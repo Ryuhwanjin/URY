@@ -1,200 +1,400 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-🎓 URY Engine v0.7.7 - Windows 독립 실행 .EXE 커스텀 경로 자동 설치/빌드 GUI 도구 (build_exe_gui.py)
-"""
+
 import os
 import sys
-import time
 import shutil
 import subprocess
 import threading
-try:
-    import tkinter as tk
-    from tkinter import ttk, messagebox, filedialog
-except ImportError:
-    tk = None
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+
+VERSION = "0.7.8"
+
+
+def get_windows_root():
+    """
+    build_exe_gui.py
+    └─ system/code/
+
+    따라서 두 단계 위가 URY_Windows/
+    """
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(current_dir, "..", ".."))
+
+
+def run_command(command, cwd, update_status_cb):
+    """명령 실행 및 실시간 로그 전달"""
+    try:
+        update_status_cb(" ".join(command))
+
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        for line in process.stdout:
+            line = line.rstrip()
+            if line:
+                update_status_cb(line)
+
+        return_code = process.wait()
+
+        if return_code != 0:
+            update_status_cb(
+                f"[ERROR] 명령 실행 실패 (exit code: {return_code})"
+            )
+            return False
+
+        return True
+
+    except Exception as e:
+        update_status_cb(f"[ERROR] {e}")
+        return False
+
 
 def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
+    """
+    실제 Windows EXE 빌드 프로세스.
+    별도 스레드에서 실행됨.
+    """
+
     try:
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.abspath(os.path.join(cur_dir, "..", ".."))
-        win_dir = os.path.join(root_dir, "URY_Windows")
-        if not os.path.exists(win_dir):
-            win_dir = root_dir
+        windows_root = get_windows_root()
+        code_dir = os.path.join(windows_root, "system", "code")
 
-        # 바탕화면(Desktop) 선택 시 _internal 및 exe가 바탕화면 최상위에 드러나지 않도록 URY_Engine 전용 하위 폴더 자동 캡슐화
-        base_folder = os.path.basename(os.path.abspath(target_install_dir)).lower()
-        if base_folder in ("desktop", "바탕화면", "바탕 화면"):
-            target_install_dir = os.path.join(target_install_dir, "URY_Engine")
+        main_script = os.path.join(code_dir, "settings_gui.py")
+        icon_path = os.path.join(windows_root, "app_icon.ico")
 
-        update_status_cb(10, "[1/5] PyInstaller 빌드 환경 패키지 검사 중...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(0.5)
+        dist_dir = os.path.join(windows_root, "dist")
+        build_dir = os.path.join(windows_root, "build")
 
-        update_status_cb(30, "[2/5] URY Engine 최신 소스코드 및 번들 에셋 정제 중...")
-        time.sleep(0.5)
+        final_dist = os.path.join(dist_dir, "URY_Engine")
 
-        update_status_cb(55, "[3/5] PyInstaller 기반 윈도우 바이너리(.exe) 컴파일 중...")
-        main_script = os.path.join(cur_dir, "settings_gui.py")
-        ico_file = os.path.join(root_dir, "app_icon.ico")
-        
-        cmd = [
-            sys.executable, "-m", "PyInstaller",
-            "--noconfirm", "--onedir", "--windowed",
-            "--name", "URY_Engine",
-            "--add-data", f"{os.path.join(root_dir, 'system')}{os.pathsep}system"
+        update_status_cb(f"[INFO] Windows 프로젝트: {windows_root}")
+        update_status_cb(f"[INFO] 엔트리포인트: {main_script}")
+
+        # 기본 파일 확인
+        if not os.path.isfile(main_script):
+            raise FileNotFoundError(
+                f"settings_gui.py를 찾을 수 없습니다: {main_script}"
+            )
+
+        if not os.path.isfile(icon_path):
+            update_status_cb(
+                f"[WARNING] 아이콘을 찾을 수 없습니다: {icon_path}"
+            )
+
+        # 이전 빌드 삭제
+        update_status_cb("[1/4] 이전 빌드 파일 정리 중...")
+
+        if os.path.isdir(final_dist):
+            shutil.rmtree(final_dist, ignore_errors=True)
+
+        if os.path.isdir(build_dir):
+            shutil.rmtree(build_dir, ignore_errors=True)
+
+        # PyInstaller 확인/설치
+        update_status_cb("[2/4] PyInstaller 확인 중...")
+
+        check_pyinstaller = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "PyInstaller",
+                "--version",
+            ],
+            cwd=windows_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        if check_pyinstaller.returncode != 0:
+            update_status_cb(
+                "[INFO] PyInstaller가 없어 설치를 진행합니다..."
+            )
+
+            install_ok = run_command(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "pyinstaller",
+                ],
+                windows_root,
+                update_status_cb,
+            )
+
+            if not install_ok:
+                raise RuntimeError("PyInstaller 설치에 실패했습니다.")
+
+        # PyInstaller 명령 구성
+        update_status_cb("[3/4] EXE 빌드 중...")
+
+        command = [
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            "--noconfirm",
+            "--clean",
+            "--onedir",
+            "--windowed",
+            "--name",
+            "URY_Engine",
+            "--add-data",
+            f"{os.path.join(windows_root, 'system')}{os.pathsep}system",
         ]
-        if os.path.exists(ico_file):
-            cmd.extend(["--icon", ico_file])
-        cmd.append(main_script)
 
-        res = subprocess.run(cmd, cwd=root_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if os.path.isfile(icon_path):
+            command.extend([
+                "--icon",
+                icon_path,
+            ])
 
-        update_status_cb(80, f"[4/5] 지정하신 설치 위치로 프로그램 캡슐화 및 이식 중...")
-        built_dist_dir = os.path.join(root_dir, "dist", "URY_Engine")
+        command.append(main_script)
 
-        if not os.path.exists(built_dist_dir):
-            raise RuntimeError(f"PyInstaller 컴파일 실패:\n{res.stderr}")
+        success = run_command(
+            command,
+            windows_root,
+            update_status_cb,
+        )
 
-        os.makedirs(target_install_dir, exist_ok=True)
-        target_exe = os.path.join(target_install_dir, "URY_Engine.exe")
+        if not success:
+            raise RuntimeError("PyInstaller EXE 빌드에 실패했습니다.")
 
-        # 만약 기본 dist 경로가 아닌 사용자 커스텀 설치 위치인 경우 복사/설치 수행
-        if os.path.abspath(target_install_dir) != os.path.abspath(built_dist_dir):
-            for item in os.listdir(built_dist_dir):
-                s_item = os.path.join(built_dist_dir, item)
-                d_item = os.path.join(target_install_dir, item)
-                if os.path.isdir(s_item):
-                    if os.path.exists(d_item):
-                        shutil.rmtree(d_item)
-                    shutil.copytree(s_item, d_item)
-                else:
-                    shutil.copy2(s_item, d_item)
+        # 결과 확인
+        update_status_cb("[4/4] 빌드 결과 확인 중...")
 
-        update_status_cb(100, "🎉 독립 실행 .EXE 설치/빌드가 성공적으로 완료되었습니다!")
-        on_complete_cb(True, target_exe)
+        if not os.path.isdir(final_dist):
+            raise RuntimeError(
+                f"빌드 결과 폴더가 생성되지 않았습니다: {final_dist}"
+            )
+
+        exe_path = os.path.join(final_dist, "URY_Engine.exe")
+
+        if not os.path.isfile(exe_path):
+            raise RuntimeError(
+                f"URY_Engine.exe가 생성되지 않았습니다: {exe_path}"
+            )
+
+        update_status_cb("")
+        update_status_cb("========================================")
+        update_status_cb("[OK] Windows EXE 빌드 완료")
+        update_status_cb(f"[OK] 결과 위치: {final_dist}")
+        update_status_cb(f"[OK] 실행 파일: {exe_path}")
+        update_status_cb("========================================")
+
+        # 사용자가 지정한 설치 폴더가 있으면 복사
+        if target_install_dir:
+            target_install_dir = os.path.abspath(
+                os.path.expanduser(target_install_dir)
+            )
+
+            if os.path.normcase(target_install_dir) != os.path.normcase(
+                final_dist
+            ):
+                update_status_cb(
+                    f"[INFO] 설치 폴더로 복사 중: {target_install_dir}"
+                )
+
+                if os.path.isdir(target_install_dir):
+                    shutil.rmtree(target_install_dir, ignore_errors=True)
+
+                shutil.copytree(final_dist, target_install_dir)
+
+                update_status_cb(
+                    f"[OK] 설치 폴더 복사 완료: {target_install_dir}"
+                )
+
+        on_complete_cb(True, final_dist)
+
     except Exception as e:
+        update_status_cb("")
+        update_status_cb("========================================")
+        update_status_cb(f"[ERROR] 빌드 실패: {e}")
+        update_status_cb("========================================")
+
         on_complete_cb(False, str(e))
 
-class ExeBuilderGUI:
-    def __init__(self):
-        if sys.platform == "win32":
-            try:
-                import ctypes
-                ctypes.windll.shcore.SetProcessDpiAwareness(2)
-                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("URY.Engine.Studio.v063")
-            except Exception:
-                pass
 
-        self.root = tk.Tk()
-        self.root.title("URY Engine v0.7.7 — Windows Standalone .EXE Installer/Builder")
-        self.root.geometry("600x350")
-        self.root.minsize(580, 340)
-        self.root.configure(bg="#181825")
+class BuildGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title(f"URY Engine v{VERSION} - Windows EXE Builder")
+        self.root.geometry("720x520")
 
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.abspath(os.path.join(cur_dir, "..", ".."))
-        ico_file = os.path.join(root_dir, "app_icon.ico")
-        if os.path.exists(ico_file):
-            try:
-                self.root.iconbitmap(ico_file)
-            except Exception:
-                pass
+        self.target_dir = tk.StringVar(
+            value=os.path.join(
+                os.path.expanduser("~"),
+                "Desktop",
+                "URY_Engine",
+            )
+        )
 
-        # Center window
-        self.root.update_idletasks()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        self.root.geometry(f'+{x}+{y}')
+        self.building = False
 
-        default_target = os.path.expanduser("~/Desktop/URY_Engine")
+        self.create_widgets()
 
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("TProgressbar", thickness=18, troughcolor="#313244", background="#89b4fa")
+    def create_widgets(self):
+        frame = tk.Frame(self.root, padx=20, pady=20)
+        frame.pack(fill="both", expand=True)
 
-        # 라운드 스퀘어 헤더 카드
-        header_card = tk.Frame(self.root, bg="#1e1e2e", bd=0, highlightthickness=1, highlightbackground="#313244")
-        header_card.pack(fill=tk.X, padx=20, pady=(18, 10))
+        title = tk.Label(
+            frame,
+            text=f"URY Engine v{VERSION}",
+            font=("Arial", 20, "bold"),
+        )
+        title.pack(pady=(0, 5))
 
-        title_lbl = tk.Label(header_card, text="🚀 URY Engine v0.7.7 - .EXE 커스텀 자동 설치/빌더", font=("Malgun Gothic", 12, "bold"), fg="#ffffff", bg="#1e1e2e")
-        title_lbl.pack(pady=(12, 4))
+        subtitle = tk.Label(
+            frame,
+            text="Windows Standalone EXE Builder",
+            font=("Arial", 11),
+        )
+        subtitle.pack(pady=(0, 20))
 
-        sub_lbl = tk.Label(header_card, text="바탕화면 선택 시에도 _internal 폴더가 난잡하게 노출되지 않도록 전용 폴더로 자동 캡슐화됩니다.", font=("Malgun Gothic", 8), fg="#a6adc8", bg="#1e1e2e")
-        sub_lbl.pack(pady=(0, 12))
+        target_frame = tk.Frame(frame)
+        target_frame.pack(fill="x", pady=(0, 10))
 
-        # 설치 경로 지정 라운드 프레임
-        path_card = tk.Frame(self.root, bg="#1e1e2e", bd=0, highlightthickness=1, highlightbackground="#313244")
-        path_card.pack(fill=tk.X, padx=20, pady=5)
+        tk.Label(
+            target_frame,
+            text="설치 폴더:",
+        ).pack(anchor="w")
 
-        tk.Label(path_card, text="📂 .EXE 설치/출력 경로 지정:", font=("Malgun Gothic", 9, "bold"), fg="#cba6f7", bg="#1e1e2e").pack(anchor="w", padx=15, pady=(10, 3))
+        path_frame = tk.Frame(target_frame)
+        path_frame.pack(fill="x", pady=5)
 
-        path_inner = tk.Frame(path_card, bg="#1e1e2e")
-        path_inner.pack(fill=tk.X, padx=15, pady=(0, 10))
+        entry = tk.Entry(
+            path_frame,
+            textvariable=self.target_dir,
+        )
+        entry.pack(side="left", fill="x", expand=True)
 
-        self.path_var = tk.StringVar(value=default_target)
-        self.path_entry = tk.Entry(path_inner, textvariable=self.path_var, font=("Malgun Gothic", 9), bg="#313244", fg="#ffffff", insertbackground="#ffffff", bd=1, relief=tk.SOLID)
-        self.path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=4, padx=(0, 6))
+        tk.Button(
+            path_frame,
+            text="찾아보기",
+            command=self.select_folder,
+        ).pack(side="right", padx=(8, 0))
 
-        browse_btn = tk.Button(path_inner, text="경로 변경...", font=("Malgun Gothic", 9), fg="#ffffff", bg="#45475a", activebackground="#585b70", bd=0, padx=12, pady=3, command=self.browse_target_dir)
-        browse_btn.pack(side=tk.RIGHT)
+        self.build_button = tk.Button(
+            frame,
+            text="EXE 빌드 시작",
+            command=self.start_build,
+            height=2,
+        )
+        self.build_button.pack(fill="x", pady=(10, 15))
 
-        self.status_lbl = tk.Label(self.root, text="[준비] 원하시는 설치 경로를 확인하신 후 빌드 버튼을 누르세요.", font=("Malgun Gothic", 9), fg="#a6adc8", bg="#181825")
-        self.status_lbl.pack(pady=4)
+        log_frame = tk.Frame(frame)
+        log_frame.pack(fill="both", expand=True)
 
-        self.progress = ttk.Progressbar(self.root, orient="horizontal", length=540, mode="determinate", style="TProgressbar")
-        self.progress.pack(pady=8)
+        tk.Label(
+            log_frame,
+            text="빌드 로그",
+        ).pack(anchor="w")
 
-        self.start_btn = tk.Button(self.root, text="🔨 지정된 경로로 .EXE 자동 설치/빌드 시작", font=("Malgun Gothic", 10, "bold"), fg="#ffffff", bg="#89b4fa", activebackground="#74c7ec", bd=0, padx=18, pady=7, command=self.start_build)
-        self.start_btn.pack(pady=6)
+        self.log_text = tk.Text(
+            log_frame,
+            wrap="word",
+            state="disabled",
+        )
+        self.log_text.pack(
+            side="left",
+            fill="both",
+            expand=True,
+        )
 
-    def browse_target_dir(self):
-        chosen = filedialog.askdirectory(title="URY_Engine.exe 설치/빌드 출력 폴더 선택", initialdir=self.path_var.get())
-        if chosen:
-            self.path_var.set(os.path.abspath(chosen))
+        scrollbar = tk.Scrollbar(
+            log_frame,
+            command=self.log_text.yview,
+        )
+        scrollbar.pack(side="right", fill="y")
+
+        self.log_text.configure(
+            yscrollcommand=scrollbar.set
+        )
+
+    def select_folder(self):
+        folder = filedialog.askdirectory(
+            title="EXE 설치 폴더 선택"
+        )
+
+        if folder:
+            self.target_dir.set(folder)
+
+    def update_status(self, message):
+        def append():
+            self.log_text.configure(state="normal")
+            self.log_text.insert("end", message + "\n")
+            self.log_text.see("end")
+            self.log_text.configure(state="disabled")
+
+        self.root.after(0, append)
+
+    def build_complete(self, success, result):
+        def finish():
+            self.building = False
+            self.build_button.configure(
+                state="normal",
+                text="EXE 빌드 시작",
+            )
+
+            if success:
+                messagebox.showinfo(
+                    "빌드 완료",
+                    f"Windows EXE 빌드가 완료되었습니다.\n\n{result}",
+                )
+            else:
+                messagebox.showerror(
+                    "빌드 실패",
+                    f"Windows EXE 빌드에 실패했습니다.\n\n{result}",
+                )
+
+        self.root.after(0, finish)
 
     def start_build(self):
-        target_dir = self.path_var.get().strip()
-        if not target_dir:
-            messagebox.showwarning("경로 오류", "설치 경로를 입력해주세요.")
+        if self.building:
             return
 
-        self.start_btn.config(state=tk.DISABLED, bg="#45475a")
-        self.path_entry.config(state=tk.DISABLED)
-        threading.Thread(target=run_build_process, args=(target_dir, self.update_status, self.on_complete), daemon=True).start()
+        self.building = True
 
-    def update_status(self, percent, text):
-        def _update():
-            self.progress['value'] = percent
-            self.status_lbl.config(text=text)
-        self.root.after(0, _update)
+        self.build_button.configure(
+            state="disabled",
+            text="빌드 중...",
+        )
 
-    def on_complete(self, success, result_path):
-        def _finish():
-            if success:
-                target_dir = os.path.dirname(result_path)
-                messagebox.showinfo("설치 완료", f"🎉 URY Engine .EXE 설치가 성공적으로 완료되었습니다!\n\n📂 설치 경로: {target_dir}\n💡 URY_Engine.exe 를 실행하여 바로 사용하세요.")
-                if sys.platform == "win32" and os.path.exists(result_path):
-                    try:
-                        subprocess.run(["explorer.exe", "/select,", result_path], check=False)
-                    except Exception:
-                        pass
-                self.root.destroy()
-            else:
-                messagebox.showerror("빌드 오류", f"❌ 설치/빌드 중 오류가 발생했습니다:\n{result_path}")
-                self.start_btn.config(state=tk.NORMAL, bg="#89b4fa")
-                self.path_entry.config(state=tk.NORMAL)
-        self.root.after(0, _finish)
+        self.log_text.configure(state="normal")
+        self.log_text.delete("1.0", "end")
+        self.log_text.configure(state="disabled")
 
-    def run(self):
-        self.root.mainloop()
+        target_dir = self.target_dir.get().strip()
+
+        thread = threading.Thread(
+            target=run_build_process,
+            args=(
+                target_dir,
+                self.update_status,
+                self.build_complete,
+            ),
+            daemon=True,
+        )
+
+        thread.start()
+
+
+def main():
+    root = tk.Tk()
+    BuildGUI(root)
+    root.mainloop()
+
 
 if __name__ == "__main__":
-    if tk is None:
-        print("Tkinter가 설치되어 있지 않습니다.")
-        sys.exit(1)
-    app = ExeBuilderGUI()
-    app.run()
+    main()
