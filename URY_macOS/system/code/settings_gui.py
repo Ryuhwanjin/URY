@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 대학 전공 학업 관리 시스템 — URY Engine v0.7.7 (AI Academic Studio)
+🎓 대학 전공 학업 관리 시스템 — URY Engine v0.7.9 (AI Academic Studio)
 - 미니멀 & 직관적인 모던 UI/UX
 - 3단계 사용자 주도형 맞춤 학습노트 생성 스튜디오 (음성 부재 대비 슬라이드 전용 모드 지원)
 - 선택적 실전 모의시험 & D-Day 맞춤 학습 로드맵 (주차별 자료 다중 선택 지원)
@@ -287,6 +287,7 @@ class SquareRoundButton(tk.Canvas):
                  state="normal", parent_bg=None, **kwargs):
         self.cmd = command
         self.btn_text = text
+        self.text_anchor = kwargs.pop("text_anchor", "center")
         self.radius = radius
         self.normal_bg = bg
         self.hover_bg = hover_bg or bg
@@ -351,7 +352,23 @@ class SquareRoundButton(tk.Canvas):
         t_color = "#94a3b8" if is_dis else self.normal_fg
         b_color = "#e2e8f0" if is_dis else fill_color
         self.rect_id = self.create_polygon(points, fill=b_color, outline="", smooth=True)
-        self.text_id = self.create_text(self.w // 2, self.h // 2, text=self.btn_text, fill=t_color, font=self.font)
+
+        text_x = self.w // 2
+        text_anchor = "center"
+
+        if self.text_anchor == "w":
+            text_x = 24
+            text_anchor = "w"
+
+        self.text_id = self.create_text(
+            text_x,
+            self.h // 2,
+            text=self.btn_text,
+            fill=t_color,
+            font=self.font,
+            anchor=text_anchor
+        )
+
         # Canvas 위젯 레벨의 self.bind로 이벤트가 일괄 처리되므로 태그 중복 바인딩 불필요 (더블 클릭 방지)
 
     def on_enter(self, e=None):
@@ -562,7 +579,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY Engine — Academic Studio v0.7.7")
+        self.root.title("URY Engine — Academic Studio v0.7.9")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -1237,152 +1254,932 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     ask_open_file_safe = staticmethod(safe_askopenfilename)
     ask_open_files_safe = staticmethod(safe_askopenfilenames)
 
+
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
 
-        # 🌟 시안 2 (Apple Clean Light) + 포레스트 그린 팔레트
-        bg_main = "#f6f8fa"        # 은은하고 편안한 Apple 라이트 그레이
-        bg_card = "#ffffff"        # 퓨어 화이트 카드
-        bg_header = "#ffffff"      # 퓨어 화이트 상단 바
-        border_c = "#e2e8f0"       # 정갈한 1px 슬레이트 보더
-        fg_main = "#0f172a"        # 또렷한 슬레이트 차콜 텍스트
-        fg_muted = "#64748b"       # 소프트 슬레이트 그레이
-        accent = "#1c4732"         # 앱 아이콘 원색 딥 포레스트 그린
+        # =====================================================
+        # URY UI 2.0
+        # =====================================================
+
+        bg_main = "#f5f7f6"
+        bg_card = "#ffffff"
+        bg_header = "#ffffff"
+
+        border_c = "#e7ebe8"
+
+        fg_main = "#17211b"
+        fg_muted = "#718078"
+
+        accent = "#1c4732"
+        accent_hover = "#285f45"
 
         self.root.configure(bg=bg_main)
 
-        # 폰트 계층
+        # Font hierarchy
         f_title = ("Pretendard", 11, "bold")
         f_body = ("Pretendard", 10)
         f_small = ("Pretendard", 9)
 
-        style.configure(".", background=bg_main, foreground=fg_main, font=f_body)
-        style.configure("TFrame", background=bg_main)
-        style.configure("Card.TFrame", background=bg_card, relief=tk.FLAT, borderwidth=0)
-        style.configure("TLabel", background=bg_main, foreground=fg_main, font=f_body)
-        style.configure("Card.TLabel", background=bg_card, foreground=fg_main, font=f_body)
-        style.configure("Muted.TLabel", background=bg_main, foreground=fg_muted, font=f_small)
-        style.configure("CardMuted.TLabel", background=bg_card, foreground=fg_muted, font=f_small)
-        style.configure("Card.TCheckbutton", background=bg_card, foreground=fg_main, font=f_body)
+        # -----------------------------------------------------
+        # Base
+        # -----------------------------------------------------
 
-        # 숨겨진 노트북 탭 (상단 플로팅 알약 세그먼트 바로 직접 제어)
-        style.layout("Hidden.TNotebook.Tab", [])
-        style.configure("Hidden.TNotebook", background=bg_main, borderwidth=0, tabmargins=0)
+        style.configure(
+            ".",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        # 기본 ttk.Notebook 스타일 유지보수
-        style.configure("TNotebook", background=bg_main, borderwidth=0)
-        style.configure("TNotebook.Tab", font=f_title, padding=[16, 8], background="#e2e8f0", foreground=fg_muted)
-        style.map("TNotebook.Tab", background=[("selected", accent)], foreground=[("selected", "#ffffff")])
+        style.configure(
+            "TFrame",
+            background=bg_main
+        )
 
-        # 버튼들
-        style.configure("Primary.TButton", font=f_title, background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Primary.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.configure(
+            "Card.TFrame",
+            background=bg_card,
+            relief=tk.FLAT,
+            borderwidth=0
+        )
 
-        style.configure("Action.TButton", font=("Pretendard", 10, "bold"), background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Action.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.configure(
+            "TLabel",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        style.configure("Secondary.TButton", font=f_body, background="#e2e8f0", foreground=fg_main, borderwidth=0)
-        style.map("Secondary.TButton", background=[("active", "#cbd5e1")])
+        style.configure(
+            "Card.TLabel",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        style.configure("Danger.TButton", font=f_body, background="#dc2626", foreground="#ffffff", borderwidth=0)
-        style.map("Danger.TButton", background=[("active", "#b91c1c"), ("disabled", "#94a3b8")])
+        style.configure(
+            "Muted.TLabel",
+            background=bg_main,
+            foreground=fg_muted,
+            font=f_small
+        )
 
-        # 트리뷰 (과목 테이블)
-        style.configure("Treeview.Heading", font=("Pretendard", 10, "bold"), background="#f1f5f9", foreground=fg_main)
-        style.configure("Treeview", font=f_body, rowheight=28, background=bg_card, fieldbackground=bg_card, foreground=fg_main)
-        style.map("Treeview", background=[("selected", "#e8f5ed")], foreground=[("selected", "#1c4732")])
+        style.configure(
+            "CardMuted.TLabel",
+            background=bg_card,
+            foreground=fg_muted,
+            font=f_small
+        )
 
-        # 라벨프레임
-        style.configure("TLabelframe", background=bg_card, bordercolor=border_c, borderwidth=1)
-        style.configure("TLabelframe.Label", background=bg_card, foreground=fg_main, font=f_title)
+        style.configure(
+            "Card.TCheckbutton",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_body
+        )
+
+        # -----------------------------------------------------
+        # Hidden Notebook
+        # -----------------------------------------------------
+
+        style.layout(
+            "Hidden.TNotebook.Tab",
+            []
+        )
+
+        style.configure(
+            "Hidden.TNotebook",
+            background=bg_main,
+            borderwidth=0,
+            tabmargins=0
+        )
+
+        style.configure(
+            "TNotebook",
+            background=bg_main,
+            borderwidth=0
+        )
+
+        # -----------------------------------------------------
+        # Buttons
+        # -----------------------------------------------------
+
+        style.configure(
+            "Primary.TButton",
+            font=f_title,
+            background=accent,
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(14, 9)
+        )
+
+        style.map(
+            "Primary.TButton",
+            background=[
+                ("active", accent_hover),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        style.configure(
+            "Action.TButton",
+            font=("Pretendard", 10, "bold"),
+            background=accent,
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(14, 9)
+        )
+
+        style.map(
+            "Action.TButton",
+            background=[
+                ("active", accent_hover),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        style.configure(
+            "Secondary.TButton",
+            font=f_body,
+            background="#edf1ee",
+            foreground=fg_main,
+            borderwidth=0,
+            padding=(12, 8)
+        )
+
+        style.map(
+            "Secondary.TButton",
+            background=[
+                ("active", "#dfe7e2")
+            ]
+        )
+
+        style.configure(
+            "Danger.TButton",
+            font=f_body,
+            background="#dc2626",
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(12, 8)
+        )
+
+        style.map(
+            "Danger.TButton",
+            background=[
+                ("active", "#b91c1c"),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        # -----------------------------------------------------
+        # Treeview
+        # -----------------------------------------------------
+
+        style.configure(
+            "Treeview.Heading",
+            font=("Pretendard", 10, "bold"),
+            background="#eef2ef",
+            foreground=fg_main,
+            relief=tk.FLAT
+        )
+
+        style.configure(
+            "Treeview",
+            font=f_body,
+            rowheight=32,
+            background=bg_card,
+            fieldbackground=bg_card,
+            foreground=fg_main,
+            borderwidth=0,
+            relief=tk.FLAT
+        )
+
+        style.map(
+            "Treeview",
+            background=[
+                ("selected", "#e4f0e8")
+            ],
+            foreground=[
+                ("selected", accent)
+            ]
+        )
+
+        # -----------------------------------------------------
+        # LabelFrame
+        # -----------------------------------------------------
+
+        style.configure(
+            "TLabelframe",
+            background=bg_card,
+            bordercolor=border_c,
+            borderwidth=0
+        )
+
+        style.configure(
+            "TLabelframe.Label",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_title
+        )
+
+        # -----------------------------------------------------
+        # Sidebar
+        # -----------------------------------------------------
+
+        style.configure(
+            "Sidebar.TFrame",
+            background="#eef3ef"
+        )
+
+        style.configure(
+            "SidebarMuted.TLabel",
+            background="#eef3ef",
+            foreground="#7b8a82",
+            font=("Pretendard", 8, "bold")
+        )
+
+        # =====================================================
+        # URY UI 2.1 — Form / Input System
+        # =====================================================
+
+        # Entry
+        style.configure(
+            "TEntry",
+            font=f_body,
+            foreground=fg_main,
+            fieldbackground=bg_card,
+            background=bg_card,
+            bordercolor=border_c,
+            lightcolor=border_c,
+            darkcolor=border_c,
+            padding=(10, 7)
+        )
+
+        style.map(
+            "TEntry",
+            bordercolor=[
+                ("focus", "#9fc5ad"),
+                ("disabled", "#e1e6e3")
+            ],
+            lightcolor=[
+                ("focus", "#9fc5ad")
+            ],
+            darkcolor=[
+                ("focus", "#9fc5ad")
+            ]
+        )
+
+        # Combobox
+        style.configure(
+            "TCombobox",
+            font=f_body,
+            foreground=fg_main,
+            fieldbackground=bg_card,
+            background=bg_card,
+            bordercolor=border_c,
+            lightcolor=border_c,
+            darkcolor=border_c,
+            padding=(9, 7)
+        )
+
+        style.map(
+            "TCombobox",
+            fieldbackground=[
+                ("readonly", bg_card),
+                ("disabled", "#f0f3f1")
+            ],
+            foreground=[
+                ("readonly", fg_main),
+                ("disabled", fg_muted)
+            ],
+            bordercolor=[
+                ("focus", "#9fc5ad")
+            ]
+        )
+
+        # Combobox dropdown
+        style.configure(
+            "TCombobox",
+            arrowsize=14
+        )
+
+        # Checkbutton
+        style.configure(
+            "TCheckbutton",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
+
+        style.map(
+            "TCheckbutton",
+            background=[
+                ("active", bg_main)
+            ],
+            foreground=[
+                ("disabled", fg_muted)
+            ]
+        )
+
+        # Card Checkbutton
+        style.map(
+            "Card.TCheckbutton",
+            background=[
+                ("active", bg_card)
+            ],
+            foreground=[
+                ("disabled", fg_muted)
+            ]
+        )
+
+        # Radio button
+        style.configure(
+            "TRadiobutton",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
+
+        style.map(
+            "TRadiobutton",
+            background=[
+                ("active", bg_main)
+            ],
+            foreground=[
+                ("disabled", fg_muted)
+            ]
+        )
+
+        # -----------------------------------------------------
+        # Progressbar
+        # -----------------------------------------------------
+
+        style.configure(
+            "Horizontal.TProgressbar",
+            background=accent,
+            troughcolor="#e8eeea",
+            borderwidth=0,
+            lightcolor=accent,
+            darkcolor=accent,
+            thickness=8
+        )
+
+        # -----------------------------------------------------
+        # Separator
+        # -----------------------------------------------------
+
+        style.configure(
+            "TSeparator",
+            background=border_c
+        )
+
+        # -----------------------------------------------------
+        # Notebook body
+        # -----------------------------------------------------
+
+        style.configure(
+            "TNotebook",
+            background=bg_main,
+            borderwidth=0,
+            tabmargins=0
+        )
+
+        # -----------------------------------------------------
+        # Scrollbar
+        # -----------------------------------------------------
+
+        style.configure(
+            "Vertical.TScrollbar",
+            background="#e8eeea",
+            troughcolor=bg_main,
+            borderwidth=0,
+            arrowsize=12
+        )
+
+        style.map(
+            "Vertical.TScrollbar",
+            background=[
+                ("active", "#cbd8d0"),
+                ("pressed", "#b8c9be")
+            ]
+        )
+
+        style.configure(
+            "Horizontal.TScrollbar",
+            background="#e8eeea",
+            troughcolor=bg_main,
+            borderwidth=0,
+            arrowsize=12
+        )
+
+        style.map(
+            "Horizontal.TScrollbar",
+            background=[
+                ("active", "#cbd8d0"),
+                ("pressed", "#b8c9be")
+            ]
+        )
+
+        # -----------------------------------------------------
+        # Additional label hierarchy
+        # -----------------------------------------------------
+
+        style.configure(
+            "Section.TLabel",
+            background=bg_card,
+            foreground=fg_main,
+            font=("Pretendard", 12, "bold")
+        )
+
+        style.configure(
+            "Title.TLabel",
+            background=bg_main,
+            foreground=fg_main,
+            font=("Pretendard", 18, "bold")
+        )
+
+        style.configure(
+            "Subtitle.TLabel",
+            background=bg_main,
+            foreground=fg_muted,
+            font=("Pretendard", 10)
+        )
+
+        style.configure(
+            "CardTitle.TLabel",
+            background=bg_card,
+            foreground=fg_main,
+            font=("Pretendard", 12, "bold")
+        )
+
+        style.configure(
+            "CardValue.TLabel",
+            background=bg_card,
+            foreground=accent,
+            font=("Pretendard", 20, "bold")
+        )
+
+        # -----------------------------------------------------
+        # Small utility buttons
+        # -----------------------------------------------------
+
+        style.configure(
+            "Small.TButton",
+            font=("Pretendard", 9, "bold"),
+            background="#edf1ee",
+            foreground=fg_main,
+            borderwidth=0,
+            padding=(10, 6)
+        )
+
+        style.map(
+            "Small.TButton",
+            background=[
+                ("active", "#dfe7e2"),
+                ("disabled", "#f0f3f1")
+            ],
+            foreground=[
+                ("disabled", fg_muted)
+            ]
+        )
 
     def create_header_card(self):
-        # 🌟 시안 2 상단 헤더: 화이트 클린 탑바 + 중앙 플로팅 알약 탭 세그먼트
-        self.header_frame = tk.Frame(self.root, bg="#ffffff", height=62, bd=0, highlightthickness=1, highlightbackground="#e2e8f0")
-        self.header_frame.pack(fill=tk.X)
-        self.header_frame.pack_propagate(False)
+        """
+        URY UI 2.0 Desktop Shell
 
-        # 좌측: 모노그램 로고 & 앱 타이틀
-        left = tk.Frame(self.header_frame, bg="#ffffff")
-        left.pack(side=tk.LEFT, padx=(14, 6), fill=tk.Y)
+        Header
+        └── Sidebar + Main Content
 
-        title_row = tk.Frame(left, bg="#ffffff")
-        title_row.pack(anchor=tk.W, pady=(12, 0))
+        기존 Notebook 및 기능 callback은 유지한다.
+        """
+
+        # =====================================================
+        # Header
+        # =====================================================
+
+        self.header_frame = tk.Frame(
+            self.root,
+            bg="#ffffff",
+            height=64,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#e7ebe8"
+        )
+
+        self.header_frame.pack(
+            fill=tk.X
+        )
+
+        self.header_frame.pack_propagate(
+            False
+        )
+
+        # -----------------------------------------------------
+        # Logo / Title
+        # -----------------------------------------------------
+
+        left = tk.Frame(
+            self.header_frame,
+            bg="#ffffff"
+        )
+
+        left.pack(
+            side=tk.LEFT,
+            padx=(20, 10),
+            fill=tk.Y
+        )
+
+        title_row = tk.Frame(
+            left,
+            bg="#ffffff"
+        )
+
+        title_row.pack(
+            anchor=tk.W,
+            pady=(13, 0)
+        )
+
         if hasattr(self, "icon_img"):
             try:
-                tk.Label(title_row, image=self.icon_img, bg="#ffffff").pack(side=tk.LEFT, padx=(0, 6))
+                tk.Label(
+                    title_row,
+                    image=self.icon_img,
+                    bg="#ffffff"
+                ).pack(
+                    side=tk.LEFT,
+                    padx=(0, 8)
+                )
             except Exception:
                 pass
-        tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.7.7", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
-        tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
-        # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
-        right = tk.Frame(self.header_frame, bg="#ffffff")
-        right.pack(side=tk.RIGHT, padx=(6, 14), fill=tk.Y)
+        tk.Label(
+            title_row,
+            text="URY Engine",
+            font=("Pretendard", 13, "bold"),
+            bg="#ffffff",
+            fg="#173b29"
+        ).pack(
+            side=tk.LEFT
+        )
+
+        tk.Label(
+            title_row,
+            text="  Academic Studio",
+            font=("Pretendard", 9),
+            bg="#ffffff",
+            fg="#89968f"
+        ).pack(
+            side=tk.LEFT
+        )
+
+        # -----------------------------------------------------
+        # Right status area
+        # -----------------------------------------------------
+
+        right = tk.Frame(
+            self.header_frame,
+            bg="#ffffff"
+        )
+
+        right.pack(
+            side=tk.RIGHT,
+            padx=(10, 20),
+            fill=tk.Y
+        )
 
         self.res_quick_btn = SquareRoundButton(
             right,
-            text="🖥️ 창 크기 ▾",
-            bg="#f1f5f9",
-            fg="#1e293b",
-            hover_bg="#e2e8f0",
-            radius=8,
-            height=28,
+            text="🖥 창 크기 ▾",
+            bg="#f1f4f2",
+            fg="#34423a",
+            hover_bg="#e4eae6",
+            active_bg="#dce5df",
+            radius=10,
+            height=30,
             font=("Pretendard", 8, "bold"),
             command=self.show_resolution_quick_menu,
             parent_bg="#ffffff"
         )
-        self.res_quick_btn.pack(side=tk.LEFT, pady=16, padx=(0, 6))
 
-        sem_text = self.settings.get("semester", "2026년 2학기")
-        self.sem_badge_label = tk.Label(right, text=f" 📅 {sem_text} ", font=("Pretendard", 8, "bold"), bg="#f1f5f9", fg="#1e293b", relief=tk.FLAT, padx=6, pady=4)
-        self.sem_badge_label.pack(side=tk.LEFT, pady=16, padx=(0, 6))
+        self.res_quick_btn.pack(
+            side=tk.LEFT,
+            pady=17,
+            padx=(0, 8)
+        )
 
-        api_key = self.settings.get("gemini_api_key", "").strip()
+        sem_text = self.settings.get(
+            "semester",
+            "2026년 2학기"
+        )
+
+        self.sem_badge_label = tk.Label(
+            right,
+            text=f"📅 {sem_text}",
+            font=("Pretendard", 8, "bold"),
+            bg="#f1f4f2",
+            fg="#34423a",
+            relief=tk.FLAT,
+            padx=9,
+            pady=5
+        )
+
+        self.sem_badge_label.pack(
+            side=tk.LEFT,
+            pady=17,
+            padx=(0, 8)
+        )
+
+        api_key = self.settings.get(
+            "gemini_api_key",
+            ""
+        ).strip()
+
         has_key = len(api_key) >= 10
-        api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = "#15803d" if has_key else "#b91c1c"
-        api_bg = "#f0fdf4" if has_key else "#fef2f2"
-        self.api_badge_label = tk.Label(right, text=api_text, font=("Pretendard", 8, "bold"), bg=api_bg, fg=api_fg, relief=tk.FLAT, padx=8, pady=4, cursor="hand2")
-        self.api_badge_label.pack(side=tk.LEFT, pady=16)
-        self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(4))
 
-        # 중앙: 시안 2 플로팅 알약형 세그먼트 탭바 (반응형 콤팩트 크기)
-        center = tk.Frame(self.header_frame, bg="#ffffff")
-        center.pack(side=tk.LEFT, expand=True)
+        api_text = (
+            "● API 연결됨"
+            if has_key
+            else "● API 등록 필요"
+        )
 
-        pill_wrap = tk.Frame(center, bg="#f1f5f9", padx=3, pady=3)
-        pill_wrap.pack()
+        api_fg = (
+            "#16834b"
+            if has_key
+            else "#c2413b"
+        )
+
+        api_bg = (
+            "#eef9f2"
+            if has_key
+            else "#fff1f0"
+        )
+
+        self.api_badge_label = tk.Label(
+            right,
+            text=api_text,
+            font=("Pretendard", 8, "bold"),
+            bg=api_bg,
+            fg=api_fg,
+            relief=tk.FLAT,
+            padx=10,
+            pady=5,
+            cursor="hand2"
+        )
+
+        self.api_badge_label.pack(
+            side=tk.LEFT,
+            pady=17
+        )
+
+        self.api_badge_label.bind(
+            "<Button-1>",
+            lambda e: self.switch_to_tab(4)
+        )
+
+        # =====================================================
+        # Workspace
+        # =====================================================
+
+        self.workspace_shell = tk.Frame(
+            self.root,
+            bg="#f5f7f6"
+        )
+
+        self.workspace_shell.pack(
+            fill=tk.BOTH,
+            expand=True
+        )
+
+        # =====================================================
+        # Sidebar
+        # =====================================================
+
+        # Sidebar 상태
+        self.sidebar_expanded = True
+        self.sidebar_expanded_width = 228
+        self.sidebar_collapsed_width = 68
+
+        self.sidebar = tk.Frame(
+            self.workspace_shell,
+            bg="#eef3ef",
+            width=self.sidebar_expanded_width
+        )
+
+        self.sidebar.pack(
+            side=tk.LEFT,
+            fill=tk.Y
+        )
+
+        self.sidebar.pack_propagate(
+            False
+        )
+
+        # -----------------------------------------------------
+        # Sidebar toggle
+        # -----------------------------------------------------
+
+        self.sidebar_toggle_btn = SquareRoundButton(
+            self.sidebar,
+            text="‹",
+            command=self.toggle_sidebar,
+            bg="#e2ebe5",
+            fg="#355445",
+            hover_bg="#d6e3da",
+            active_bg="#cadccf",
+            radius=10,
+            width=38,
+            height=34,
+            font=("Pretendard", 15, "bold"),
+            parent_bg="#eef3ef"
+        )
+
+        self.sidebar_toggle_btn.pack(
+            anchor=tk.E,
+            padx=12,
+            pady=(14, 0)
+        )
+
+        # -----------------------------------------------------
+        # Sidebar branding
+        # -----------------------------------------------------
+
+        brand = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
+
+        self.sidebar_brand = brand
+
+        brand.pack(
+            fill=tk.X,
+            padx=20,
+            pady=(24, 22)
+        )
+
+        tk.Label(
+            brand,
+            text="MY WORKSPACE",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#8a9890"
+        ).pack(
+            anchor=tk.W
+        )
+
+        tk.Label(
+            brand,
+            text="학업 워크스페이스",
+            font=("Pretendard", 13, "bold"),
+            bg="#eef3ef",
+            fg="#1b3025"
+        ).pack(
+            anchor=tk.W,
+            pady=(5, 0)
+        )
+
+        # -----------------------------------------------------
+        # Menu label
+        # -----------------------------------------------------
+
+        self.sidebar_menu_label = tk.Label(
+            self.sidebar,
+            text="MENU",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#8a9890"
+        )
+
+        self.sidebar_menu_label.pack(
+            anchor=tk.W,
+            padx=22,
+            pady=(0, 8)
+        )
+
+        # -----------------------------------------------------
+        # Navigation
+        # -----------------------------------------------------
 
         self.tab_pills = []
+
         self.tab_defs = [
-            ("🎙️ Studio", 0),
-            ("📝 Exam", 1),
-            ("💬 Tutor", 2),
-            ("📊 Dashboard", 3),
-            ("⚙️ Settings", 4),
-            ("🛠️ Advanced", 5),
+            ("🎙️", "Studio", 0),
+            ("📝", "Exam", 1),
+            ("💬", "Tutor", 2),
+            ("📊", "Dashboard", 3),
+            ("⚙️", "Settings", 4),
+            ("🛠️", "Advanced", 5),
         ]
 
-        for text, idx in self.tab_defs:
-            is_active = (idx == 0)
-            btn = SquareRoundButton(
-                pill_wrap,
-                text=text,
-                command=lambda i=idx: self.switch_to_tab(i),
-                bg="#1c4732" if is_active else "#f1f5f9",
-                fg="#ffffff" if is_active else "#475569",
-                hover_bg="#265e43" if is_active else "#e2e8f0",
-                radius=9,
-                height=30,
-                font=("Pretendard", 9, "bold"),
-                parent_bg="#f1f5f9"
-            )
-            btn.pack(side=tk.LEFT, padx=1)
-            self.tab_pills.append(btn)
+        nav_container = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
 
+        self.sidebar_nav_container = nav_container
+
+        nav_container.pack(
+            fill=tk.X,
+            padx=12
+        )
+
+        for icon, text, idx in self.tab_defs:
+
+            is_active = idx == 0
+
+            btn = SquareRoundButton(
+                nav_container,
+                text=f"{icon}   {text}",
+                command=lambda i=idx: self.switch_to_tab(i),
+                bg="#dcebe1" if is_active else "#eef3ef",
+                fg="#174a31" if is_active else "#56645c",
+                hover_bg="#dcebe1",
+                active_bg="#cfe3d6",
+                radius=11,
+                width=202,
+                height=42,
+                font=("Pretendard", 9, "bold"),
+                parent_bg="#eef3ef",
+                text_anchor="w"
+            )
+
+            btn.pack(
+                fill=tk.X,
+                pady=3
+            )
+
+            # 토글 시 복원하기 위한 정보
+            btn.sidebar_icon = icon
+            btn.sidebar_text = text
+            btn.sidebar_full_text = f"{icon}   {text}"
+            btn.sidebar_index = idx
+
+            self.tab_pills.append(
+                btn
+            )
+
+        # -----------------------------------------------------
+        # Sidebar bottom
+        # -----------------------------------------------------
+
+        bottom = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
+
+        self.sidebar_bottom = bottom
+
+        bottom.pack(
+            side=tk.BOTTOM,
+            fill=tk.X,
+            padx=20,
+            pady=20
+        )
+
+        tk.Frame(
+            bottom,
+            bg="#dce4df",
+            height=1
+        ).pack(
+            fill=tk.X,
+            pady=(0, 12)
+        )
+
+        tk.Label(
+            bottom,
+            text="URY Engine",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#708078"
+        ).pack(
+            anchor=tk.W
+        )
+
+        tk.Label(
+            bottom,
+            text="Academic Studio",
+            font=("Pretendard", 8),
+            bg="#eef3ef",
+            fg="#9aa69f"
+        ).pack(
+            anchor=tk.W
+        )
+
+        # =====================================================
+        # Main content
+        # =====================================================
+
+        self.main_content = tk.Frame(
+            self.workspace_shell,
+            bg="#f5f7f6"
+        )
+
+        self.main_content.pack(
+            side=tk.LEFT,
+            fill=tk.BOTH,
+            expand=True
+        )
     def update_api_status_badge(self):
         """헤더의 API 상태 배지를 현재 설정값에 맞춰 갱신"""
         if not hasattr(self, "api_badge_label"):
@@ -1395,72 +2192,425 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.api_badge_label.config(text=api_text, bg=api_bg, fg=api_fg)
 
 
+
+
+    def toggle_sidebar(self):
+        """Sidebar 확장/축소"""
+
+        try:
+            self.sidebar_expanded = not self.sidebar_expanded
+
+            if self.sidebar_expanded:
+                self._expand_sidebar()
+            else:
+                self._collapse_sidebar()
+
+        except Exception as e:
+            print(f"[WARN] Sidebar toggle error: {e}")
+
+
+    def _redraw_sidebar_button(self, pill):
+        """SquareRoundButton의 Canvas 내용을 현재 btn_text로 다시 그림"""
+        try:
+            pill.delete("all")
+        except Exception:
+            pass
+
+        try:
+            pill.draw()
+            return
+        except TypeError:
+            pass
+        except Exception:
+            return
+
+        try:
+            pill.draw(pill.cget("bg"))
+        except Exception:
+            pass
+
+
+    def _sidebar_redraw(self, button):
+        """SquareRoundButton의 내부 상태를 변경하고 다시 그린다."""
+        try:
+            button.delete("all")
+        except Exception:
+            pass
+        button.draw(button.normal_bg)
+
+    def _collapse_sidebar(self):
+        """Sidebar를 아이콘 전용 모드로 축소"""
+        self.sidebar_expanded = False
+
+        self.sidebar.configure(
+            width=self.sidebar_collapsed_width
+        )
+
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack_forget()
+
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack_forget()
+
+        for pill in getattr(self, "tab_pills", []):
+            icon = getattr(pill, "sidebar_icon", "")
+
+            pill.btn_text = icon
+            pill.w = 44
+
+            tk.Canvas.config(
+                pill,
+                width=44,
+                height=42
+            )
+
+            self._sidebar_redraw(pill)
+
+            pill.pack_configure(
+                fill=tk.NONE,
+                padx=0,
+                pady=3
+            )
+
+        self.sidebar_toggle_btn.btn_text = "›"
+        self.sidebar_toggle_btn.w = 38
+
+        tk.Canvas.config(
+            self.sidebar_toggle_btn,
+            width=38,
+            height=34
+        )
+
+        self._sidebar_redraw(
+            self.sidebar_toggle_btn
+        )
+
+        self.sidebar_toggle_btn.pack_configure(
+            anchor=tk.CENTER
+        )
+
+        if hasattr(self, "sidebar_bottom"):
+            self.sidebar_bottom.pack_forget()
+
+    def _expand_sidebar(self):
+        """Sidebar를 전체 메뉴 모드로 확장"""
+        self.sidebar_expanded = True
+
+        self.sidebar.configure(
+            width=self.sidebar_expanded_width
+        )
+
+        # -------------------------------------------------
+        # 메뉴 버튼 먼저 복원
+        # -------------------------------------------------
+        for pill in getattr(self, "tab_pills", []):
+            icon = getattr(pill, "sidebar_icon", "")
+            text = getattr(pill, "sidebar_text", "")
+
+            pill.btn_text = getattr(
+                pill,
+                "sidebar_full_text",
+                f"{icon}   {text}"
+            )
+
+            pill.w = 202
+
+            tk.Canvas.config(
+                pill,
+                width=202,
+                height=42
+            )
+
+            self._sidebar_redraw(pill)
+
+            pill.pack_configure(
+                fill=tk.X,
+                padx=0,
+                pady=3
+            )
+
+        # -------------------------------------------------
+        # 기존 위젯을 원래 순서대로 재배치
+        #
+        # pack(before=...)는 대상 위젯의 pack 상태에
+        # 따라 Tcl 오류가 발생할 수 있으므로 사용하지 않는다.
+        # 대신 nav를 기준으로 앞쪽 위젯을 재배치한다.
+        # -------------------------------------------------
+
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack_forget()
+
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack_forget()
+
+        if hasattr(self, "sidebar_nav_container"):
+            self.sidebar_nav_container.pack_forget()
+
+        # brand
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack(
+                fill=tk.X,
+                padx=20,
+                pady=(24, 22)
+            )
+
+        # menu label
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack(
+                anchor=tk.W,
+                padx=22,
+                pady=(0, 8)
+            )
+
+        # navigation
+        if hasattr(self, "sidebar_nav_container"):
+            self.sidebar_nav_container.pack(
+                fill=tk.X,
+                padx=12
+            )
+
+        # -------------------------------------------------
+        # Toggle 버튼
+        # -------------------------------------------------
+        self.sidebar_toggle_btn.btn_text = "‹"
+        self.sidebar_toggle_btn.w = 38
+
+        tk.Canvas.config(
+            self.sidebar_toggle_btn,
+            width=38,
+            height=34
+        )
+
+        self._sidebar_redraw(
+            self.sidebar_toggle_btn
+        )
+
+        self.sidebar_toggle_btn.pack_configure(
+            anchor=tk.E,
+            padx=12,
+            pady=(14, 0)
+        )
+
+        # -------------------------------------------------
+        # Bottom
+        # -------------------------------------------------
+        if hasattr(self, "sidebar_bottom"):
+            self.sidebar_bottom.pack_forget()
+            self.sidebar_bottom.pack(
+                side=tk.BOTTOM,
+                fill=tk.X,
+                padx=20,
+                pady=20
+            )
+
+
     def switch_to_tab(self, idx):
         try:
             self.notebook.select(idx)
-            for i, pill in enumerate(self.tab_pills):
-                if i == idx:
-                    pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
-                else:
-                    pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
+
+            if hasattr(self, "tab_pills"):
+                for i, pill in enumerate(self.tab_pills):
+
+                    if i == idx:
+                        pill.config(
+                            bg="#dcebe1",
+                            fg="#174a31",
+                            hover_bg="#dcebe1",
+                            active_bg="#cfe3d6"
+                        )
+
+                    else:
+                        pill.config(
+                            bg="#eef3ef",
+                            fg="#56645c",
+                            hover_bg="#e2e9e5",
+                            active_bg="#dfe8e2"
+                        )
+
             self.on_tab_changed()
+
         except Exception:
             pass
 
     def create_tabs(self):
-        self.notebook = ttk.Notebook(self.root, style="Hidden.TNotebook")
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=16, pady=(12, 16))
+        # =====================================================
+        # Hidden functional Notebook
+        # =====================================================
+        #
+        # 실제 탭 기능은 기존 구조를 그대로 사용한다.
+        # 사용자에게 보이는 navigation만 Sidebar로 변경.
+        #
 
-        # 탭 1: 🎙️ 학습노트 생성 스튜디오
-        self.tab_studio = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_studio, text=" 학습노트 스튜디오 ")
+        self.notebook = ttk.Notebook(
+            self.main_content,
+            style="Hidden.TNotebook"
+        )
+
+        self.notebook.pack(
+            fill=tk.BOTH,
+            expand=True,
+            padx=20,
+            pady=(18, 20)
+        )
+
+        # -----------------------------------------------------
+        # Studio
+        # -----------------------------------------------------
+
+        self.tab_studio = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_studio,
+            text=" 학습노트 스튜디오 "
+        )
+
         self.build_studio_tab()
 
-        # 탭 2: 📝 실전 모의시험 & 공부기간 로드맵
-        self.tab_exam = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_exam, text=" 시험 대비 & 로드맵 ")
+        # -----------------------------------------------------
+        # Exam
+        # -----------------------------------------------------
+
+        self.tab_exam = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_exam,
+            text=" 시험 대비 & 로드맵 "
+        )
+
         self.build_exam_tab()
 
-        # 탭 3: 💬 AI 강의 튜터 (교수님 Q&A)
-        self.tab_tutor = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_tutor, text=" 조교 Q&A ")
+        # -----------------------------------------------------
+        # Tutor
+        # -----------------------------------------------------
+
+        self.tab_tutor = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_tutor,
+            text=" 조교 Q&A "
+        )
+
         self.build_tutor_tab()
 
-        # 탭 4: 📊 주차별 진도 대시보드
-        self.tab_dashboard = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_dashboard, text=" 학업 진도 ")
+        # -----------------------------------------------------
+        # Dashboard
+        # -----------------------------------------------------
+
+        self.tab_dashboard = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_dashboard,
+            text=" 학업 진도 "
+        )
+
         self.build_dashboard_tab()
 
-        # 탭 5: ⚙️ 과목 및 시스템 설정
-        self.tab_settings = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_settings, text=" 설정 ")
+        # -----------------------------------------------------
+        # Settings
+        # -----------------------------------------------------
+
+        self.tab_settings = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_settings,
+            text=" 설정 "
+        )
+
         self.build_settings_tab()
 
-        # 탭 6: 🛠️ 고급 도구 (프롬프트 / 보관함 / 법적고지)
-        self.tab_advanced = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_advanced, text=" 고급 도구 ")
+        # -----------------------------------------------------
+        # Advanced
+        # -----------------------------------------------------
+
+        self.tab_advanced = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_advanced,
+            text=" 고급 도구 "
+        )
+
         self.build_advanced_tab()
 
-        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+        self.notebook.bind(
+            "<<NotebookTabChanged>>",
+            self.on_tab_changed
+        )
 
     def on_tab_changed(self, event=None):
         self.refresh_course_combos()
+
         try:
-            cur_idx = self.notebook.index(self.notebook.select())
+            cur_idx = self.notebook.index(
+                self.notebook.select()
+            )
+
             if hasattr(self, "tab_pills"):
-                for i, pill in enumerate(self.tab_pills):
+
+                for i, pill in enumerate(
+                    self.tab_pills
+                ):
+
                     if i == cur_idx:
-                        pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
+                        pill.config(
+                            bg="#dcebe1",
+                            fg="#174a31",
+                            hover_bg="#dcebe1",
+                            active_bg="#cfe3d6"
+                        )
+
                     else:
-                        pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
-            current_tab = self.notebook.tab(self.notebook.select(), "text").strip()
-            if any(k in current_tab for k in ("진도", "대시보드")) and hasattr(self, "refresh_dashboard"):
-                self.refresh_dashboard()
-            elif any(k in current_tab for k in ("조교", "튜터", "Q&A")) and hasattr(self, "on_tutor_course_changed"):
-                self.on_tutor_course_changed()
+                        pill.config(
+                            bg="#eef3ef",
+                            fg="#56645c",
+                            hover_bg="#e2e9e5",
+                            active_bg="#dfe8e2"
+                        )
+
+            current_tab = self.notebook.tab(
+                self.notebook.select(),
+                "text"
+            ).strip()
+
+            if any(
+                k in current_tab
+                for k in ("진도", "대시보드")
+            ):
+                if hasattr(
+                    self,
+                    "refresh_dashboard"
+                ):
+                    self.refresh_dashboard()
+
+            elif any(
+                k in current_tab
+                for k in ("조교", "튜터", "Q&A")
+            ):
+                if hasattr(
+                    self,
+                    "on_tutor_course_changed"
+                ):
+                    self.on_tutor_course_changed()
+
         except Exception:
             pass
-
     def refresh_course_combos(self):
         course_names = [c["course_name"] for c in self.courses if c.get("course_name")]
         for combo_name in ("studio_course_combo", "exam_course_combo", "dash_course_combo", "tutor_course_combo"):
@@ -1483,8 +2633,21 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # 탭 1: 🎙️ 학습노트 생성 스튜디오 (Apple Clean Light 2.0 감성 룩)
     # =========================================================================
     def build_studio_tab(self):
-        # 🌟 Apple Clean Light 2.0: 포근한 캔버스 배경 (#f5f6f8) 위 2열 분할 워크스페이스
-        studio_container = tk.Frame(self.tab_studio, bg="#f5f6f8")
+        # =====================================================
+        # URY STUDIO UI 2.1
+        # 공통 UI 시스템과 동일한 Green / Neutral 디자인
+        # =====================================================
+        STUDIO_BG = "#f5f7f6"
+        CARD_BG = "#ffffff"
+        BORDER = "#e7ebe8"
+        TEXT = "#17211b"
+        MUTED = "#718078"
+        SUBTLE = "#edf1ee"
+        SOFT_GREEN = "#e8f2eb"
+        GREEN_TEXT = "#1c4732"
+
+        # 2열 분할 워크스페이스
+        studio_container = tk.Frame(self.tab_studio, bg=STUDIO_BG)
         studio_container.pack(fill=tk.BOTH, expand=True)
 
         studio_container.columnconfigure(0, weight=5, uniform="studio_col")
@@ -1494,44 +2657,44 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # =============================================================
         # [LEFT COLUMN] 넉넉하고 정갈한 Content Setup Card (한눈에 직접 확인)
         # =============================================================
-        left_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=1, highlightbackground="#edf2f7")
+        left_card = tk.Frame(studio_container, bg=CARD_BG, bd=0, highlightthickness=1, highlightbackground=BORDER)
         left_card.grid(row=0, column=0, sticky="nsew", padx=(10, 6), pady=8)
 
-        left_content = tk.Frame(left_card, bg="#ffffff", padx=18, pady=14)
+        left_content = tk.Frame(left_card, bg=CARD_BG, padx=18, pady=14)
         left_content.pack(fill=tk.BOTH, expand=True)
 
         # -------------------------------------------------------------
         # Step 1: 과목 및 강의 정보 설정
         # -------------------------------------------------------------
-        s1_head = tk.Frame(left_content, bg="#ffffff")
+        s1_head = tk.Frame(left_content, bg=CARD_BG)
         s1_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(s1_head, text=" 1 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
-        tk.Label(s1_head, text="Step 1. Course Selection (과목 및 수업 정보)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
-        tk.Label(s1_head, text="2026년 2학기", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(side=tk.RIGHT)
+        tk.Label(s1_head, text=" 1 ", font=("Pretendard", 9, "bold"), bg=GREEN_TEXT, fg="#ffffff", padx=6, pady=3).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s1_head, text="Step 1. Course Selection (과목 및 수업 정보)", font=("Pretendard", 11, "bold"), bg=CARD_BG, fg=TEXT).pack(side=tk.LEFT)
+        tk.Label(s1_head, text="2026년 2학기", font=("Pretendard", 8), bg="#ffffff", fg="#8a9890").pack(side=tk.RIGHT)
 
-        tk.Label(left_content, text="Select Course (수강 과목):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 3))
+        tk.Label(left_content, text="Select Course (수강 과목):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 3))
         self.studio_course_combo = ttk.Combobox(left_content, state="readonly", font=("Pretendard", 10))
         self.studio_course_combo.pack(fill=tk.X, pady=(0, 10))
         self.studio_course_combo.bind("<<ComboboxSelected>>", lambda e: self.on_studio_course_changed())
 
         # 일자 및 주차 행
-        row_dt = tk.Frame(left_content, bg="#ffffff")
+        row_dt = tk.Frame(left_content, bg=CARD_BG)
         row_dt.pack(fill=tk.X, pady=(0, 8))
 
         # 일자 선택기
-        col_date = tk.Frame(row_dt, bg="#ffffff")
+        col_date = tk.Frame(row_dt, bg=CARD_BG)
         col_date.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-        tk.Label(col_date, text="Class Date (수업 일자):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 2))
+        tk.Label(col_date, text="Class Date (수업 일자):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 2))
         
-        d_box = tk.Frame(col_date, bg="#f8fafc", highlightthickness=1, highlightbackground="#cbd5e1", padx=4, pady=2)
+        d_box = tk.Frame(col_date, bg="#f9fbfa", highlightthickness=1, highlightbackground="#cbd5e1", padx=4, pady=2)
         d_box.pack(fill=tk.X)
         self.studio_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         self.studio_date_entry = tk.Entry(
             d_box,
             textvariable=self.studio_date_var,
             font=("Pretendard", 9),
-            bg="#f8fafc",
-            fg="#0f172a",
+            bg="#f9fbfa",
+            fg=TEXT,
             insertbackground="#1c4732",
             relief=tk.FLAT,
             bd=0,
@@ -1546,9 +2709,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ttk.Button(d_box, text="▶", width=2, style="Secondary.TButton", command=lambda: self.adjust_studio_date(1)).pack(side=tk.LEFT, padx=1)
 
         # 주차 및 차시 선택기
-        col_wk = tk.Frame(row_dt, bg="#ffffff")
+        col_wk = tk.Frame(row_dt, bg=CARD_BG)
         col_wk.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-        tk.Label(col_wk, text="Week & Session (주차 및 차시):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 2))
+        tk.Label(col_wk, text="Week & Session (주차 및 차시):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 2))
         
         default_weeks = []
         for w in range(1, 17):
@@ -1562,9 +2725,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_week_combo.bind("<<ComboboxSelected>>", lambda e: self.update_preview_paper_header())
 
         # 수업 파트 선택기 (1부, 2부, 3부)
-        col_part = tk.Frame(row_dt, bg="#ffffff")
+        col_part = tk.Frame(row_dt, bg=CARD_BG)
         col_part.pack(side=tk.RIGHT, fill=tk.X)
-        tk.Label(col_part, text="Part (수업 파트):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 2))
+        tk.Label(col_part, text="Part (수업 파트):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 2))
         PART_OPTIONS = ["1부 (전반부)", "2부 (후반부)", "3부 (마무리)", "통합 (단일 음성)"]
         self.studio_part_combo = ttk.Combobox(col_part, values=PART_OPTIONS, state="readonly", font=("Pretendard", 9, "bold"), width=12)
         self.studio_part_combo.set(PART_OPTIONS[0])
@@ -1572,31 +2735,31 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_part_combo.bind("<<ComboboxSelected>>", lambda e: self.update_preview_paper_header())
 
         # 출력 언어 (전체 폭을 활용하여 어떤 해상도에서도 텍스트 잘림 절대 방지)
-        row_lang = tk.Frame(left_content, bg="#ffffff")
+        row_lang = tk.Frame(left_content, bg=CARD_BG)
         row_lang.pack(fill=tk.X, pady=(0, 12))
-        tk.Label(row_lang, text="Output Language (생성 출력 언어):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 2))
+        tk.Label(row_lang, text="Output Language (생성 출력 언어):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 2))
         self.studio_lang_combo = ttk.Combobox(row_lang, values=LANG_OPTIONS, state="readonly", font=("Pretendard", 9))
         self.studio_lang_combo.set(LANG_OPTIONS[0])
         self.studio_lang_combo.pack(fill=tk.X)
 
         # 부드러운 구분선
-        tk.Frame(left_content, bg="#f1f5f9", height=1).pack(fill=tk.X, pady=(0, 12))
+        tk.Frame(left_content, bg=BORDER, height=1).pack(fill=tk.X, pady=(0, 12))
 
         # -------------------------------------------------------------
         # Step 2: Content Input (강의 음성 및 슬라이드 투입 센터)
         # -------------------------------------------------------------
-        self.s2_head = tk.Frame(left_content, bg="#ffffff")
+        self.s2_head = tk.Frame(left_content, bg=CARD_BG)
         self.s2_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(self.s2_head, text=" 2 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
-        tk.Label(self.s2_head, text="Step 2. Content Input (음성 & 슬라이드 투입)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
+        tk.Label(self.s2_head, text=" 2 ", font=("Pretendard", 9, "bold"), bg=GREEN_TEXT, fg="#ffffff", padx=6, pady=3).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(self.s2_head, text="Step 2. Content Input (음성 & 슬라이드 투입)", font=("Pretendard", 11, "bold"), bg=CARD_BG, fg=TEXT).pack(side=tk.LEFT)
 
-        self.audio_select_frame = tk.Frame(left_content, bg="#ffffff")
+        self.audio_select_frame = tk.Frame(left_content, bg=CARD_BG)
         self.audio_select_frame.pack(fill=tk.X, pady=(0, 14))
 
-        tk.Label(self.audio_select_frame, text="Audio Center (수업 실시간 녹음 및 오디오 연동):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 6))
+        tk.Label(self.audio_select_frame, text="Audio Center (수업 실시간 녹음 및 오디오 연동):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(anchor=tk.W, pady=(0, 6))
 
         # 오디오 액션 바: 녹음 버튼 & 찾기 버튼
-        audio_btn_row = tk.Frame(self.audio_select_frame, bg="#ffffff")
+        audio_btn_row = tk.Frame(self.audio_select_frame, bg=CARD_BG)
         audio_btn_row.pack(fill=tk.X, pady=(0, 8))
 
         self.rec_btn = SquareRoundButton(
@@ -1617,7 +2780,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(
             audio_btn_row,
             text="📂  오디오 파일 찾기...",
-            bg="#f1f5f9",
+            bg=SUBTLE,
             hover_bg="#e2e8f0",
             fg="#334155",
             radius=9,
@@ -1628,13 +2791,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ).pack(side=tk.LEFT)
 
         # 등록된 오디오 캡슐 칩 컨테이너 (말랑하고 유려한 디자인)
-        self.audio_chip_frame = tk.Frame(self.audio_select_frame, bg="#f0fdf4", highlightthickness=1, highlightbackground="#bbf7d0", padx=12, pady=10)
+        self.audio_chip_frame = tk.Frame(self.audio_select_frame, bg="#edf7f0", highlightthickness=1, highlightbackground="#cfe3d6", padx=12, pady=10)
         self.audio_chip_frame.pack(fill=tk.X, pady=(2, 8))
 
-        self.audio_chip_title = tk.Label(self.audio_chip_frame, text="🎙️ 선택된 음성 파일이 없습니다.", font=("Pretendard", 9, "bold"), bg="#f0fdf4", fg="#166534")
+        self.audio_chip_title = tk.Label(self.audio_chip_frame, text="🎙️ 선택된 음성 파일이 없습니다.", font=("Pretendard", 9, "bold"), bg="#edf7f0", fg=GREEN_TEXT)
         self.audio_chip_title.pack(side=tk.LEFT)
 
-        self.audio_chip_badge = tk.Label(self.audio_chip_frame, text="미연동", font=("Pretendard", 8, "bold"), bg="#dcfce7", fg="#15803d", padx=6, pady=2)
+        self.audio_chip_badge = tk.Label(self.audio_chip_frame, text="미연동", font=("Pretendard", 8, "bold"), bg="#dcebe1", fg=GREEN_TEXT, padx=6, pady=2)
         self.audio_chip_badge.pack(side=tk.RIGHT)
 
         # 숨겨진 데이터 변수 및 이전 호환용 더미 리스트박스
@@ -1644,39 +2807,39 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.audio_listbox = tk.Listbox(self.audio_select_frame)  # 호환성 유지
 
         # 최근 감지된 오디오 빠른 선택 콤보
-        recent_row = tk.Frame(self.audio_select_frame, bg="#ffffff")
+        recent_row = tk.Frame(self.audio_select_frame, bg=CARD_BG)
         recent_row.pack(fill=tk.X, pady=(2, 4))
-        tk.Label(recent_row, text="최근 발견된 녹음:", font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#94a3b8").pack(side=tk.LEFT, padx=(0, 6))
+        tk.Label(recent_row, text="최근 발견된 녹음:", font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#8a9890").pack(side=tk.LEFT, padx=(0, 6))
         self.detected_audio_combo = ttk.Combobox(recent_row, state="readonly", font=("Pretendard", 8), width=35)
         self.detected_audio_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.detected_audio_combo.bind("<<ComboboxSelected>>", self.on_detected_audio_combo_select)
 
         # 슬라이드 섹션
-        slide_head_row = tk.Frame(left_content, bg="#ffffff")
+        slide_head_row = tk.Frame(left_content, bg=CARD_BG)
         slide_head_row.pack(fill=tk.X, pady=(10, 6))
-        tk.Label(slide_head_row, text="Lecture Slides (강의 슬라이드 PDF):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(side=tk.LEFT)
+        tk.Label(slide_head_row, text="Lecture Slides (강의 슬라이드 PDF):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg=MUTED).pack(side=tk.LEFT)
 
-        badge_box = tk.Frame(slide_head_row, bg="#ffffff")
+        badge_box = tk.Frame(slide_head_row, bg=CARD_BG)
         badge_box.pack(side=tk.RIGHT)
         for fmt in ("PDF", "PPTX", "HWPX"):
-            tk.Label(badge_box, text=f" {fmt} ", font=("Pretendard", 7, "bold"), bg="#f1f5f9", fg="#64748b").pack(side=tk.LEFT, padx=1)
+            tk.Label(badge_box, text=f" {fmt} ", font=("Pretendard", 7, "bold"), bg=SUBTLE, fg=MUTED).pack(side=tk.LEFT, padx=1)
 
         # 슬라이드 조작 버튼
-        slide_btn_row = tk.Frame(left_content, bg="#ffffff")
+        slide_btn_row = tk.Frame(left_content, bg=CARD_BG)
         slide_btn_row.pack(fill=tk.X, pady=(0, 8))
-        SquareRoundButton(slide_btn_row, text="➕  슬라이드 추가...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
-        SquareRoundButton(slide_btn_row, text="📷  칠판 판서...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_blackboard_photo, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
-        SquareRoundButton(slide_btn_row, text="☐ 전체 해제", bg="#fef2f2", hover_bg="#fee2e2", fg="#dc2626", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.deselect_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
-        SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg="#f0fdf4", hover_bg="#dcfce7", fg="#166534", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
-        SquareRoundButton(slide_btn_row, text="🔄 새로고침", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#64748b", radius=8, height=30, font=("Pretendard", 8), command=self.refresh_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
+        SquareRoundButton(slide_btn_row, text="➕  슬라이드 추가...", bg=SUBTLE, hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg=CARD_BG).pack(side=tk.LEFT, padx=(0, 4))
+        SquareRoundButton(slide_btn_row, text="📷  칠판 판서...", bg=SUBTLE, hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_blackboard_photo, parent_bg=CARD_BG).pack(side=tk.LEFT, padx=(0, 4))
+        SquareRoundButton(slide_btn_row, text="☐ 전체 해제", bg="#fef2f2", hover_bg="#fee2e2", fg="#dc2626", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.deselect_all_studio_slides, parent_bg=CARD_BG).pack(side=tk.RIGHT, padx=(2, 0))
+        SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg="#f0fdf4", hover_bg="#dcfce7", fg="#166534", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg=CARD_BG).pack(side=tk.RIGHT, padx=(2, 0))
+        SquareRoundButton(slide_btn_row, text="🔄 새로고침", bg=SUBTLE, hover_bg="#e2e8f0", fg=MUTED, radius=8, height=30, font=("Pretendard", 8), command=self.refresh_studio_slides, parent_bg=CARD_BG).pack(side=tk.RIGHT, padx=(2, 0))
 
         # 등록된 슬라이드 카드 칩 컨테이너
-        slide_canvas_frame = tk.Frame(left_content, bg="#ffffff")
+        slide_canvas_frame = tk.Frame(left_content, bg=CARD_BG)
         slide_canvas_frame.pack(fill=tk.X, pady=(0, 14))
 
-        self.slide_canvas = tk.Canvas(slide_canvas_frame, height=105, bg="#f8fafc", highlightthickness=1, highlightbackground="#e2e8f0")
+        self.slide_canvas = tk.Canvas(slide_canvas_frame, height=105, bg="#f9fbfa", highlightthickness=1, highlightbackground=BORDER)
         slide_sb = ttk.Scrollbar(slide_canvas_frame, orient=tk.VERTICAL, command=self.slide_canvas.yview)
-        self.slide_inner_frame = tk.Frame(self.slide_canvas, bg="#f8fafc", padx=6, pady=6)
+        self.slide_inner_frame = tk.Frame(self.slide_canvas, bg="#f9fbfa", padx=6, pady=6)
         self.slide_inner_frame.bind("<Configure>", lambda e: self.slide_canvas.configure(scrollregion=self.slide_canvas.bbox("all")))
         self.slide_canvas.create_window((0, 0), window=self.slide_inner_frame, anchor="nw")
         self.slide_canvas.configure(yscrollcommand=slide_sb.set)
@@ -1695,15 +2858,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         slide_canvas_frame.bind("<Leave>", lambda e: self.slide_canvas.unbind_all("<MouseWheel>"))
 
         # 부드러운 구분선
-        tk.Frame(left_content, bg="#f1f5f9", height=1).pack(fill=tk.X, pady=(0, 16))
+        tk.Frame(left_content, bg=BORDER, height=1).pack(fill=tk.X, pady=(0, 16))
 
         # -------------------------------------------------------------
         # Step 3: Process & Refine (분석 모드 설정)
         # -------------------------------------------------------------
-        s3_head = tk.Frame(left_content, bg="#ffffff")
+        s3_head = tk.Frame(left_content, bg=CARD_BG)
         s3_head.pack(fill=tk.X, pady=(0, 6))
-        tk.Label(s3_head, text=" 3 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
-        tk.Label(s3_head, text="Step 3. Process & Refine (분석 모드)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
+        tk.Label(s3_head, text=" 3 ", font=("Pretendard", 9, "bold"), bg=GREEN_TEXT, fg="#ffffff", padx=6, pady=3).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s3_head, text="Step 3. Process & Refine (분석 모드)", font=("Pretendard", 11, "bold"), bg=CARD_BG, fg=TEXT).pack(side=tk.LEFT)
 
         self.no_audio_var = tk.BooleanVar(value=False)
         self.no_audio_check = ttk.Checkbutton(
@@ -1728,25 +2891,25 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # =============================================================
         # [RIGHT COLUMN] Inspiring Live Study Note Paper & Console
         # =============================================================
-        right_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=1, highlightbackground="#edf2f7")
+        right_card = tk.Frame(studio_container, bg=CARD_BG, bd=0, highlightthickness=1, highlightbackground=BORDER)
         right_card.grid(row=0, column=1, sticky="nsew", padx=(6, 10), pady=8)
 
         # 1. 하단 액션 바: 2열 구조로 배치하여 화면 크기에 따른 버튼 겹침 및 잘림 원천 방지
         action_bar = tk.Frame(right_card, bg="#ffffff", padx=16, pady=8)
         action_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-        tk.Frame(right_card, bg="#f1f5f9", height=1).pack(side=tk.BOTTOM, fill=tk.X)
+        tk.Frame(right_card, bg=BORDER, height=1).pack(side=tk.BOTTOM, fill=tk.X)
 
         # 액션 상단 행: 시원한 전폭 메인 Generate 버튼
-        act_row_top = tk.Frame(action_bar, bg="#ffffff")
+        act_row_top = tk.Frame(action_bar, bg=CARD_BG)
         act_row_top.pack(fill=tk.X, pady=(0, 6))
 
         self.generate_studio_btn = SquareRoundButton(
             act_row_top,
             text="✨  완벽 학습노트 및 출판용 PDF 생성",
-            bg="#1c4732",
-            hover_bg="#265e43",
-            active_bg="#143324",
+            bg=GREEN_TEXT,
+            hover_bg="#285f45",
+            active_bg="#143525",
             radius=9,
             height=38,
             font=("Pretendard", 10, "bold"),
@@ -1756,7 +2919,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.generate_studio_btn.pack(fill=tk.X)
 
         # 액션 하단 행: 보조 유틸리티 버튼들
-        act_row_bot = tk.Frame(action_bar, bg="#ffffff")
+        act_row_bot = tk.Frame(action_bar, bg=CARD_BG)
         act_row_bot.pack(fill=tk.X)
 
         self.studio_open_pdf_btn = SquareRoundButton(
@@ -1777,7 +2940,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_open_folder_btn = SquareRoundButton(
             act_row_bot,
             text="📂 폴더 열기",
-            bg="#f1f5f9",
+            bg=SUBTLE,
             hover_bg="#e2e8f0",
             fg="#334155",
             radius=8,
@@ -1791,7 +2954,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_clear_log_btn = SquareRoundButton(
             act_row_bot,
             text="🧹 콘솔 비우기",
-            bg="#f1f5f9",
+            bg=SUBTLE,
             hover_bg="#e2e8f0",
             fg="#334155",
             radius=8,
@@ -1818,59 +2981,59 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_stop_btn.pack(side=tk.RIGHT)
 
         # 2. 상단: 실물 규격 라이브 프리뷰 헤더 배너
-        paper_banner = tk.Frame(right_card, bg="#ffffff")
+        paper_banner = tk.Frame(right_card, bg=CARD_BG)
         paper_banner.pack(fill=tk.X, padx=16, pady=(4, 6))
 
-        b_left = tk.Frame(paper_banner, bg="#ffffff")
+        b_left = tk.Frame(paper_banner, bg=CARD_BG)
         b_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         tk.Label(b_left, text="📖  LIVE STUDY NOTE PREVIEW", font=("Pretendard", 8, "bold"), bg="#dcfce7", fg="#166534", padx=6, pady=2).pack(anchor=tk.W)
-        self.preview_title_label = tk.Label(b_left, text="제 1강: 핵심 강의노트 및 시험 족보 프리뷰", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#0f172a")
+        self.preview_title_label = tk.Label(b_left, text="제 1강: 핵심 강의노트 및 시험 족보 프리뷰", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=TEXT)
         self.preview_title_label.pack(anchor=tk.W, pady=(2, 0))
-        tk.Label(b_left, text="교수님 육성 강조 포인트 & 실전 모의시험 10문항 자동 색인", font=("Pretendard", 8), bg="#ffffff", fg="#64748b").pack(anchor=tk.W)
+        tk.Label(b_left, text="교수님 육성 강조 포인트 & 실전 모의시험 10문항 자동 색인", font=("Pretendard", 8), bg="#ffffff", fg=MUTED).pack(anchor=tk.W)
 
-        tk.Label(paper_banner, text="A4 출판 규격", font=("Pretendard", 8, "bold"), bg="#f1f5f9", fg="#475569", padx=8, pady=3).pack(side=tk.RIGHT)
+        tk.Label(paper_banner, text="A4 출판 규격", font=("Pretendard", 8, "bold"), bg=SUBTLE, fg=MUTED, padx=8, pady=3).pack(side=tk.RIGHT)
 
         # 3대 핵심 구조화 프리뷰 카드 스택 (여백 최적화)
-        p_stack = tk.Frame(right_card, bg="#ffffff")
+        p_stack = tk.Frame(right_card, bg=CARD_BG)
         p_stack.pack(fill=tk.X, padx=16, pady=(0, 6))
 
         # 1. Key Concepts 카드
-        card_kc = tk.Frame(p_stack, bg="#f8fafc", highlightthickness=1, highlightbackground="#edf2f7", padx=10, pady=6)
+        card_kc = tk.Frame(p_stack, bg="#f9fbfa", highlightthickness=1, highlightbackground=BORDER, padx=10, pady=6)
         card_kc.pack(fill=tk.X, pady=(0, 4))
-        tk.Label(card_kc, text="📌  핵심 개념 요약 (Key Concepts)", font=("Pretendard", 9, "bold"), bg="#f8fafc", fg="#1c4732").pack(anchor=tk.W)
-        tk.Label(card_kc, text="• 데이터 독립성: 논리적 구조 변경 시 응용 프로그램 영향 차단\n• 3단계 스키마 구조: 외부(개별 뷰) ➔ 개념(전체 논리) ➔ 내부(물리 저장)\n• DBMS 필수 특징: 자기 기술성, 동시성 제어(ACID), 무결성 보장", font=("Pretendard", 8), bg="#f8fafc", fg="#334155", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
+        tk.Label(card_kc, text="📌  핵심 개념 요약 (Key Concepts)", font=("Pretendard", 9, "bold"), bg="#f9fbfa", fg="#1c4732").pack(anchor=tk.W)
+        tk.Label(card_kc, text="• 데이터 독립성: 논리적 구조 변경 시 응용 프로그램 영향 차단\n• 3단계 스키마 구조: 외부(개별 뷰) ➔ 개념(전체 논리) ➔ 내부(물리 저장)\n• DBMS 필수 특징: 자기 기술성, 동시성 제어(ACID), 무결성 보장", font=("Pretendard", 8), bg="#f9fbfa", fg="#334155", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
 
         # 2. Exam Tips 카드 (따뜻한 앰버 톤)
-        card_tip = tk.Frame(p_stack, bg="#fffbeb", highlightthickness=1, highlightbackground="#fef3c7", padx=10, pady=6)
+        card_tip = tk.Frame(p_stack, bg="#fbf8ef", highlightthickness=1, highlightbackground="#eee5c9", padx=10, pady=6)
         card_tip.pack(fill=tk.X, pady=(0, 4))
-        tk.Label(card_tip, text="🎯  교수님 육성 시험 팁 (Exam Predictions)", font=("Pretendard", 9, "bold"), bg="#fffbeb", fg="#92400e").pack(anchor=tk.W)
-        tk.Label(card_tip, text='• "중간고사 1번 서술형으로 외부 스키마와 개념 스키마의 차이점 출제 예정"\n• "슬라이드 8페이지의 스키마 사상(Mapping) 다이어그램 반드시 암기할 것"', font=("Pretendard", 8, "bold"), bg="#fffbeb", fg="#78350f", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
+        tk.Label(card_tip, text="🎯  교수님 육성 시험 팁 (Exam Predictions)", font=("Pretendard", 9, "bold"), bg="#fbf8ef", fg="#80652c").pack(anchor=tk.W)
+        tk.Label(card_tip, text='• "중간고사 1번 서술형으로 외부 스키마와 개념 스키마의 차이점 출제 예정"\n• "슬라이드 8페이지의 스키마 사상(Mapping) 다이어그램 반드시 암기할 것"', font=("Pretendard", 8, "bold"), bg="#fbf8ef", fg="#6f5a2c", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
 
         # 3. Practice Questions 카드 (차분한 인디고 톤)
-        card_q = tk.Frame(p_stack, bg="#f0f4ff", highlightthickness=1, highlightbackground="#e0e7ff", padx=10, pady=6)
+        card_q = tk.Frame(p_stack, bg="#f5f7fa", highlightthickness=1, highlightbackground="#dfe5e8", padx=10, pady=6)
         card_q.pack(fill=tk.X, pady=(0, 4))
-        tk.Label(card_q, text="✍️  실전 모의 문제 (Practice Questions)", font=("Pretendard", 9, "bold"), bg="#f0f4ff", fg="#3730a3").pack(anchor=tk.W)
-        tk.Label(card_q, text="• Q1. 파일 시스템과 데이터베이스 시스템의 무결성 유지 방식 차이를 서술하시오.\n• Q2. 물리적 데이터 독립성이란 내부 스키마 변경이 (        )에 영향을 미치지 않는 특성이다.", font=("Pretendard", 8), bg="#f0f4ff", fg="#312e81", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
+        tk.Label(card_q, text="✍️  실전 모의 문제 (Practice Questions)", font=("Pretendard", 9, "bold"), bg="#f5f7fa", fg="#36515f").pack(anchor=tk.W)
+        tk.Label(card_q, text="• Q1. 파일 시스템과 데이터베이스 시스템의 무결성 유지 방식 차이를 서술하시오.\n• Q2. 물리적 데이터 독립성이란 내부 스키마 변경이 (        )에 영향을 미치지 않는 특성이다.", font=("Pretendard", 8), bg="#f5f7fa", fg="#40515a", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
 
         # 실시간 진행 상황 및 터미널 콘솔 로그 영역 (하단 여백을 시원하게 채움)
-        console_box = tk.Frame(right_card, bg="#ffffff")
+        console_box = tk.Frame(right_card, bg=CARD_BG)
         console_box.pack(fill=tk.BOTH, expand=True, padx=16, pady=(4, 12))
 
-        c_status_row = tk.Frame(console_box, bg="#ffffff")
+        c_status_row = tk.Frame(console_box, bg=CARD_BG)
         c_status_row.pack(fill=tk.X, pady=(0, 4))
 
         self.studio_progress = ttk.Progressbar(c_status_row, mode="determinate", length=160)
         self.studio_progress.pack(side=tk.LEFT, padx=(0, 8))
 
         self.studio_status_var = tk.StringVar(value="자료 준비 완료: [학습노트 및 출판용 PDF 생성]을 클릭하세요.")
-        tk.Label(c_status_row, textvariable=self.studio_status_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#475569").pack(side=tk.LEFT)
+        tk.Label(c_status_row, textvariable=self.studio_status_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg=MUTED).pack(side=tk.LEFT)
 
         self.studio_eta_var = tk.StringVar(value="")
         tk.Label(c_status_row, textvariable=self.studio_eta_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.RIGHT)
 
         # 터미널 콘솔 로그 창 (fill=tk.BOTH, expand=True로 하단 빈 공간 완벽 활용)
-        txt_wrap = tk.Frame(console_box, bg="#ffffff")
+        txt_wrap = tk.Frame(console_box, bg=CARD_BG)
         txt_wrap.pack(fill=tk.BOTH, expand=True)
 
         term_font = ("Menlo", 9) if sys.platform == "darwin" else ("Consolas", 9)
@@ -1878,7 +3041,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             txt_wrap,
             wrap=tk.WORD,
             font=term_font,
-            bg="#0f172a",
+            bg=TEXT,
             fg="#f8fafc",
             insertbackground="#ffffff",
             relief=tk.FLAT,
@@ -2436,6 +3599,17 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # 탭 2: 📝 실전 모의시험 & 공부 기간 로드맵 (사용자 선택형)
     # =========================================================================
     def build_exam_tab(self):
+        # Exam UI 2.1 design tokens
+        EXAM_BG = "#f5f7f6"
+        CARD_BG = "#ffffff"
+        BORDER = "#e7ebe8"
+        TEXT = "#17211b"
+        MUTED = "#718078"
+        SUBTLE = "#edf1ee"
+        SOFT_GREEN = "#e8f2eb"
+        GREEN = "#1c4732"
+        GREEN_HOVER = "#285f45"
+
         frame = ttk.LabelFrame(self.tab_exam, text=" 📝 실전 모의시험 생성 & D-Day 맞춤 로드맵 ", padding="12")
         frame.pack(fill=tk.BOTH, expand=True)
 
@@ -2482,14 +3656,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             textvariable=self.exam_hours_var,
             width=10,
             font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            bg=CARD_BG,
+            fg=TEXT,
+            insertbackground=GREEN,
+            selectbackground="#dfece3",
+            selectforeground=TEXT,
             relief=tk.FLAT,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=BORDER,
             takefocus=True
         )
         self.exam_hours_entry.pack(side=tk.LEFT)
@@ -2513,7 +3687,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         canvas_wrap = ttk.Frame(mat_frame)
         canvas_wrap.pack(fill=tk.X)
 
-        self.exam_mat_canvas = tk.Canvas(canvas_wrap, height=85, bg="#ffffff", highlightthickness=1, highlightbackground="#cbd5e1")
+        self.exam_mat_canvas = tk.Canvas(canvas_wrap, height=85, bg=CARD_BG, highlightthickness=1, highlightbackground=BORDER)
         mat_sb = ttk.Scrollbar(canvas_wrap, orient=tk.VERTICAL, command=self.exam_mat_canvas.yview)
         self.exam_mat_inner = ttk.Frame(self.exam_mat_canvas)
         self.exam_mat_inner.bind("<Configure>", lambda e: self.exam_mat_canvas.configure(scrollregion=self.exam_mat_canvas.bbox("all")))
@@ -2528,12 +3702,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         btn_bar = ttk.Frame(form)
         btn_bar.pack(fill=tk.X, pady=(8, 0))
 
-        SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg="#1c4732", hover_bg="#265e43", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg="#205c3b", hover_bg="#2a774d", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="✍️ 답안 채점", bg="#285943", hover_bg="#357357", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_grading_dialog_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="⚡ 치트시트 생성", bg="#3a6652", hover_bg="#4a8067", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
-        self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
+        SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg=GREEN, hover_bg=GREEN_HOVER, radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg="#285f45", hover_bg="#34704f", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="✍️ 답안 채점", bg="#3f6b55", hover_bg="#4f8066", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_grading_dialog_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="⚡ 치트시트 생성", bg="#4f705d", hover_bg="#62816f", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="📂 문제 폴더", bg=SUBTLE, hover_bg="#dfe7e2", fg=TEXT, radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
+        self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg=SUBTLE, hover_bg="#dfe7e2", fg=TEXT, radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
         self.exam_open_pdf_btn.pack(side=tk.LEFT)
 
         # 실시간 진행 상황 및 로그 콘솔 프레임 (ETA & Progress Bar)
@@ -2547,10 +3721,10 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.exam_progress.pack(side=tk.LEFT, padx=(0, 10))
 
         self.exam_status_var = tk.StringVar(value="과목 및 범위를 선택하고 위의 생성 버튼을 클릭하세요.")
-        ttk.Label(status_row, textvariable=self.exam_status_var, font=("Pretendard", 9, "bold"), foreground="#475569").pack(side=tk.LEFT)
+        ttk.Label(status_row, textvariable=self.exam_status_var, font=("Pretendard", 9, "bold"), foreground=MUTED).pack(side=tk.LEFT)
 
         self.exam_eta_var = tk.StringVar(value="")
-        ttk.Label(status_row, textvariable=self.exam_eta_var, font=("Pretendard", 9, "bold"), foreground="#2563eb").pack(side=tk.RIGHT)
+        ttk.Label(status_row, textvariable=self.exam_eta_var, font=("Pretendard", 9, "bold"), foreground=GREEN).pack(side=tk.RIGHT)
 
         ttk.Button(status_row, text="🗑️ 콘솔 지우기", style="Secondary.TButton", command=self.clear_exam_log).pack(side=tk.RIGHT, padx=(0, 8))
 
@@ -2562,8 +3736,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             txt_wrap,
             wrap=tk.WORD,
             font=term_font,
-            bg="#0f172a",
-            fg="#f8fafc",
+            bg="#17211b",
+            fg="#f5f7f6",
             insertbackground="#ffffff",
             relief=tk.FLAT,
             padx=10,
@@ -2577,13 +3751,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.add_context_menu(self.exam_log_text)
 
         # 로그 컬러 태그
-        self.exam_log_text.tag_config("time", foreground="#94a3b8")
-        self.exam_log_text.tag_config("step", foreground="#38bdf8", font=(term_font[0], term_font[1], "bold"))
-        self.exam_log_text.tag_config("success", foreground="#4ade80", font=(term_font[0], term_font[1], "bold"))
-        self.exam_log_text.tag_config("warning", foreground="#facc15")
-        self.exam_log_text.tag_config("error", foreground="#f87171", font=(term_font[0], term_font[1], "bold"))
-        self.exam_log_text.tag_config("highlight", foreground="#c084fc")
-        self.exam_log_text.tag_config("normal", foreground="#e2e8f0")
+        self.exam_log_text.tag_config("time", foreground="#9aa8a0")
+        self.exam_log_text.tag_config("step", foreground="#8fc4a7", font=(term_font[0], term_font[1], "bold"))
+        self.exam_log_text.tag_config("success", foreground="#9bd3ad", font=(term_font[0], term_font[1], "bold"))
+        self.exam_log_text.tag_config("warning", foreground="#d8b66b")
+        self.exam_log_text.tag_config("error", foreground="#ef9a91", font=(term_font[0], term_font[1], "bold"))
+        self.exam_log_text.tag_config("highlight", foreground="#b9a5c8")
+        self.exam_log_text.tag_config("normal", foreground="#d9e2dc")
 
         # 기존 코드 호환용 숨김 Text 위젯 및 콘텐츠 캐시
         self.exam_preview_text = tk.Text(self.root)
@@ -3331,14 +4505,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ttk.Button(top_bar, text="✏️ 닉네임", style="Secondary.TButton", command=self.rename_tutor_nickname_dialog).pack(side=tk.LEFT)
 
         # 안전 면책 및 듀얼 모드 안내 배너 (Disclaimer)
-        disclaimer_frame = tk.Frame(container, bg="#fffbeb", highlightthickness=1, highlightbackground="#fde68a", padx=10, pady=5)
+        disclaimer_frame = tk.Frame(container, bg="#fbf5e8", highlightthickness=1, highlightbackground="#ead9ad", padx=10, pady=5)
         disclaimer_frame.pack(fill=tk.X, pady=(0, 6))
         self.tutor_disclaimer_lbl = ttk.Label(
             disclaimer_frame,
             text="⚠️ [안내] 본 튜터는 복습 보조용입니다. 강의 외 전공 기초 이론도 친절히 해설하며, 공식 시험 일정/범위는 e-캠퍼스 공식 공지를 반드시 최종 확인하세요.",
             font=("Pretendard", 9),
-            foreground="#92400e",
-            background="#fffbeb"
+            foreground="#8a5a13",
+            background="#fbf5e8"
         )
         self.tutor_disclaimer_lbl.pack(side=tk.LEFT)
 
@@ -3352,7 +4526,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         chat_wrap = ttk.Frame(chat_frame)
         chat_wrap.pack(fill=tk.BOTH, expand=True)
 
-        self.tutor_chat_text = tk.Text(chat_wrap, wrap=tk.WORD, font=("Pretendard", 12), bg="#ffffff", fg="#0f172a", relief=tk.FLAT, highlightthickness=1, highlightbackground="#e2e8f0", padx=16, pady=14, spacing1=2, spacing2=4, spacing3=2)
+        self.tutor_chat_text = tk.Text(chat_wrap, wrap=tk.WORD, font=("Pretendard", 12), bg="#ffffff", fg="#17211b", relief=tk.FLAT, highlightthickness=1, highlightbackground="#e7ebe8", padx=16, pady=14, spacing1=2, spacing2=4, spacing3=2)
         chat_sb = ttk.Scrollbar(chat_wrap, orient=tk.VERTICAL, command=self.tutor_chat_text.yview)
         self.tutor_chat_text.config(yscrollcommand=chat_sb.set)
         self.tutor_chat_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -3360,25 +4534,25 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.add_context_menu(self.tutor_chat_text)
 
         # Configure tags for styling chat messages & rich markdown (12pt high-readability)
-        self.tutor_chat_text.tag_configure("user_hdr", font=("Pretendard", 12, "bold"), foreground="#2563eb")
-        self.tutor_chat_text.tag_configure("user_body", font=("Pretendard", 12), foreground="#0f172a", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_hdr", font=("Pretendard", 12, "bold"), foreground="#7c3aed")
-        self.tutor_chat_text.tag_configure("tutor_body", font=("Pretendard", 12), foreground="#0f172a", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("system_info", font=("Pretendard", 10, "italic"), foreground="#64748b")
-        self.tutor_chat_text.tag_configure("time_tag", font=("Pretendard", 11, "bold"), foreground="#b45309", background="#fef3c7")
-        self.tutor_chat_text.tag_configure("ref_quote", font=("Pretendard", 11), foreground="#475569", background="#f8fafc", lmargin1=18, lmargin2=18)
+        self.tutor_chat_text.tag_configure("user_hdr", font=("Pretendard", 12, "bold"), foreground="#477a62")
+        self.tutor_chat_text.tag_configure("user_body", font=("Pretendard", 12), foreground="#17211b", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_hdr", font=("Pretendard", 12, "bold"), foreground="#1c4732")
+        self.tutor_chat_text.tag_configure("tutor_body", font=("Pretendard", 12), foreground="#17211b", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("system_info", font=("Pretendard", 10, "italic"), foreground="#718078")
+        self.tutor_chat_text.tag_configure("time_tag", font=("Pretendard", 11, "bold"), foreground="#8a5a13", background="#fbf5e8")
+        self.tutor_chat_text.tag_configure("ref_quote", font=("Pretendard", 11), foreground="#65736b", background="#f5f7f6", lmargin1=18, lmargin2=18)
 
         # Markdown typography tags (12pt scale)
-        self.tutor_chat_text.tag_configure("tutor_h1", font=("Pretendard", 15, "bold"), foreground="#1e1b4b", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_h2", font=("Pretendard", 13, "bold"), foreground="#312e81", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_h3", font=("Pretendard", 12, "bold"), foreground="#4338ca", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_h4", font=("Pretendard", 12, "bold"), foreground="#4338ca", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_bold", font=("Pretendard", 12, "bold"), foreground="#0f172a")
-        self.tutor_chat_text.tag_configure("tutor_code", font=("Menlo", 11), foreground="#be123c", background="#f1f5f9")
-        self.tutor_chat_text.tag_configure("tutor_code_block", font=("Menlo", 11), foreground="#0f172a", background="#f8fafc", lmargin1=24, lmargin2=24)
-        self.tutor_chat_text.tag_configure("tutor_quote", font=("Pretendard", 11, "italic"), foreground="#475569", background="#f1f5f9", lmargin1=24, lmargin2=24)
-        self.tutor_chat_text.tag_configure("tutor_hr", font=("Pretendard", 10), foreground="#cbd5e1", lmargin1=14, lmargin2=14)
-        self.tutor_chat_text.tag_configure("tutor_bullet", font=("Pretendard", 12), foreground="#0f172a", lmargin1=18, lmargin2=32)
+        self.tutor_chat_text.tag_configure("tutor_h1", font=("Pretendard", 15, "bold"), foreground="#17211b", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_h2", font=("Pretendard", 13, "bold"), foreground="#244c37", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_h3", font=("Pretendard", 12, "bold"), foreground="#35634b", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_h4", font=("Pretendard", 12, "bold"), foreground="#35634b", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_bold", font=("Pretendard", 12, "bold"), foreground="#17211b")
+        self.tutor_chat_text.tag_configure("tutor_code", font=("Menlo", 11), foreground="#8b4054", background="#eef2ef")
+        self.tutor_chat_text.tag_configure("tutor_code_block", font=("Menlo", 11), foreground="#17211b", background="#f8fafc", lmargin1=24, lmargin2=24)
+        self.tutor_chat_text.tag_configure("tutor_quote", font=("Pretendard", 11, "italic"), foreground="#65736b", background="#eef2ef", lmargin1=24, lmargin2=24)
+        self.tutor_chat_text.tag_configure("tutor_hr", font=("Pretendard", 10), foreground="#cbd8d0", lmargin1=14, lmargin2=14)
+        self.tutor_chat_text.tag_configure("tutor_bullet", font=("Pretendard", 12), foreground="#17211b", lmargin1=18, lmargin2=32)
 
         # 4. 하단 질문 입력 및 전송
         bottom_frame = ttk.Frame(container)
@@ -3387,7 +4561,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         input_wrap = ttk.Frame(bottom_frame)
         input_wrap.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
 
-        self.tutor_input_text = tk.Text(input_wrap, height=3, wrap=tk.WORD, font=("Pretendard", 12), bg="#ffffff", fg="#0f172a", relief=tk.FLAT, highlightthickness=1, highlightbackground="#cbd5e1", padx=12, pady=10)
+        self.tutor_input_text = tk.Text(input_wrap, height=3, wrap=tk.WORD, font=("Pretendard", 12), bg="#ffffff", fg="#17211b", relief=tk.FLAT, highlightthickness=1, highlightbackground="#e7ebe8", padx=12, pady=10)
         self.tutor_input_text.pack(fill=tk.BOTH, expand=True)
         self.add_context_menu(self.tutor_input_text)
         self.tutor_input_text.bind("<Return>", self.on_tutor_input_return)
@@ -3396,7 +4570,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         btn_box.pack(side=tk.RIGHT, fill=tk.Y)
 
         ttk.Button(btn_box, text="📎 자료 첨부...", style="Secondary.TButton", command=self.attach_tutor_material_file).pack(fill=tk.X, pady=(0, 4))
-        self.tutor_send_btn = SquareRoundButton(btn_box, text="질문 전송 (Enter)", bg="#1c4732", hover_bg="#265e43", radius=8, height=36, font=("Pretendard", 10, "bold"), command=self.send_tutor_message)
+        self.tutor_send_btn = SquareRoundButton(btn_box, text="질문 전송 (Enter)", bg="#1c4732", hover_bg="#285f45", radius=8, height=36, font=("Pretendard", 10, "bold"), command=self.send_tutor_message)
         self.tutor_send_btn.pack(fill=tk.BOTH, expand=True, ipadx=10)
 
 
@@ -3915,6 +5089,20 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # 탭 4: 📊 주차별/차시별 진도 모니터링 대시보드
     # =========================================================================
     def build_dashboard_tab(self):
+        # Dashboard UI 2.1 design tokens
+        DASH_BG = "#f5f7f6"
+        CARD_BG = "#ffffff"
+        BORDER = "#e7ebe8"
+        TEXT = "#17211b"
+        MUTED = "#718078"
+        SUBTLE = "#f1f4f2"
+        SOFT_GREEN = "#e8f2eb"
+        GREEN_TEXT = "#1c4732"
+        SOFT_BLUE = "#eef3f8"
+        BLUE_TEXT = "#365d7a"
+        SOFT_PURPLE = "#f3f0f7"
+        PURPLE_TEXT = "#66507a"
+
         frame = ttk.Frame(self.tab_dashboard)
         frame.pack(fill=tk.BOTH, expand=True)
 
@@ -3935,17 +5123,17 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         kpi_frame.pack(fill=tk.X, pady=(0, 10))
 
         def create_kpi_card(parent, title, bg_color, border_color):
-            card = tk.Frame(parent, bg=bg_color, highlightthickness=1, highlightbackground=border_color, padx=10, pady=6)
+            card = tk.Frame(parent, bg=bg_color, highlightthickness=1, highlightbackground=border_color, padx=12, pady=8)
             card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
-            lbl_title = tk.Label(card, text=title, font=("Pretendard", 8, "bold"), bg=bg_color, fg="#475569")
+            lbl_title = tk.Label(card, text=title, font=("Pretendard", 8, "bold"), bg=bg_color, fg=MUTED)
             lbl_title.pack(anchor=tk.W)
-            lbl_val = tk.Label(card, text="-", font=("Pretendard", 12, "bold"), bg=bg_color, fg="#0f172a")
+            lbl_val = tk.Label(card, text="-", font=("Pretendard", 12, "bold"), bg=bg_color, fg=TEXT)
             lbl_val.pack(anchor=tk.W, pady=(2, 0))
             return lbl_val
 
-        self.dash_kpi_total = create_kpi_card(kpi_frame, "📅 총 정규 차시", "#f8fafc", "#cbd5e1")
-        self.dash_kpi_audio = create_kpi_card(kpi_frame, "🎙️ 녹음 파일 처리율", "#eff6ff", "#93c5fd")
-        self.dash_kpi_notes = create_kpi_card(kpi_frame, "📗 강의노트 제작 현황", "#f0fdf4", "#86efac")
+        self.dash_kpi_total = create_kpi_card(kpi_frame, "📅 총 정규 차시", CARD_BG, BORDER)
+        self.dash_kpi_audio = create_kpi_card(kpi_frame, "🎙️ 녹음 파일 처리율", SOFT_BLUE, "#d7e3ec")
+        self.dash_kpi_notes = create_kpi_card(kpi_frame, "📗 강의노트 제작 현황", SOFT_GREEN, "#cfe3d5")
         self.dash_kpi_exam  = create_kpi_card(kpi_frame, "🎯 시험대비 산출물 (모의/치트)", "#faf5ff", "#d8b4fe")
 
         # 3. 주차별/차시별 진도 테이블 (Treeview)
@@ -3980,18 +5168,18 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.dash_tree.bind("<Double-1>", lambda e: self.dash_open_note_action())
 
         # 태그 스타일
-        self.dash_tree.tag_configure("even", background="#ffffff")
-        self.dash_tree.tag_configure("odd", background="#f8fafc")
-        self.dash_tree.tag_configure("completed", background="#f0fdf4")
+        self.dash_tree.tag_configure("even", background=CARD_BG)
+        self.dash_tree.tag_configure("odd", background=DASH_BG)
+        self.dash_tree.tag_configure("completed", background=SOFT_GREEN, foreground=GREEN_TEXT)
 
         # 4. 하단 빠른 실행 액션 바
         act_bar = ttk.Frame(frame)
         act_bar.pack(fill=tk.X, pady=(8, 0))
 
-        SquareRoundButton(act_bar, text="📖  선택 강의노트 PDF 열기", bg="#1c4732", hover_bg="#265e43", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_open_note_action).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(act_bar, text="📂  선택 주차 폴더 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_open_folder_action).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(act_bar, text="⚡  3분 치트시트 생성", bg="#205c3b", hover_bg="#2a774d", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(act_bar, text="📝  맞춤 모의시험 출제", bg="#285943", hover_bg="#357357", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_goto_exam_action).pack(side=tk.LEFT)
+        SquareRoundButton(act_bar, text="📖  선택 강의노트 PDF 열기", bg="#1c4732", hover_bg="#285f45", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_open_note_action).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(act_bar, text="📂  선택 주차 폴더 열기", bg="#edf1ee", hover_bg="#dfe7e2", fg=TEXT, radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_open_folder_action).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(act_bar, text="⚡  3분 치트시트 생성", bg="#1c4732", hover_bg="#285f45", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(act_bar, text="📝  맞춤 모의시험 출제", bg="#285f45", hover_bg="#34704f", radius=8, height=36, font=("Pretendard", 9, "bold"), command=self.dash_goto_exam_action).pack(side=tk.LEFT)
 
     def open_current_dash_course_folder(self):
         cname = self.dash_course_combo.get().strip()
@@ -4248,6 +5436,19 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # 탭 4: ⚙️ 과목 및 시스템 설정
     # =========================================================================
     def build_settings_tab(self):
+        # Settings UI 2.1 design tokens
+        SETTINGS_BG = "#f5f7f6"
+        CARD_BG = "#ffffff"
+        BORDER = "#e7ebe8"
+        TEXT = "#17211b"
+        MUTED = "#718078"
+        SUBTLE = "#edf1ee"
+        SOFT_GREEN = "#e8f2eb"
+        GREEN = "#1c4732"
+        GREEN_HOVER = "#285f45"
+        DANGER_BG = "#fceceb"
+        DANGER_TEXT = "#b42318"
+
         # 상단 설정 카드 (학기 & API Key)
         top_frame = ttk.LabelFrame(self.tab_settings, text=" 학기 및 Gemini API 설정 ", padding="10")
         top_frame.pack(fill=tk.X, pady=(0, 8))
@@ -4262,14 +5463,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             textvariable=self.semester_var,
             width=14,
             font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            bg=CARD_BG,
+            fg=TEXT,
+            insertbackground=GREEN,
+            selectbackground="#dfece3",
+            selectforeground=TEXT,
             relief=tk.FLAT,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=BORDER,
             takefocus=True
         )
         self.semester_entry.pack(side=tk.LEFT, padx=(0, 10))
@@ -4283,14 +5484,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             textvariable=self.start_date_var,
             width=11,
             font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            bg=CARD_BG,
+            fg=TEXT,
+            insertbackground=GREEN,
+            selectbackground="#dfece3",
+            selectforeground=TEXT,
             relief=tk.FLAT,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=BORDER,
             takefocus=True
         )
         self.start_date_entry.pack(side=tk.LEFT, padx=(0, 10))
@@ -4304,14 +5505,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             textvariable=self.end_date_var,
             width=11,
             font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            bg=CARD_BG,
+            fg=TEXT,
+            insertbackground=GREEN,
+            selectbackground="#dfece3",
+            selectforeground=TEXT,
             relief=tk.FLAT,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=BORDER,
             takefocus=True
         )
         self.end_date_entry.pack(side=tk.LEFT)
@@ -4328,21 +5529,21 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             textvariable=self.api_key_var,
             show="",
             font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            bg=CARD_BG,
+            fg=TEXT,
+            insertbackground=GREEN,
+            selectbackground="#dfece3",
+            selectforeground=TEXT,
             relief=tk.FLAT,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=BORDER,
             takefocus=True
         )
         self.api_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.api_entry.bind("<Button-1>", lambda e: self.api_entry.focus_set())
         self.add_context_menu(self.api_entry)
 
-        SquareRoundButton(api_row, text="💾 설정 저장", bg="#1c4732", hover_bg="#265e43", radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
+        SquareRoundButton(api_row, text="💾 설정 저장", bg=GREEN, hover_bg=GREEN_HOVER, radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
 
         # 화면 해상도 및 창모드 크기 조절 카드
         res_frame = ttk.LabelFrame(self.tab_settings, text=" 🖥️ 화면 해상도 및 창모드 크기 조절 (Window Resolution) ", padding="10")
@@ -4378,9 +5579,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             SquareRoundButton(
                 preset_row,
                 text=p_label,
-                bg="#f1f5f9",
-                hover_bg="#e2e8f0",
-                fg="#334155",
+                bg=SUBTLE,
+                hover_bg="#dfe7e2",
+                fg=TEXT,
                 radius=8,
                 height=28,
                 font=("Pretendard", 8, "bold"),
@@ -4391,9 +5592,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(
             preset_row,
             text="⛶ 전체 화면",
-            bg="#f1f5f9",
-            hover_bg="#e2e8f0",
-            fg="#1e293b",
+            bg=SUBTLE,
+            hover_bg="#dfe7e2",
+            fg=TEXT,
             radius=8,
             height=28,
             font=("Pretendard", 8, "bold"),
@@ -4455,8 +5656,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(
             custom_row,
             text="크기 적용",
-            bg="#1c4732",
-            hover_bg="#265e43",
+            bg=GREEN,
+            hover_bg=GREEN_HOVER,
             radius=8,
             height=28,
             font=("Pretendard", 9, "bold"),
@@ -4502,9 +5703,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         c_btn_row = ttk.Frame(self.tab_settings)
         c_btn_row.pack(fill=tk.X, pady=(0, 8))
 
-        SquareRoundButton(c_btn_row, text="➕  과목 추가", bg="#1c4732", hover_bg="#265e43", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.add_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(c_btn_row, text="✏️  선택 과목 수정", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.edit_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(c_btn_row, text="🗑️  과목 삭제", bg="#fee2e2", hover_bg="#fecaca", fg="#dc2626", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.delete_course_action).pack(side=tk.LEFT)
+        SquareRoundButton(c_btn_row, text="➕  과목 추가", bg=GREEN, hover_bg=GREEN_HOVER, radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.add_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(c_btn_row, text="✏️  선택 과목 수정", bg=SUBTLE, hover_bg="#dfe7e2", fg=TEXT, radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.edit_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(c_btn_row, text="🗑️  과목 삭제", bg=DANGER_BG, hover_bg="#f7d9d6", fg=DANGER_TEXT, radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.delete_course_action).pack(side=tk.LEFT)
 
         # 하단 전체 파이프라인 일괄 수동 실행 옵션 (사용자가 원할 때만 실행)
         batch_frame = ttk.LabelFrame(self.tab_settings, text=" 🚀 전체 파이프라인 일괄 수동 실행 (옵션) ", padding="8")
@@ -4826,7 +6027,20 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # 탭 4: 🛠️ 고급 도구 (프롬프트 / 보관함 동기화 / 윤리 및 법적고지)
     # =========================================================================
     def build_advanced_tab(self):
-        sub_nb = ttk.Notebook(self.tab_advanced)
+        # Advanced UI 2.1 design tokens
+        ADV_BG = "#f5f7f6"
+        CARD_BG = "#ffffff"
+        BORDER = "#e7ebe8"
+        TEXT = "#17211b"
+        MUTED = "#718078"
+        SUBTLE = "#edf1ee"
+        GREEN = "#1c4732"
+        GREEN_HOVER = "#285f45"
+        WARNING_BG = "#fbf5e8"
+        WARNING_TEXT = "#8a5a13"
+        DANGER_TEXT = "#b42318"
+
+        sub_nb = ttk.Notebook(self.tab_advanced, style="TNotebook")
         sub_nb.pack(fill=tk.BOTH, expand=True)
 
         # ---------------------------------------------------------------------
@@ -4852,7 +6066,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         txt_wrap = ttk.Frame(frame_prompt)
         txt_wrap.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
 
-        self.prompt_text = tk.Text(txt_wrap, wrap=tk.WORD, font=("JetBrains Mono", 10), bg="#ffffff", fg="#0f172a", relief=tk.SOLID, bd=1, padx=8, pady=8)
+        self.prompt_text = tk.Text(txt_wrap, wrap=tk.WORD, font=("JetBrains Mono", 10), bg=CARD_BG, fg=TEXT, relief=tk.SOLID, bd=1, padx=8, pady=8)
         sb = ttk.Scrollbar(txt_wrap, orient=tk.VERTICAL, command=self.prompt_text.yview)
         self.prompt_text.config(yscrollcommand=sb.set)
         self.prompt_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -4877,7 +6091,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             legal_top_bar,
             text="⚠️ [필독] 본 시스템(URY Engine)으로 녹음 및 생성된 모든 자료는 '개인 학업 목적(저작권법 제30조)'으로만 이용 가능하며,\n외부 무단 배포 및 공유는 엄격히 금지됩니다. (저작권법 제136조, 통신비밀보호법 제3조)",
             font=("Pretendard", 9, "bold"),
-            foreground="#b91c1c",
+            foreground=DANGER_TEXT,
             justify=tk.LEFT
         )
         lbl_desc.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -4892,7 +6106,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         legal_txt_wrap = ttk.Frame(frame_legal)
         legal_txt_wrap.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
 
-        self.legal_text = tk.Text(legal_txt_wrap, wrap=tk.WORD, font=("Pretendard", 9), bg="#f8fafc", fg="#0f172a", relief=tk.FLAT, highlightthickness=1, highlightbackground="#cbd5e1", padx=12, pady=12)
+        self.legal_text = tk.Text(legal_txt_wrap, wrap=tk.WORD, font=("Pretendard", 9), bg=SUBTLE, fg=TEXT, relief=tk.FLAT, highlightthickness=1, highlightbackground=BORDER, padx=12, pady=12)
         legal_sb = ttk.Scrollbar(legal_txt_wrap, orient=tk.VERTICAL, command=self.legal_text.yview)
         self.legal_text.config(yscrollcommand=legal_sb.set)
         self.legal_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
