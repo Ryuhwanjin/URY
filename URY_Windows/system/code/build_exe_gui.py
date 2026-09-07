@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 
-VERSION = "0.7.8"
+VERSION = "0.7.9"
 
 
 def get_windows_root():

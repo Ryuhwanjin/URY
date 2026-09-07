@@ -1,12 +1,12 @@
 @echo off
 setlocal
 
-title URY Engine v0.7.8 - Windows EXE Builder
+title URY Engine v0.7.9 - Windows EXE Builder
 
 cd /d "%~dp0"
 
 echo =========================================================
-echo   URY Engine v0.7.8 Windows EXE Builder
+echo   URY Engine v0.7.9 Windows EXE Builder
 echo =========================================================
 echo.
 
