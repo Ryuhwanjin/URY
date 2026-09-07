@@ -1968,18 +1968,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
 
     def _sidebar_redraw(self, button):
-        """SquareRoundButton의 내부 상태를 직접 변경하고 다시 그린다."""
+        """SquareRoundButton의 내부 상태를 변경하고 다시 그린다."""
         try:
             button.delete("all")
         except Exception:
             pass
-
         button.draw(button.normal_bg)
-
 
     def _collapse_sidebar(self):
         """Sidebar를 아이콘 전용 모드로 축소"""
-
         self.sidebar_expanded = False
 
         self.sidebar.configure(
@@ -1993,21 +1990,11 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             self.sidebar_menu_label.pack_forget()
 
         for pill in getattr(self, "tab_pills", []):
+            icon = getattr(pill, "sidebar_icon", "")
 
-            # 생성 당시 저장한 아이콘만 사용
-            icon = getattr(
-                pill,
-                "sidebar_icon",
-                ""
-            )
-
-            # 중요:
-            # config(text=...) 사용 금지
-            # SquareRoundButton 내부 변수 직접 변경
             pill.btn_text = icon
             pill.w = 44
 
-            # Canvas 실제 크기만 변경
             tk.Canvas.config(
                 pill,
                 width=44,
@@ -2022,7 +2009,6 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 pady=3
             )
 
-        # Toggle 버튼
         self.sidebar_toggle_btn.btn_text = "›"
         self.sidebar_toggle_btn.w = 38
 
@@ -2043,52 +2029,27 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         if hasattr(self, "sidebar_bottom"):
             self.sidebar_bottom.pack_forget()
 
-
     def _expand_sidebar(self):
         """Sidebar를 전체 메뉴 모드로 확장"""
-
         self.sidebar_expanded = True
 
         self.sidebar.configure(
             width=self.sidebar_expanded_width
         )
 
-        if hasattr(self, "sidebar_brand"):
-            self.sidebar_brand.pack(
-                fill=tk.X,
-                padx=20,
-                pady=(10, 22),
-                before=self.sidebar_menu_label
-            )
-
-        if hasattr(self, "sidebar_menu_label"):
-            self.sidebar_menu_label.pack(
-                anchor=tk.W,
-                padx=22,
-                pady=(0, 8),
-                before=self.sidebar_nav_container
-            )
-
+        # -------------------------------------------------
+        # 메뉴 버튼 먼저 복원
+        # -------------------------------------------------
         for pill in getattr(self, "tab_pills", []):
+            icon = getattr(pill, "sidebar_icon", "")
+            text = getattr(pill, "sidebar_text", "")
 
-            icon = getattr(
+            pill.btn_text = getattr(
                 pill,
-                "sidebar_icon",
-                ""
+                "sidebar_full_text",
+                f"{icon}   {text}"
             )
 
-            text = getattr(
-                pill,
-                "sidebar_text",
-                ""
-            )
-
-            # 원래 메뉴 문자열을 다시 생성
-            full_text = f"{icon}   {text}"
-
-            # 중요:
-            # config(text=...) 사용 금지
-            pill.btn_text = full_text
             pill.w = 202
 
             tk.Canvas.config(
@@ -2105,7 +2066,49 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 pady=3
             )
 
+        # -------------------------------------------------
+        # 기존 위젯을 원래 순서대로 재배치
+        #
+        # pack(before=...)는 대상 위젯의 pack 상태에
+        # 따라 Tcl 오류가 발생할 수 있으므로 사용하지 않는다.
+        # 대신 nav를 기준으로 앞쪽 위젯을 재배치한다.
+        # -------------------------------------------------
+
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack_forget()
+
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack_forget()
+
+        if hasattr(self, "sidebar_nav_container"):
+            self.sidebar_nav_container.pack_forget()
+
+        # brand
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack(
+                fill=tk.X,
+                padx=20,
+                pady=(24, 22)
+            )
+
+        # menu label
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack(
+                anchor=tk.W,
+                padx=22,
+                pady=(0, 8)
+            )
+
+        # navigation
+        if hasattr(self, "sidebar_nav_container"):
+            self.sidebar_nav_container.pack(
+                fill=tk.X,
+                padx=12
+            )
+
+        # -------------------------------------------------
         # Toggle 버튼
+        # -------------------------------------------------
         self.sidebar_toggle_btn.btn_text = "‹"
         self.sidebar_toggle_btn.w = 38
 
@@ -2120,17 +2123,22 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         )
 
         self.sidebar_toggle_btn.pack_configure(
-            anchor=tk.E
+            anchor=tk.E,
+            padx=12,
+            pady=(14, 0)
         )
 
+        # -------------------------------------------------
+        # Bottom
+        # -------------------------------------------------
         if hasattr(self, "sidebar_bottom"):
+            self.sidebar_bottom.pack_forget()
             self.sidebar_bottom.pack(
                 side=tk.BOTTOM,
                 fill=tk.X,
                 padx=20,
                 pady=20
             )
-
 
 
     def switch_to_tab(self, idx):
