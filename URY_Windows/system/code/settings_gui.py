@@ -1237,152 +1237,686 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     ask_open_file_safe = staticmethod(safe_askopenfilename)
     ask_open_files_safe = staticmethod(safe_askopenfilenames)
 
+
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
 
-        # 🌟 시안 2 (Apple Clean Light) + 포레스트 그린 팔레트
-        bg_main = "#f6f8fa"        # 은은하고 편안한 Apple 라이트 그레이
-        bg_card = "#ffffff"        # 퓨어 화이트 카드
-        bg_header = "#ffffff"      # 퓨어 화이트 상단 바
-        border_c = "#e2e8f0"       # 정갈한 1px 슬레이트 보더
-        fg_main = "#0f172a"        # 또렷한 슬레이트 차콜 텍스트
-        fg_muted = "#64748b"       # 소프트 슬레이트 그레이
-        accent = "#1c4732"         # 앱 아이콘 원색 딥 포레스트 그린
+        # =====================================================
+        # URY UI 2.0
+        # =====================================================
+
+        bg_main = "#f5f7f6"
+        bg_card = "#ffffff"
+        bg_header = "#ffffff"
+
+        border_c = "#e7ebe8"
+
+        fg_main = "#17211b"
+        fg_muted = "#718078"
+
+        accent = "#1c4732"
+        accent_hover = "#285f45"
 
         self.root.configure(bg=bg_main)
 
-        # 폰트 계층
+        # Font hierarchy
         f_title = ("Pretendard", 11, "bold")
         f_body = ("Pretendard", 10)
         f_small = ("Pretendard", 9)
 
-        style.configure(".", background=bg_main, foreground=fg_main, font=f_body)
-        style.configure("TFrame", background=bg_main)
-        style.configure("Card.TFrame", background=bg_card, relief=tk.FLAT, borderwidth=0)
-        style.configure("TLabel", background=bg_main, foreground=fg_main, font=f_body)
-        style.configure("Card.TLabel", background=bg_card, foreground=fg_main, font=f_body)
-        style.configure("Muted.TLabel", background=bg_main, foreground=fg_muted, font=f_small)
-        style.configure("CardMuted.TLabel", background=bg_card, foreground=fg_muted, font=f_small)
-        style.configure("Card.TCheckbutton", background=bg_card, foreground=fg_main, font=f_body)
+        # -----------------------------------------------------
+        # Base
+        # -----------------------------------------------------
 
-        # 숨겨진 노트북 탭 (상단 플로팅 알약 세그먼트 바로 직접 제어)
-        style.layout("Hidden.TNotebook.Tab", [])
-        style.configure("Hidden.TNotebook", background=bg_main, borderwidth=0, tabmargins=0)
+        style.configure(
+            ".",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        # 기본 ttk.Notebook 스타일 유지보수
-        style.configure("TNotebook", background=bg_main, borderwidth=0)
-        style.configure("TNotebook.Tab", font=f_title, padding=[16, 8], background="#e2e8f0", foreground=fg_muted)
-        style.map("TNotebook.Tab", background=[("selected", accent)], foreground=[("selected", "#ffffff")])
+        style.configure(
+            "TFrame",
+            background=bg_main
+        )
 
-        # 버튼들
-        style.configure("Primary.TButton", font=f_title, background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Primary.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.configure(
+            "Card.TFrame",
+            background=bg_card,
+            relief=tk.FLAT,
+            borderwidth=0
+        )
 
-        style.configure("Action.TButton", font=("Pretendard", 10, "bold"), background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Action.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.configure(
+            "TLabel",
+            background=bg_main,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        style.configure("Secondary.TButton", font=f_body, background="#e2e8f0", foreground=fg_main, borderwidth=0)
-        style.map("Secondary.TButton", background=[("active", "#cbd5e1")])
+        style.configure(
+            "Card.TLabel",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_body
+        )
 
-        style.configure("Danger.TButton", font=f_body, background="#dc2626", foreground="#ffffff", borderwidth=0)
-        style.map("Danger.TButton", background=[("active", "#b91c1c"), ("disabled", "#94a3b8")])
+        style.configure(
+            "Muted.TLabel",
+            background=bg_main,
+            foreground=fg_muted,
+            font=f_small
+        )
 
-        # 트리뷰 (과목 테이블)
-        style.configure("Treeview.Heading", font=("Pretendard", 10, "bold"), background="#f1f5f9", foreground=fg_main)
-        style.configure("Treeview", font=f_body, rowheight=28, background=bg_card, fieldbackground=bg_card, foreground=fg_main)
-        style.map("Treeview", background=[("selected", "#e8f5ed")], foreground=[("selected", "#1c4732")])
+        style.configure(
+            "CardMuted.TLabel",
+            background=bg_card,
+            foreground=fg_muted,
+            font=f_small
+        )
 
-        # 라벨프레임
-        style.configure("TLabelframe", background=bg_card, bordercolor=border_c, borderwidth=1)
-        style.configure("TLabelframe.Label", background=bg_card, foreground=fg_main, font=f_title)
+        style.configure(
+            "Card.TCheckbutton",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_body
+        )
+
+        # -----------------------------------------------------
+        # Hidden Notebook
+        # -----------------------------------------------------
+
+        style.layout(
+            "Hidden.TNotebook.Tab",
+            []
+        )
+
+        style.configure(
+            "Hidden.TNotebook",
+            background=bg_main,
+            borderwidth=0,
+            tabmargins=0
+        )
+
+        style.configure(
+            "TNotebook",
+            background=bg_main,
+            borderwidth=0
+        )
+
+        # -----------------------------------------------------
+        # Buttons
+        # -----------------------------------------------------
+
+        style.configure(
+            "Primary.TButton",
+            font=f_title,
+            background=accent,
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(14, 9)
+        )
+
+        style.map(
+            "Primary.TButton",
+            background=[
+                ("active", accent_hover),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        style.configure(
+            "Action.TButton",
+            font=("Pretendard", 10, "bold"),
+            background=accent,
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(14, 9)
+        )
+
+        style.map(
+            "Action.TButton",
+            background=[
+                ("active", accent_hover),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        style.configure(
+            "Secondary.TButton",
+            font=f_body,
+            background="#edf1ee",
+            foreground=fg_main,
+            borderwidth=0,
+            padding=(12, 8)
+        )
+
+        style.map(
+            "Secondary.TButton",
+            background=[
+                ("active", "#dfe7e2")
+            ]
+        )
+
+        style.configure(
+            "Danger.TButton",
+            font=f_body,
+            background="#dc2626",
+            foreground="#ffffff",
+            borderwidth=0,
+            padding=(12, 8)
+        )
+
+        style.map(
+            "Danger.TButton",
+            background=[
+                ("active", "#b91c1c"),
+                ("disabled", "#aab5ae")
+            ]
+        )
+
+        # -----------------------------------------------------
+        # Treeview
+        # -----------------------------------------------------
+
+        style.configure(
+            "Treeview.Heading",
+            font=("Pretendard", 10, "bold"),
+            background="#eef2ef",
+            foreground=fg_main,
+            relief=tk.FLAT
+        )
+
+        style.configure(
+            "Treeview",
+            font=f_body,
+            rowheight=32,
+            background=bg_card,
+            fieldbackground=bg_card,
+            foreground=fg_main,
+            borderwidth=0,
+            relief=tk.FLAT
+        )
+
+        style.map(
+            "Treeview",
+            background=[
+                ("selected", "#e4f0e8")
+            ],
+            foreground=[
+                ("selected", accent)
+            ]
+        )
+
+        # -----------------------------------------------------
+        # LabelFrame
+        # -----------------------------------------------------
+
+        style.configure(
+            "TLabelframe",
+            background=bg_card,
+            bordercolor=border_c,
+            borderwidth=0
+        )
+
+        style.configure(
+            "TLabelframe.Label",
+            background=bg_card,
+            foreground=fg_main,
+            font=f_title
+        )
+
+        # -----------------------------------------------------
+        # Sidebar
+        # -----------------------------------------------------
+
+        style.configure(
+            "Sidebar.TFrame",
+            background="#eef3ef"
+        )
+
+        style.configure(
+            "SidebarMuted.TLabel",
+            background="#eef3ef",
+            foreground="#7b8a82",
+            font=("Pretendard", 8, "bold")
+        )
 
     def create_header_card(self):
-        # 🌟 시안 2 상단 헤더: 화이트 클린 탑바 + 중앙 플로팅 알약 탭 세그먼트
-        self.header_frame = tk.Frame(self.root, bg="#ffffff", height=62, bd=0, highlightthickness=1, highlightbackground="#e2e8f0")
-        self.header_frame.pack(fill=tk.X)
-        self.header_frame.pack_propagate(False)
+        """
+        URY UI 2.0 Desktop Shell
 
-        # 좌측: 모노그램 로고 & 앱 타이틀
-        left = tk.Frame(self.header_frame, bg="#ffffff")
-        left.pack(side=tk.LEFT, padx=(14, 6), fill=tk.Y)
+        Header
+        └── Sidebar + Main Content
 
-        title_row = tk.Frame(left, bg="#ffffff")
-        title_row.pack(anchor=tk.W, pady=(12, 0))
+        기존 Notebook 및 기능 callback은 유지한다.
+        """
+
+        # =====================================================
+        # Header
+        # =====================================================
+
+        self.header_frame = tk.Frame(
+            self.root,
+            bg="#ffffff",
+            height=64,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#e7ebe8"
+        )
+
+        self.header_frame.pack(
+            fill=tk.X
+        )
+
+        self.header_frame.pack_propagate(
+            False
+        )
+
+        # -----------------------------------------------------
+        # Logo / Title
+        # -----------------------------------------------------
+
+        left = tk.Frame(
+            self.header_frame,
+            bg="#ffffff"
+        )
+
+        left.pack(
+            side=tk.LEFT,
+            padx=(20, 10),
+            fill=tk.Y
+        )
+
+        title_row = tk.Frame(
+            left,
+            bg="#ffffff"
+        )
+
+        title_row.pack(
+            anchor=tk.W,
+            pady=(13, 0)
+        )
+
         if hasattr(self, "icon_img"):
             try:
-                tk.Label(title_row, image=self.icon_img, bg="#ffffff").pack(side=tk.LEFT, padx=(0, 6))
+                tk.Label(
+                    title_row,
+                    image=self.icon_img,
+                    bg="#ffffff"
+                ).pack(
+                    side=tk.LEFT,
+                    padx=(0, 8)
+                )
             except Exception:
                 pass
-        tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.7.7", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
-        tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
-        # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
-        right = tk.Frame(self.header_frame, bg="#ffffff")
-        right.pack(side=tk.RIGHT, padx=(6, 14), fill=tk.Y)
+        tk.Label(
+            title_row,
+            text="URY Engine",
+            font=("Pretendard", 13, "bold"),
+            bg="#ffffff",
+            fg="#173b29"
+        ).pack(
+            side=tk.LEFT
+        )
+
+        tk.Label(
+            title_row,
+            text="  Academic Studio",
+            font=("Pretendard", 9),
+            bg="#ffffff",
+            fg="#89968f"
+        ).pack(
+            side=tk.LEFT
+        )
+
+        # -----------------------------------------------------
+        # Right status area
+        # -----------------------------------------------------
+
+        right = tk.Frame(
+            self.header_frame,
+            bg="#ffffff"
+        )
+
+        right.pack(
+            side=tk.RIGHT,
+            padx=(10, 20),
+            fill=tk.Y
+        )
 
         self.res_quick_btn = SquareRoundButton(
             right,
-            text="🖥️ 창 크기 ▾",
-            bg="#f1f5f9",
-            fg="#1e293b",
-            hover_bg="#e2e8f0",
-            radius=8,
-            height=28,
+            text="🖥 창 크기 ▾",
+            bg="#f1f4f2",
+            fg="#34423a",
+            hover_bg="#e4eae6",
+            active_bg="#dce5df",
+            radius=10,
+            height=30,
             font=("Pretendard", 8, "bold"),
             command=self.show_resolution_quick_menu,
             parent_bg="#ffffff"
         )
-        self.res_quick_btn.pack(side=tk.LEFT, pady=16, padx=(0, 6))
 
-        sem_text = self.settings.get("semester", "2026년 2학기")
-        self.sem_badge_label = tk.Label(right, text=f" 📅 {sem_text} ", font=("Pretendard", 8, "bold"), bg="#f1f5f9", fg="#1e293b", relief=tk.FLAT, padx=6, pady=4)
-        self.sem_badge_label.pack(side=tk.LEFT, pady=16, padx=(0, 6))
+        self.res_quick_btn.pack(
+            side=tk.LEFT,
+            pady=17,
+            padx=(0, 8)
+        )
 
-        api_key = self.settings.get("gemini_api_key", "").strip()
+        sem_text = self.settings.get(
+            "semester",
+            "2026년 2학기"
+        )
+
+        self.sem_badge_label = tk.Label(
+            right,
+            text=f"📅 {sem_text}",
+            font=("Pretendard", 8, "bold"),
+            bg="#f1f4f2",
+            fg="#34423a",
+            relief=tk.FLAT,
+            padx=9,
+            pady=5
+        )
+
+        self.sem_badge_label.pack(
+            side=tk.LEFT,
+            pady=17,
+            padx=(0, 8)
+        )
+
+        api_key = self.settings.get(
+            "gemini_api_key",
+            ""
+        ).strip()
+
         has_key = len(api_key) >= 10
-        api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = "#15803d" if has_key else "#b91c1c"
-        api_bg = "#f0fdf4" if has_key else "#fef2f2"
-        self.api_badge_label = tk.Label(right, text=api_text, font=("Pretendard", 8, "bold"), bg=api_bg, fg=api_fg, relief=tk.FLAT, padx=8, pady=4, cursor="hand2")
-        self.api_badge_label.pack(side=tk.LEFT, pady=16)
-        self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(4))
 
-        # 중앙: 시안 2 플로팅 알약형 세그먼트 탭바 (반응형 콤팩트 크기)
-        center = tk.Frame(self.header_frame, bg="#ffffff")
-        center.pack(side=tk.LEFT, expand=True)
+        api_text = (
+            "● API 연결됨"
+            if has_key
+            else "● API 등록 필요"
+        )
 
-        pill_wrap = tk.Frame(center, bg="#f1f5f9", padx=3, pady=3)
-        pill_wrap.pack()
+        api_fg = (
+            "#16834b"
+            if has_key
+            else "#c2413b"
+        )
+
+        api_bg = (
+            "#eef9f2"
+            if has_key
+            else "#fff1f0"
+        )
+
+        self.api_badge_label = tk.Label(
+            right,
+            text=api_text,
+            font=("Pretendard", 8, "bold"),
+            bg=api_bg,
+            fg=api_fg,
+            relief=tk.FLAT,
+            padx=10,
+            pady=5,
+            cursor="hand2"
+        )
+
+        self.api_badge_label.pack(
+            side=tk.LEFT,
+            pady=17
+        )
+
+        self.api_badge_label.bind(
+            "<Button-1>",
+            lambda e: self.switch_to_tab(4)
+        )
+
+        # =====================================================
+        # Workspace
+        # =====================================================
+
+        self.workspace_shell = tk.Frame(
+            self.root,
+            bg="#f5f7f6"
+        )
+
+        self.workspace_shell.pack(
+            fill=tk.BOTH,
+            expand=True
+        )
+
+        # =====================================================
+        # Sidebar
+        # =====================================================
+
+        # Sidebar 상태
+        self.sidebar_expanded = True
+        self.sidebar_expanded_width = 228
+        self.sidebar_collapsed_width = 68
+
+        self.sidebar = tk.Frame(
+            self.workspace_shell,
+            bg="#eef3ef",
+            width=self.sidebar_expanded_width
+        )
+
+        self.sidebar.pack(
+            side=tk.LEFT,
+            fill=tk.Y
+        )
+
+        self.sidebar.pack_propagate(
+            False
+        )
+
+        # -----------------------------------------------------
+        # Sidebar toggle
+        # -----------------------------------------------------
+
+        self.sidebar_toggle_btn = SquareRoundButton(
+            self.sidebar,
+            text="‹",
+            command=self.toggle_sidebar,
+            bg="#e2ebe5",
+            fg="#355445",
+            hover_bg="#d6e3da",
+            active_bg="#cadccf",
+            radius=10,
+            width=38,
+            height=34,
+            font=("Pretendard", 15, "bold"),
+            parent_bg="#eef3ef"
+        )
+
+        self.sidebar_toggle_btn.pack(
+            anchor=tk.E,
+            padx=12,
+            pady=(14, 0)
+        )
+
+        # -----------------------------------------------------
+        # Sidebar branding
+        # -----------------------------------------------------
+
+        brand = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
+
+        self.sidebar_brand = brand
+
+        brand.pack(
+            fill=tk.X,
+            padx=20,
+            pady=(24, 22)
+        )
+
+        tk.Label(
+            brand,
+            text="MY WORKSPACE",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#8a9890"
+        ).pack(
+            anchor=tk.W
+        )
+
+        tk.Label(
+            brand,
+            text="학업 워크스페이스",
+            font=("Pretendard", 13, "bold"),
+            bg="#eef3ef",
+            fg="#1b3025"
+        ).pack(
+            anchor=tk.W,
+            pady=(5, 0)
+        )
+
+        # -----------------------------------------------------
+        # Menu label
+        # -----------------------------------------------------
+
+        self.sidebar_menu_label = tk.Label(
+            self.sidebar,
+            text="MENU",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#8a9890"
+        )
+
+        self.sidebar_menu_label.pack(
+            anchor=tk.W,
+            padx=22,
+            pady=(0, 8)
+        )
+
+        # -----------------------------------------------------
+        # Navigation
+        # -----------------------------------------------------
 
         self.tab_pills = []
+
         self.tab_defs = [
-            ("🎙️ Studio", 0),
-            ("📝 Exam", 1),
-            ("💬 Tutor", 2),
-            ("📊 Dashboard", 3),
-            ("⚙️ Settings", 4),
-            ("🛠️ Advanced", 5),
+            ("🎙️", "Studio", 0),
+            ("📝", "Exam", 1),
+            ("💬", "Tutor", 2),
+            ("📊", "Dashboard", 3),
+            ("⚙️", "Settings", 4),
+            ("🛠️", "Advanced", 5),
         ]
 
-        for text, idx in self.tab_defs:
-            is_active = (idx == 0)
-            btn = SquareRoundButton(
-                pill_wrap,
-                text=text,
-                command=lambda i=idx: self.switch_to_tab(i),
-                bg="#1c4732" if is_active else "#f1f5f9",
-                fg="#ffffff" if is_active else "#475569",
-                hover_bg="#265e43" if is_active else "#e2e8f0",
-                radius=9,
-                height=30,
-                font=("Pretendard", 9, "bold"),
-                parent_bg="#f1f5f9"
-            )
-            btn.pack(side=tk.LEFT, padx=1)
-            self.tab_pills.append(btn)
+        nav_container = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
 
+        self.sidebar_nav_container = nav_container
+
+        nav_container.pack(
+            fill=tk.X,
+            padx=12
+        )
+
+        for icon, text, idx in self.tab_defs:
+
+            is_active = idx == 0
+
+            btn = SquareRoundButton(
+                nav_container,
+                text=f"{icon}   {text}",
+                command=lambda i=idx: self.switch_to_tab(i),
+                bg="#dcebe1" if is_active else "#eef3ef",
+                fg="#174a31" if is_active else "#56645c",
+                hover_bg="#dcebe1",
+                active_bg="#cfe3d6",
+                radius=11,
+                width=202,
+                height=42,
+                font=("Pretendard", 9, "bold"),
+                parent_bg="#eef3ef"
+            )
+
+            btn.pack(
+                fill=tk.X,
+                pady=3
+            )
+
+            # 토글 시 복원하기 위한 정보
+            btn.sidebar_icon = icon
+            btn.sidebar_text = text
+            btn.sidebar_full_text = f"{icon}   {text}"
+            btn.sidebar_index = idx
+
+            self.tab_pills.append(
+                btn
+            )
+
+        # -----------------------------------------------------
+        # Sidebar bottom
+        # -----------------------------------------------------
+
+        bottom = tk.Frame(
+            self.sidebar,
+            bg="#eef3ef"
+        )
+
+        self.sidebar_bottom = bottom
+
+        bottom.pack(
+            side=tk.BOTTOM,
+            fill=tk.X,
+            padx=20,
+            pady=20
+        )
+
+        tk.Frame(
+            bottom,
+            bg="#dce4df",
+            height=1
+        ).pack(
+            fill=tk.X,
+            pady=(0, 12)
+        )
+
+        tk.Label(
+            bottom,
+            text="URY Engine",
+            font=("Pretendard", 8, "bold"),
+            bg="#eef3ef",
+            fg="#708078"
+        ).pack(
+            anchor=tk.W
+        )
+
+        tk.Label(
+            bottom,
+            text="Academic Studio",
+            font=("Pretendard", 8),
+            bg="#eef3ef",
+            fg="#9aa69f"
+        ).pack(
+            anchor=tk.W
+        )
+
+        # =====================================================
+        # Main content
+        # =====================================================
+
+        self.main_content = tk.Frame(
+            self.workspace_shell,
+            bg="#f5f7f6"
+        )
+
+        self.main_content.pack(
+            side=tk.LEFT,
+            fill=tk.BOTH,
+            expand=True
+        )
     def update_api_status_badge(self):
         """헤더의 API 상태 배지를 현재 설정값에 맞춰 갱신"""
         if not hasattr(self, "api_badge_label"):
@@ -1395,72 +1929,417 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.api_badge_label.config(text=api_text, bg=api_bg, fg=api_fg)
 
 
+
+
+    def toggle_sidebar(self):
+        """Sidebar 확장/축소"""
+
+        try:
+            self.sidebar_expanded = not self.sidebar_expanded
+
+            if self.sidebar_expanded:
+                self._expand_sidebar()
+            else:
+                self._collapse_sidebar()
+
+        except Exception as e:
+            print(f"[WARN] Sidebar toggle error: {e}")
+
+
+    def _redraw_sidebar_button(self, pill):
+        """SquareRoundButton의 Canvas 내용을 현재 btn_text로 다시 그림"""
+        try:
+            pill.delete("all")
+        except Exception:
+            pass
+
+        try:
+            pill.draw()
+            return
+        except TypeError:
+            pass
+        except Exception:
+            return
+
+        try:
+            pill.draw(pill.cget("bg"))
+        except Exception:
+            pass
+
+
+    def _sidebar_redraw(self, button):
+        """SquareRoundButton의 내부 상태를 직접 변경하고 다시 그린다."""
+        try:
+            button.delete("all")
+        except Exception:
+            pass
+
+        button.draw(button.normal_bg)
+
+
+    def _collapse_sidebar(self):
+        """Sidebar를 아이콘 전용 모드로 축소"""
+
+        self.sidebar_expanded = False
+
+        self.sidebar.configure(
+            width=self.sidebar_collapsed_width
+        )
+
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack_forget()
+
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack_forget()
+
+        for pill in getattr(self, "tab_pills", []):
+
+            # 생성 당시 저장한 아이콘만 사용
+            icon = getattr(
+                pill,
+                "sidebar_icon",
+                ""
+            )
+
+            # 중요:
+            # config(text=...) 사용 금지
+            # SquareRoundButton 내부 변수 직접 변경
+            pill.btn_text = icon
+            pill.w = 44
+
+            # Canvas 실제 크기만 변경
+            tk.Canvas.config(
+                pill,
+                width=44,
+                height=42
+            )
+
+            self._sidebar_redraw(pill)
+
+            pill.pack_configure(
+                fill=tk.NONE,
+                padx=0,
+                pady=3
+            )
+
+        # Toggle 버튼
+        self.sidebar_toggle_btn.btn_text = "›"
+        self.sidebar_toggle_btn.w = 38
+
+        tk.Canvas.config(
+            self.sidebar_toggle_btn,
+            width=38,
+            height=34
+        )
+
+        self._sidebar_redraw(
+            self.sidebar_toggle_btn
+        )
+
+        self.sidebar_toggle_btn.pack_configure(
+            anchor=tk.CENTER
+        )
+
+        if hasattr(self, "sidebar_bottom"):
+            self.sidebar_bottom.pack_forget()
+
+
+    def _expand_sidebar(self):
+        """Sidebar를 전체 메뉴 모드로 확장"""
+
+        self.sidebar_expanded = True
+
+        self.sidebar.configure(
+            width=self.sidebar_expanded_width
+        )
+
+        if hasattr(self, "sidebar_brand"):
+            self.sidebar_brand.pack(
+                fill=tk.X,
+                padx=20,
+                pady=(10, 22),
+                before=self.sidebar_menu_label
+            )
+
+        if hasattr(self, "sidebar_menu_label"):
+            self.sidebar_menu_label.pack(
+                anchor=tk.W,
+                padx=22,
+                pady=(0, 8),
+                before=self.sidebar_nav_container
+            )
+
+        for pill in getattr(self, "tab_pills", []):
+
+            icon = getattr(
+                pill,
+                "sidebar_icon",
+                ""
+            )
+
+            text = getattr(
+                pill,
+                "sidebar_text",
+                ""
+            )
+
+            # 원래 메뉴 문자열을 다시 생성
+            full_text = f"{icon}   {text}"
+
+            # 중요:
+            # config(text=...) 사용 금지
+            pill.btn_text = full_text
+            pill.w = 202
+
+            tk.Canvas.config(
+                pill,
+                width=202,
+                height=42
+            )
+
+            self._sidebar_redraw(pill)
+
+            pill.pack_configure(
+                fill=tk.X,
+                padx=0,
+                pady=3
+            )
+
+        # Toggle 버튼
+        self.sidebar_toggle_btn.btn_text = "‹"
+        self.sidebar_toggle_btn.w = 38
+
+        tk.Canvas.config(
+            self.sidebar_toggle_btn,
+            width=38,
+            height=34
+        )
+
+        self._sidebar_redraw(
+            self.sidebar_toggle_btn
+        )
+
+        self.sidebar_toggle_btn.pack_configure(
+            anchor=tk.E
+        )
+
+        if hasattr(self, "sidebar_bottom"):
+            self.sidebar_bottom.pack(
+                side=tk.BOTTOM,
+                fill=tk.X,
+                padx=20,
+                pady=20
+            )
+
+
+
     def switch_to_tab(self, idx):
         try:
             self.notebook.select(idx)
-            for i, pill in enumerate(self.tab_pills):
-                if i == idx:
-                    pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
-                else:
-                    pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
+
+            if hasattr(self, "tab_pills"):
+                for i, pill in enumerate(self.tab_pills):
+
+                    if i == idx:
+                        pill.config(
+                            bg="#dcebe1",
+                            fg="#174a31",
+                            hover_bg="#dcebe1",
+                            active_bg="#cfe3d6"
+                        )
+
+                    else:
+                        pill.config(
+                            bg="#eef3ef",
+                            fg="#56645c",
+                            hover_bg="#e2e9e5",
+                            active_bg="#dfe8e2"
+                        )
+
             self.on_tab_changed()
+
         except Exception:
             pass
 
     def create_tabs(self):
-        self.notebook = ttk.Notebook(self.root, style="Hidden.TNotebook")
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=16, pady=(12, 16))
+        # =====================================================
+        # Hidden functional Notebook
+        # =====================================================
+        #
+        # 실제 탭 기능은 기존 구조를 그대로 사용한다.
+        # 사용자에게 보이는 navigation만 Sidebar로 변경.
+        #
 
-        # 탭 1: 🎙️ 학습노트 생성 스튜디오
-        self.tab_studio = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_studio, text=" 학습노트 스튜디오 ")
+        self.notebook = ttk.Notebook(
+            self.main_content,
+            style="Hidden.TNotebook"
+        )
+
+        self.notebook.pack(
+            fill=tk.BOTH,
+            expand=True,
+            padx=20,
+            pady=(18, 20)
+        )
+
+        # -----------------------------------------------------
+        # Studio
+        # -----------------------------------------------------
+
+        self.tab_studio = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_studio,
+            text=" 학습노트 스튜디오 "
+        )
+
         self.build_studio_tab()
 
-        # 탭 2: 📝 실전 모의시험 & 공부기간 로드맵
-        self.tab_exam = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_exam, text=" 시험 대비 & 로드맵 ")
+        # -----------------------------------------------------
+        # Exam
+        # -----------------------------------------------------
+
+        self.tab_exam = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_exam,
+            text=" 시험 대비 & 로드맵 "
+        )
+
         self.build_exam_tab()
 
-        # 탭 3: 💬 AI 강의 튜터 (교수님 Q&A)
-        self.tab_tutor = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_tutor, text=" 조교 Q&A ")
+        # -----------------------------------------------------
+        # Tutor
+        # -----------------------------------------------------
+
+        self.tab_tutor = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_tutor,
+            text=" 조교 Q&A "
+        )
+
         self.build_tutor_tab()
 
-        # 탭 4: 📊 주차별 진도 대시보드
-        self.tab_dashboard = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_dashboard, text=" 학업 진도 ")
+        # -----------------------------------------------------
+        # Dashboard
+        # -----------------------------------------------------
+
+        self.tab_dashboard = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_dashboard,
+            text=" 학업 진도 "
+        )
+
         self.build_dashboard_tab()
 
-        # 탭 5: ⚙️ 과목 및 시스템 설정
-        self.tab_settings = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_settings, text=" 설정 ")
+        # -----------------------------------------------------
+        # Settings
+        # -----------------------------------------------------
+
+        self.tab_settings = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_settings,
+            text=" 설정 "
+        )
+
         self.build_settings_tab()
 
-        # 탭 6: 🛠️ 고급 도구 (프롬프트 / 보관함 / 법적고지)
-        self.tab_advanced = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_advanced, text=" 고급 도구 ")
+        # -----------------------------------------------------
+        # Advanced
+        # -----------------------------------------------------
+
+        self.tab_advanced = ttk.Frame(
+            self.notebook,
+            padding="10"
+        )
+
+        self.notebook.add(
+            self.tab_advanced,
+            text=" 고급 도구 "
+        )
+
         self.build_advanced_tab()
 
-        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+        self.notebook.bind(
+            "<<NotebookTabChanged>>",
+            self.on_tab_changed
+        )
 
     def on_tab_changed(self, event=None):
         self.refresh_course_combos()
+
         try:
-            cur_idx = self.notebook.index(self.notebook.select())
+            cur_idx = self.notebook.index(
+                self.notebook.select()
+            )
+
             if hasattr(self, "tab_pills"):
-                for i, pill in enumerate(self.tab_pills):
+
+                for i, pill in enumerate(
+                    self.tab_pills
+                ):
+
                     if i == cur_idx:
-                        pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
+                        pill.config(
+                            bg="#dcebe1",
+                            fg="#174a31",
+                            hover_bg="#dcebe1",
+                            active_bg="#cfe3d6"
+                        )
+
                     else:
-                        pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
-            current_tab = self.notebook.tab(self.notebook.select(), "text").strip()
-            if any(k in current_tab for k in ("진도", "대시보드")) and hasattr(self, "refresh_dashboard"):
-                self.refresh_dashboard()
-            elif any(k in current_tab for k in ("조교", "튜터", "Q&A")) and hasattr(self, "on_tutor_course_changed"):
-                self.on_tutor_course_changed()
+                        pill.config(
+                            bg="#eef3ef",
+                            fg="#56645c",
+                            hover_bg="#e2e9e5",
+                            active_bg="#dfe8e2"
+                        )
+
+            current_tab = self.notebook.tab(
+                self.notebook.select(),
+                "text"
+            ).strip()
+
+            if any(
+                k in current_tab
+                for k in ("진도", "대시보드")
+            ):
+                if hasattr(
+                    self,
+                    "refresh_dashboard"
+                ):
+                    self.refresh_dashboard()
+
+            elif any(
+                k in current_tab
+                for k in ("조교", "튜터", "Q&A")
+            ):
+                if hasattr(
+                    self,
+                    "on_tutor_course_changed"
+                ):
+                    self.on_tutor_course_changed()
+
         except Exception:
             pass
-
     def refresh_course_combos(self):
         course_names = [c["course_name"] for c in self.courses if c.get("course_name")]
         for combo_name in ("studio_course_combo", "exam_course_combo", "dash_course_combo", "tutor_course_combo"):
