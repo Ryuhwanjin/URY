@@ -188,7 +188,10 @@ def call_gemini(prompt, max_retries=3):
                             if parts and "text" in parts[0]:
                                 return parts[0]["text"].strip()
                 except urllib.error.HTTPError as e:
-                    if e.code in (503, 429, 500, 502, 504) and attempt < max_retries - 1:
+                    if e.code in (429, 503):
+                        print(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환...")
+                        break
+                    if e.code in (500, 502, 504) and attempt < max_retries - 1:
                         delay = backoffs[attempt]
                         print(f"  ⚠️ [{model}] HTTP {e.code} 서버 과부하: {delay}초 후 자동 재시도 ({attempt+1}/{max_retries})...")
                         time.sleep(delay)

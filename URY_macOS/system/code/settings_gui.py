@@ -68,6 +68,11 @@ except Exception:
     except Exception:
         PDFViewerDialog = None
 
+try:
+    import update_checker
+except ImportError:
+    update_checker = None
+
 # =========================================================================
 # 🛡️ macOS Cocoa Tkinter SIGABRT 크래시 방지용 네이티브 안전 파일 다이얼로그
 # =========================================================================
@@ -562,7 +567,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY Engine — Academic Studio v0.7.7")
+        self.root.title("URY Engine — Academic Studio v0.7.9")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -650,8 +655,28 @@ class UnifiedDashboardApp:
             self.root.lift()
             self.root.focus_force()
             self.root.after(120, lambda: self.check_compliance_agreement(force=False))
+            self.root.after(500, self.check_for_updates)
         except Exception:
             pass
+
+    def check_for_updates(self):
+        """시작을 막지 않고 GitHub 최신 릴리즈만 확인한다."""
+        if not update_checker:
+            return
+
+        def check():
+            try:
+                version, url = update_checker.get_latest_release()
+                if update_checker.is_newer(version):
+                    self.root.after(0, lambda: self.prompt_update(version, url))
+            except Exception:
+                pass
+
+        threading.Thread(target=check, daemon=True).start()
+
+    def prompt_update(self, version, url):
+        if messagebox.askyesno("URY Engine 업데이트", f"새 버전 {version}이 있습니다.\n공식 다운로드 페이지를 열까요?", parent=self.root):
+            update_checker.open_release_page(url)
 
     def check_compliance_agreement(self, force=False):
         if not force and self.settings.get("compliance_agreed", False):
@@ -1315,7 +1340,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             except Exception:
                 pass
         tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.7.7", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.7.9", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -1426,20 +1451,10 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.notebook.add(self.tab_tutor, text=" 조교 Q&A ")
         self.build_tutor_tab()
 
-        # 탭 4: 📊 주차별 진도 대시보드
-        self.tab_dashboard = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_dashboard, text=" 학업 진도 ")
-        self.build_dashboard_tab()
-
-        # 탭 5: ⚙️ 과목 및 시스템 설정
+        # 탭 4: ⚙️ 과목 및 시스템 설정
         self.tab_settings = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(self.tab_settings, text=" 설정 ")
         self.build_settings_tab()
-
-        # 탭 6: 🛠️ 고급 도구 (프롬프트 / 보관함 / 법적고지)
-        self.tab_advanced = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_advanced, text=" 고급 도구 ")
-        self.build_advanced_tab()
 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
@@ -1678,7 +1693,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         slide_sb = ttk.Scrollbar(slide_canvas_frame, orient=tk.VERTICAL, command=self.slide_canvas.yview)
         self.slide_inner_frame = tk.Frame(self.slide_canvas, bg="#f8fafc", padx=6, pady=6)
         self.slide_inner_frame.bind("<Configure>", lambda e: self.slide_canvas.configure(scrollregion=self.slide_canvas.bbox("all")))
-        self.slide_canvas.create_window((0, 0), window=self.slide_inner_frame, anchor="nw")
+        slide_window = self.slide_canvas.create_window((0, 0), window=self.slide_inner_frame, anchor="nw")
+        self.slide_canvas.bind("<Configure>", lambda e: self.slide_canvas.itemconfigure(slide_window, width=e.width))
         self.slide_canvas.configure(yscrollcommand=slide_sb.set)
 
         self.slide_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -1691,8 +1707,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             else:
                 self.slide_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
             return "break"
-        slide_canvas_frame.bind("<Enter>", lambda e: self.slide_canvas.bind_all("<MouseWheel>", _on_slide_wheel))
-        slide_canvas_frame.bind("<Leave>", lambda e: self.slide_canvas.unbind_all("<MouseWheel>"))
+        self.slide_canvas.bind("<MouseWheel>", _on_slide_wheel)
+        self.slide_inner_frame.bind("<MouseWheel>", _on_slide_wheel)
 
         # 부드러운 구분선
         tk.Frame(left_content, bg="#f1f5f9", height=1).pack(fill=tk.X, pady=(0, 16))
@@ -2195,7 +2211,11 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         selected_slides = [p for p, v in self.slide_check_vars.items() if v.get()]
         date_str = self.studio_date_var.get().strip()
-        week_str = self.studio_week_combo.get().replace("주차", "").strip()
+        week_match = re.search(r"\d+", self.studio_week_combo.get())
+        if not week_match:
+            messagebox.showwarning("주차 확인", "주차를 'N주차 N차시' 형식으로 선택해주세요.")
+            return
+        week_num = int(week_match.group())
         lang_mode = LANG_LABEL_TO_CODE.get(self.studio_lang_combo.get(), "both")
 
         # UI 상태 변경
@@ -2236,7 +2256,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     audio_path=audio_path,
                     slide_paths=selected_slides,
                     date_str=date_str,
-                    week_num=week_str,
+                    week_num=week_num,
                     lang_mode=lang_mode,
                     log_callback=log_cb,
                     cancel_check=lambda: self.studio_cancel_requested

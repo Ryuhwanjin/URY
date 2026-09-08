@@ -142,8 +142,6 @@ def load_dotenv(ws_dir):
 
 load_dotenv(WORKSPACE_DIR)
 
-SEMESTER_START = datetime(2026, 9, 1).date()
-
 # API 키 및 모델
 API_KEY = os.environ.get("GEMINI_API_KEY", config_manager.get_api_key())
 MODEL = "gemini-flash-latest-high-res-exp"
@@ -539,7 +537,10 @@ The following content was ALREADY synthesized in the earlier session of Week {we
                 if e.code in (404, 403, 400):
                     print(f"  ⚠️ [{model}] 미지원/무료 계정 권한 제한 (HTTP {e.code}) -> 다음 일반 계정 모델로 즉시 전환...")
                     break
-                elif e.code in (503, 429, 500, 502, 504) and attempt < len(backoff_delays) - 1:
+                elif e.code in (429, 503):
+                    print(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환... ({err_body})")
+                    break
+                elif e.code in (500, 502, 504) and attempt < len(backoff_delays) - 1:
                     delay = backoff_delays[attempt]
                     print(f"  ⚠️ [{model}] HTTP {e.code} 서버 과부하 감지: {delay}초 후 자동 재시도 ({attempt+1}/{len(backoff_delays)})... ({err_body})")
                     time.sleep(delay)
@@ -777,7 +778,7 @@ def scan_and_process_all_lectures(target_courses=None, target_audio_files=None):
                 target_date = datetime.fromtimestamp(mtime).date()
                 date_str = target_date.strftime("%Y-%m-%d")
 
-            week_num = calculate_academic_week(target_date, SEMESTER_START)
+            week_num = calculate_academic_week(target_date)
 
             allow_ko = config_manager.should_generate_korean(config["name"])
             allow_en = config_manager.should_generate_english(config["name"])
@@ -881,8 +882,7 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
         target_date = datetime.now().date()
 
     if not week_num:
-        diff_days = (target_date - SEMESTER_START).days
-        week_num = max(1, (diff_days // 7) + 1)
+        week_num = calculate_academic_week(target_date)
     else:
         try:
             week_num = int(week_num)
@@ -1021,7 +1021,10 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                         err_body = err_json.get("error", {}).get("message", raw_bytes[:120])
                     except Exception:
                         err_body = str(e)
-                    if e.code in (503, 429, 500, 502, 504) and attempt < len(backoff_delays) - 1:
+                    if e.code in (429, 503):
+                        log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
+                        break
+                    if e.code in (500, 502, 504) and attempt < len(backoff_delays) - 1:
                         delay = backoff_delays[attempt]
                         log(f"  ⚠️ [{model}] HTTP {e.code} 서버 과부하 감지: {delay}초 후 자동 재시도 ({attempt+1}/{len(backoff_delays)})... ({err_body})", step=2)
                         time.sleep(delay)
@@ -1212,7 +1215,7 @@ The following content was ALREADY synthesized in the earlier session of Week {we
 - 핵심 전문 용어는 반드시 `한글 번역 (English Official Term)` 형태로 병기할 것.
 - 아스키 박스 그림(`┌─┐`, `│`, `└─┘`, `+---+`)이나 반복선(`==========`)을 절대 출력하지 마십시오. 표(Markdown Table)나 표준 인용구(`>`)를 사용하십시오.
 - 본문 문장 사이에 `[Slide 1]`, `[Slide 2~3]`, `[🎙️ 음성]`, `[📖 교재]`, `[Tagged]` 같은 대괄호 태그나 슬라이드 번호 태그를 절대로 생성하지 마십시오. 100% 깔끔한 학술 서술체로 작성하십시오.
-- 평가 규정 및 세부 배점은 `| 평가 항목 | 비중 (%) | 세부 운영 규칙 및 정책 |` 마크다운 테이블로 집약하고, 불필요한 줄글로 페이지를 낭비하지 말 것.
+- 평가 규정·배점은 제공된 음성 또는 슬라이드에 명시된 경우에만 요약할 것. 자료에 없으면 추정하거나 별도 섹션을 만들지 말 것.
 - 반드시 1. 개요, 2. 핵심 이론 분석, 3. 키워드 사전, 4. 체크리스트까지 4개 섹션 전체를 끝까지 완벽히 작성할 것.
 
 [작성 가이드라인]
@@ -1221,8 +1224,7 @@ The following content was ALREADY synthesized in the earlier session of Week {we
 > 📌 **과목명**: {cname} | **주차**: {week_num}주차 | **수업 일자**: {actual_date_str} ({weekday_kr})
 
 ## 📌 1. 수업 개요 및 주요 공지사항
-- 이번 주차 핵심 학습 목표 및 출석/과제/시험 관련 공지 사항을 완벽 정리
-- 성적 평가 기준 테이블 (`| 평가 항목 | 비중 (%) | 세부 운영 규칙 및 정책 |`)
+- 이번 주차 핵심 학습 목표와, 원본 자료에 실제로 있는 출석·과제·시험 공지 사항만 정리
 
 ## 💡 2. 핵심 이론 및 상세 개념 분석
 - 잡소리(사담, 농담, 딴소리)는 일절 배제하고, 슬라이드와 강의의 모든 챕터, 불렛포인트, 세부 개념, 공식을 빠짐없이 체계적인 번호와 소제목으로 '최대한 상세하게' 해설
