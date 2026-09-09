@@ -1935,12 +1935,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 kind, args = self.studio_events.get_nowait()
             except queue.Empty:
                 break
+            run_id, *payload = args
+            if run_id != getattr(self, "_studio_run_id", None):
+                continue
             if kind == "log":
-                self.on_studio_log_event(*args)
+                self.on_studio_log_event(*payload)
             elif kind == "success":
-                self.on_studio_generation_success(*args)
+                self.on_studio_generation_success(*payload)
             elif kind == "error":
-                self.on_studio_generation_error(*args)
+                self.on_studio_generation_error(*payload)
         self.root.after(100, self.drain_studio_events)
 
     def update_preview_paper_header(self):
@@ -2245,6 +2248,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         lang_mode = LANG_LABEL_TO_CODE.get(self.studio_lang_combo.get(), "both")
 
         # UI 상태 변경
+        previous_cancel = getattr(self, "_studio_cancel_event", None)
+        if previous_cancel:
+            previous_cancel.set()
+        cancel_event = threading.Event()
+        self._studio_cancel_event = cancel_event
+        self._studio_run_id = getattr(self, "_studio_run_id", 0) + 1
+        run_id = self._studio_run_id
         self.studio_cancel_requested = False
         self.generate_studio_btn.config(state=tk.DISABLED)
         self.studio_stop_btn.config(state=tk.NORMAL)
@@ -2275,7 +2285,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     pass
 
                 def log_cb(msg, step=None, eta=None):
-                    self.studio_events.put(("log", (msg, step, eta)))
+                    self.studio_events.put(("log", (run_id, msg, step, eta)))
 
                 result = process_all_lectures.generate_custom_lecture_note(
                     cname=cname,
@@ -2285,13 +2295,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     week_num=week_num,
                     lang_mode=lang_mode,
                     log_callback=log_cb,
-                    cancel_check=lambda: self.studio_cancel_requested
+                    cancel_check=cancel_event.is_set
                 )
-                self.studio_events.put(("success", (result,)))
+                self.studio_events.put(("success", (run_id, result)))
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                self.studio_events.put(("error", (str(e),)))
+                self.studio_events.put(("error", (run_id, str(e))))
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -2350,18 +2360,20 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         if not self.studio_is_running:
             return
         self.studio_cancel_requested = True
+        if getattr(self, "_studio_cancel_event", None):
+            self._studio_cancel_event.set()
         self.studio_is_running = False
         self.studio_progress["value"] = 0
         self.studio_status_var.set("🛑 사용자에 의해 작업이 강제 중단되었습니다.")
-        self.studio_eta_var.set("🛑 작업 중단됨 (Kill)")
+        self.studio_eta_var.set("🛑 취소 요청됨")
         self.generate_studio_btn.config(state=tk.NORMAL)
         self.studio_stop_btn.config(state=tk.DISABLED)
 
         self.append_studio_log("=" * 55, "error")
-        self.append_studio_log("🛑 [작업 즉시 중단] 사용자가 생성을 강제 취소하였습니다.", "error")
-        self.append_studio_log("   작업 스레드를 종료하고 모든 버튼 상태를 정상으로 복구했습니다.", "highlight")
+        self.append_studio_log("🛑 [작업 취소] 현재 API 요청이 끝나는 즉시 작업을 중단합니다.", "error")
+        self.append_studio_log("   이전 작업의 로그·결과는 새 작업에 반영되지 않습니다.", "highlight")
         self.append_studio_log("   앱을 재시작할 필요 없이 설정을 변경하여 즉시 다시 생성할 수 있습니다.", "step")
-        messagebox.showwarning("작업 중단", "학습노트 생성이 즉시 중단되었습니다.\n\n앱을 껐다 켤 필요 없이 옵션을 변경하여 다시 실행할 수 있습니다.")
+        messagebox.showwarning("작업 취소", "현재 요청이 끝나는 즉시 학습노트 생성을 중단합니다.\n\n앱을 껐다 켤 필요 없이 옵션을 변경하여 다시 실행할 수 있습니다.")
 
     def append_studio_log(self, text, tag="normal"):
         if not hasattr(self, "studio_log_text"):
