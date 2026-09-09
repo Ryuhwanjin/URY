@@ -1395,6 +1395,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
+        soft_windows = sys.platform == "win32"
 
         bg_main = "#f6f8fa"
         bg_card = "#ffffff"
@@ -1430,13 +1431,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         style.map("TNotebook.Tab", background=[("selected", accent)], foreground=[("selected", "#ffffff")])
 
         # 버튼들
-        style.configure("Primary.TButton", font=f_title, background=accent, foreground="#ffffff", borderwidth=0)
+        style.configure("Primary.TButton", font=f_title, background=accent, foreground="#ffffff", borderwidth=0, padding=[12, 7])
         style.map("Primary.TButton", background=[("active", self.accent_color("#265e43")), ("disabled", "#94a3b8")])
 
-        style.configure("Action.TButton", font=("Pretendard", 10, "bold"), background=accent, foreground="#ffffff", borderwidth=0)
+        style.configure("Action.TButton", font=("Pretendard", 10, "bold"), background=accent, foreground="#ffffff", borderwidth=0, padding=[12, 7])
         style.map("Action.TButton", background=[("active", self.accent_color("#265e43")), ("disabled", "#94a3b8")])
 
-        style.configure("Secondary.TButton", font=f_body, background="#e2e8f0", foreground=fg_main, borderwidth=0)
+        style.configure("Secondary.TButton", font=f_body, background="#eef2f6", foreground=fg_main, borderwidth=0, padding=[10, 6])
         style.map("Secondary.TButton", background=[("active", "#cbd5e1")])
 
         style.configure("Danger.TButton", font=f_body, background="#dc2626", foreground="#ffffff", borderwidth=0)
@@ -1444,12 +1445,17 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         # 트리뷰 (과목 테이블)
         style.configure("Treeview.Heading", font=("Pretendard", 10, "bold"), background="#f1f5f9", foreground=fg_main)
-        style.configure("Treeview", font=f_body, rowheight=28, background=bg_card, fieldbackground=bg_card, foreground=fg_main)
+        style.configure("Treeview", font=f_body, rowheight=32 if soft_windows else 28, background=bg_card, fieldbackground=bg_card, foreground=fg_main, borderwidth=0)
         style.map("Treeview", background=[("selected", self.accent_color("#e8f5ed"))], foreground=[("selected", self.accent_color("#1c4732"))])
 
         # 라벨프레임
-        style.configure("TLabelframe", background=bg_card, bordercolor=border_c, borderwidth=1)
+        style.configure("TLabelframe", background=bg_card, bordercolor=border_c,
+                        borderwidth=0 if soft_windows else 1, relief=tk.FLAT,
+                        padding=[14, 12] if soft_windows else 0)
         style.configure("TLabelframe.Label", background=bg_card, foreground=fg_main, font=f_title)
+        if soft_windows:
+            style.configure("TCombobox", padding=[8, 6], relief=tk.FLAT)
+            style.configure("TEntry", padding=[8, 6], relief=tk.FLAT)
 
     def create_header_card(self):
         # 🌟 시안 2 상단 헤더: 화이트 클린 탑바 + 중앙 플로팅 알약 탭 세그먼트
@@ -1647,7 +1653,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # =============================================================
         # [LEFT COLUMN] 넉넉하고 정갈한 Content Setup Card (한눈에 직접 확인)
         # =============================================================
-        left_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=1, highlightbackground="#edf2f7")
+        left_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=0 if sys.platform == "win32" else 1, highlightbackground="#edf2f7")
         left_card.grid(row=0, column=0, sticky="nsew", padx=(10, 6), pady=8)
 
         left_content = tk.Frame(left_card, bg="#ffffff", padx=18, pady=14)
@@ -1884,7 +1890,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # =============================================================
         # [RIGHT COLUMN] Inspiring Live Study Note Paper & Console
         # =============================================================
-        right_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=1, highlightbackground="#edf2f7")
+        right_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=0 if sys.platform == "win32" else 1, highlightbackground="#edf2f7")
         right_card.grid(row=0, column=1, sticky="nsew", padx=(6, 10), pady=8)
 
         # 1. 하단 액션 바: 2열 구조로 배치하여 화면 크기에 따른 버튼 겹침 및 잘림 원천 방지

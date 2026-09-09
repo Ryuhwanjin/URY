@@ -18,6 +18,9 @@ class RequestedUiTests(unittest.TestCase):
                 self.assertNotIn('text="▶ 전체 파이프라인 수동 구동"', source)
                 for label in ("업데이트", "기능 설명", "이용약관 · 윤리"):
                     self.assertIn(label, source)
+                self.assertIn('soft_windows = sys.platform == "win32"', source)
+                self.assertIn('borderwidth=0 if soft_windows else 1', source)
+                self.assertIn('rowheight=32 if soft_windows else 28', source)
 
 
 if __name__ == "__main__":
