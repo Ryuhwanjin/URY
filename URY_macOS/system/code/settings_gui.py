@@ -963,13 +963,16 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             messagebox.showerror("오류", f"PDF를 여는 중 오류가 발생했습니다:\n{sub_err}", parent=self.root)
 
     def set_theme_accent(self, color_hex):
-        if not color_hex or not color_hex.startswith("#"):
-            return
-        self.theme_accent = color_hex
-        self.settings["theme_accent"] = color_hex
+        color_hex = (color_hex or "").strip()
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", color_hex):
+            messagebox.showwarning("색상 입력", "HEX 색상은 #1C4732 형식으로 입력해주세요.")
+            return False
+        self.theme_accent = color_hex.upper()
+        self.settings["theme_accent"] = self.theme_accent
         config_manager.save_settings(self.settings)
         self.setup_styles()
         self.refresh_theme_widgets()
+        return True
 
     def choose_custom_color(self):
         curr = getattr(self, "theme_accent", "#1c4732")
@@ -1028,6 +1031,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             self.accent_preview_chip.config(bg=accent)
         if hasattr(self, "accent_hex_label"):
             self.accent_hex_label.config(text=f"현재 선택된 포인트 색상: {accent}")
+        if hasattr(self, "theme_hex_var"):
+            self.theme_hex_var.set(accent)
 
     def setup_icon(self):
         try:
@@ -1276,14 +1281,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         style = ttk.Style()
         style.theme_use("clam")
 
-        # 🌟 시안 2 (Apple Clean Light) + 포레스트 그린 팔레트
-        bg_main = "#f6f8fa"        # 은은하고 편안한 Apple 라이트 그레이
-        bg_card = "#ffffff"        # 퓨어 화이트 카드
-        bg_header = "#ffffff"      # 퓨어 화이트 상단 바
-        border_c = "#e2e8f0"       # 정갈한 1px 슬레이트 보더
-        fg_main = "#0f172a"        # 또렷한 슬레이트 차콜 텍스트
-        fg_muted = "#64748b"       # 소프트 슬레이트 그레이
-        accent = "#1c4732"         # 앱 아이콘 원색 딥 포레스트 그린
+        is_dark = getattr(self, "theme_mode", "light") == "dark"
+        bg_main = "#17211D" if is_dark else "#f6f8fa"
+        bg_card = "#223028" if is_dark else "#ffffff"
+        bg_header = bg_card
+        border_c = "#3D5146" if is_dark else "#e2e8f0"
+        fg_main = "#F1F5F9" if is_dark else "#0f172a"
+        fg_muted = "#B7C7BD" if is_dark else "#64748b"
+        accent = getattr(self, "theme_accent", "#1C4732")
 
         self.root.configure(bg=bg_main)
 
@@ -4076,6 +4081,36 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.add_context_menu(self.api_entry)
 
         SquareRoundButton(api_row, text="💾 설정 저장", bg="#1c4732", hover_bg="#265e43", radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
+
+        theme_frame = ttk.LabelFrame(self.tab_settings, text=" 🎨 대학별 테마 ", padding="10")
+        theme_frame.pack(fill=tk.X, pady=(0, 8))
+        theme_row = ttk.Frame(theme_frame)
+        theme_row.pack(fill=tk.X)
+        self.tab_theme_toggle_btn = SquareRoundButton(
+            theme_row, text="", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e",
+            radius=8, height=28, font=("Pretendard", 8, "bold"),
+            command=self.toggle_theme, parent_bg="#ffffff"
+        )
+        self.tab_theme_toggle_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.accent_preview_chip = tk.Label(theme_row, width=3, height=1, bg=self.theme_accent, relief=tk.FLAT)
+        self.accent_preview_chip.pack(side=tk.LEFT, padx=(0, 6))
+        self.accent_hex_label = ttk.Label(theme_row, text="")
+        self.accent_hex_label.pack(side=tk.LEFT, padx=(0, 8))
+        self.theme_hex_var = tk.StringVar(value=self.theme_accent)
+        theme_hex_entry = tk.Entry(theme_row, textvariable=self.theme_hex_var, width=9, font=("Pretendard", 9),
+                                   bg="#ffffff", fg="#0f172a", relief=tk.SOLID, bd=1)
+        theme_hex_entry.pack(side=tk.LEFT, padx=(0, 4))
+        SquareRoundButton(
+            theme_row, text="HEX 적용", bg="#1c4732", hover_bg="#265e43", radius=8, height=28,
+            font=("Pretendard", 8, "bold"), command=lambda: self.set_theme_accent(self.theme_hex_var.get()),
+            parent_bg="#ffffff"
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        for label, color in (("고려대", "#8B1E3F"), ("서울대", "#003478"), ("연세대", "#003C71")):
+            SquareRoundButton(
+                theme_row, text=label, bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=28,
+                font=("Pretendard", 8), command=lambda c=color: self.set_theme_accent(c), parent_bg="#ffffff"
+            ).pack(side=tk.LEFT, padx=2)
+        self.refresh_theme_widgets()
 
         # 화면 해상도 및 창모드 크기 조절 카드
         res_frame = ttk.LabelFrame(self.tab_settings, text=" 🖥️ 화면 해상도 및 창모드 크기 조절 (Window Resolution) ", padding="10")
