@@ -669,9 +669,11 @@ class UnifiedDashboardApp:
         except Exception:
             pass
 
-    def check_for_updates(self):
+    def check_for_updates(self, manual=False):
         """시작을 막지 않고 GitHub 최신 릴리즈만 확인한다."""
         if not update_checker:
+            if manual:
+                messagebox.showwarning("업데이트 확인", "업데이트 확인 기능을 불러올 수 없습니다.", parent=self.root)
             return
 
         def check():
@@ -679,8 +681,11 @@ class UnifiedDashboardApp:
                 version, url = update_checker.get_latest_release()
                 if update_checker.is_newer(version):
                     self.root.after(0, lambda: self.prompt_update(version, url))
+                elif manual:
+                    self.root.after(0, lambda: messagebox.showinfo("업데이트 확인", "현재 최신 버전을 사용 중입니다.", parent=self.root))
             except Exception:
-                pass
+                if manual:
+                    self.root.after(0, lambda: messagebox.showwarning("업데이트 확인", "GitHub 릴리즈 정보를 확인할 수 없습니다.", parent=self.root))
 
         threading.Thread(target=check, daemon=True).start()
 
@@ -4100,6 +4105,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.add_context_menu(self.api_entry)
 
         SquareRoundButton(api_row, text="💾 설정 저장", bg="#1c4732", hover_bg="#265e43", radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
+        SquareRoundButton(api_row, text="🔄 업데이트 확인", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=32, font=("Pretendard", 9, "bold"), command=lambda: self.check_for_updates(manual=True)).pack(side=tk.RIGHT, padx=(0, 6))
 
         theme_frame = ttk.LabelFrame(self.tab_settings, text=" 🎨 대학별 테마 ", padding="10")
         theme_frame.pack(fill=tk.X, pady=(0, 8))

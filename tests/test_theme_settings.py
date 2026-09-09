@@ -19,6 +19,8 @@ class ThemeSettingsTest(unittest.TestCase):
             self.assertIn("theme_hex_var", methods["build_settings_tab"])
             self.assertIn("self.apply_theme_icon()", methods["set_theme_accent"])
             self.assertIn("def apply_theme_icon", source)
+            self.assertIn("check_for_updates(manual=True)", methods["build_settings_tab"])
+            self.assertIn('def check_for_updates(self, manual=False)', source)
 
 
 if __name__ == "__main__":
