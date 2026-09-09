@@ -18,6 +18,7 @@ REQUIRED_PACKAGES = [
     ("requests", "requests"),
     ("pptx", "python-pptx"),
     ("docx", "python-docx"),
+    ("PIL", "pillow"),
 ]
 
 

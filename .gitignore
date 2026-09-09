@@ -65,6 +65,8 @@ __pycache__/
 env/
 venv/
 .venv/
+.venv-macos-build/
+URY_macOS/URY Engine/
 
 # ==========================================
 # 🍏 macOS / OS 시스템 메타데이터

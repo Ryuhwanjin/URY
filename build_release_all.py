@@ -17,7 +17,7 @@ MACOS_DIR = os.path.join(ROOT_DIR, "URY_macOS")
 WIN_DIR = os.path.join(ROOT_DIR, "URY_Windows")
 DIST_DIR = os.path.join(ROOT_DIR, "배포")
 
-VERSION = "v0.7.9"
+VERSION = "v0.8.0"
 PRIVATE_FILES = {".env", "settings.json", "processed_history.json"}
 PRIVATE_DIRS = {"__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images"}
 

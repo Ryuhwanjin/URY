@@ -17,8 +17,9 @@ def main():
         import build_release_all
         version = build_release_all.VERSION
     except Exception:
-        version = "v0.7.8"
+        version = "v0.8.0"
     dmg_out = os.path.join(root_dir, '배포', f'URY_Engine_{version}.dmg')
+    os.makedirs(os.path.dirname(dmg_out), exist_ok=True)
     app_src = os.path.join(root_dir, 'URY_macOS', 'URY Engine.app')
 
     if not os.path.exists(app_src):

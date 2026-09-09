@@ -44,7 +44,14 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
 
         update_status_cb(55, "[3/5] PyInstaller 기반 윈도우 바이너리(.exe) 컴파일 중...")
         main_script = os.path.join(cur_dir, "settings_gui.py")
-        ico_file = os.path.join(root_dir, "app_icon.ico")
+        assets_dir = os.path.abspath(os.path.join(root_dir, "..", "assets"))
+        icon_png = os.path.join(assets_dir, "ury_engine_icon.png")
+        ico_file = os.path.join(root_dir, "build", "ury_engine_icon.ico")
+        if os.path.exists(icon_png):
+            from PIL import Image
+            os.makedirs(os.path.dirname(ico_file), exist_ok=True)
+            Image.open(icon_png).convert("RGBA").save(
+                ico_file, sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
         
         cmd = [
             sys.executable, "-m", "PyInstaller",
@@ -56,6 +63,8 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
             cmd.extend(["--hidden-import", module])
         if os.path.exists(ico_file):
             cmd.extend(["--icon", ico_file])
+        if os.path.isdir(assets_dir):
+            cmd.extend(["--add-data", f"{assets_dir}{os.pathsep}assets"])
         cmd.append(main_script)
 
         res = subprocess.run(cmd, cwd=root_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

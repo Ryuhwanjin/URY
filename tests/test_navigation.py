@@ -30,6 +30,9 @@ class NavigationTest(unittest.TestCase):
                                             {"self": SimpleNamespace(switch_to_tab=selected.append)})
                             callback(*([None] * len(node.args.args)))
                 self.assertEqual(selected, [settings_index, settings_index])
+                self.assertTrue(any(isinstance(node, ast.Assign)
+                                    and any(ast.unparse(target) == "self.sidebar_frame" for target in node.targets)
+                                    for node in ast.walk(methods["create_tabs"])))
 
 
 if __name__ == "__main__":

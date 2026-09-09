@@ -15,6 +15,10 @@ if getattr(sys, "frozen", False):
 
     # Determine writable workspace directory (무조건 바탕화면 ~/Desktop/URY_Engine으로 확정)
     user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+    if "--smoke-test" in sys.argv:
+        import tempfile
+        smoke_workspace = tempfile.TemporaryDirectory(prefix="ury-build-check-")
+        user_ws = smoke_workspace.name
     os.makedirs(user_ws, exist_ok=True)
     os.makedirs(os.path.join(user_ws, "00_녹음_수신함"), exist_ok=True)
     sys_p = os.path.join(user_ws, "system")
@@ -146,5 +150,21 @@ else:
     spec.loader.exec_module(mod)
 
 if __name__ == "__main__":
-    if hasattr(mod, "main"):
+    if "--smoke-test" in sys.argv:
+        root = mod.tk.Tk()
+        app = mod.UnifiedDashboardApp(root)
+        app.check_for_updates = lambda *args, **kwargs: None
+        app.check_compliance_agreement = lambda *args, **kwargs: None
+        result = []
+
+        def verify_window():
+            result.append(bool(root.winfo_viewable()))
+            root.destroy()
+
+        root.after(5000, verify_window)
+        root.mainloop()
+        if result != [True]:
+            raise SystemExit("GUI smoke test failed: main window was not visible")
+        print("GUI_SMOKE_OK", flush=True)
+    elif hasattr(mod, "main"):
         mod.main()

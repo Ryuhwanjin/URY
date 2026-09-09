@@ -17,6 +17,8 @@ import glob
 import shutil
 import base64
 import json
+import colorsys
+import io
 import subprocess
 import traceback
 import threading
@@ -291,6 +293,10 @@ class SquareRoundButton(tk.Canvas):
                  hover_bg="#255e42", active_bg="#143525", radius=8,
                  font=("Pretendard", 10, "bold"), width=None, height=34,
                  state="normal", parent_bg=None, **kwargs):
+        resolve = getattr(parent._root(), "accent_color", lambda color: color)
+        bg, fg = resolve(bg), resolve(fg)
+        hover_bg = resolve(hover_bg) if hover_bg else bg
+        active_bg = resolve(active_bg) if active_bg else bg
         self.cmd = command
         self.btn_text = text
         self.radius = radius
@@ -477,7 +483,7 @@ class CinematicSplashScreen:
         
         self.win = tk.Toplevel(root)
         self.win.overrideredirect(True)
-        self.win.configure(bg="#1c4732")
+        self.win.configure(bg=root.accent_color("#1c4732"))
         
         w, h = 580, 340
         sw = self.win.winfo_screenwidth()
@@ -488,7 +494,7 @@ class CinematicSplashScreen:
         self.win.lift()
         self.win.attributes("-topmost", True)
         
-        self.canvas = tk.Canvas(self.win, width=w, height=h, bg="#1c4732", highlightthickness=0)
+        self.canvas = tk.Canvas(self.win, width=w, height=h, bg=root.accent_color("#1c4732"), highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
         
         # 은은하고 얇은 단일 외곽선
@@ -526,7 +532,7 @@ class CinematicSplashScreen:
         self.idx = 0
         
         # 초기 커서 (첫 글자 위치)
-        self.cursor_id = self.canvas.create_line(start_x, self.base_y - 14, start_x, self.base_y + 14, fill="#82a585", width=2)
+        self.cursor_id = self.canvas.create_line(start_x, self.base_y - 14, start_x, self.base_y + 14, fill=self.root.accent_color("#82a585"), width=2)
         
         self.win.after(100, self.step_type)
         
@@ -552,7 +558,7 @@ class CinematicSplashScreen:
         w, h = 580, 340
         # 중앙 모노그램 완벽 중앙 정렬
         self.mono_id = self.canvas.create_text(w//2, h//2 - 14, text="U   R   Y", fill="#fbf9f4", font=("Helvetica Neue", 48, "bold"), anchor=tk.CENTER)
-        self.sub_id = self.canvas.create_text(w//2, h//2 + 38, text="U L T I M A T E   R E S U L T   F O R   Y O U", fill="#82a585", font=("Helvetica Neue", 9, "bold"), anchor=tk.CENTER)
+        self.sub_id = self.canvas.create_text(w//2, h//2 + 38, text="U L T I M A T E   R E S U L T   F O R   Y O U", fill=self.root.accent_color("#82a585"), font=("Helvetica Neue", 9, "bold"), anchor=tk.CENTER)
         
         self.win.after(650, self.finish)
         
@@ -568,7 +574,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY Engine — Academic Studio v0.7.9")
+        self.root.title("URY Engine — Academic Studio v0.8.0")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -597,8 +603,10 @@ class UnifiedDashboardApp:
         self.bind_mac_shortcuts()
 
         self.settings = config_manager.load_settings()
-        self.theme_mode = self.settings.get("theme_mode", "light")
         self.theme_accent = self.settings.get("theme_accent", "#1c4732")
+        self.root.accent_color = self.accent_color
+        self._accent_values = self.accent_values()
+        self.apply_theme_icon()
         active_semester = self.settings.get("semester", "2026년 2학기")
         self.semester_courses = dict(self.settings.get("semester_courses", {}))
         self.semester_courses.setdefault(active_semester, list(self.settings.get("courses", [])))
@@ -657,6 +665,7 @@ class UnifiedDashboardApp:
         self.create_header_card()
         self.create_tabs()
         self.populate_course_table()
+        self.refresh_theme_widgets()
 
 
     def on_splash_done(self):
@@ -690,8 +699,24 @@ class UnifiedDashboardApp:
         threading.Thread(target=check, daemon=True).start()
 
     def prompt_update(self, version, url):
-        if messagebox.askyesno("URY Engine 업데이트", f"새 버전 {version}이 있습니다.\n공식 다운로드 페이지를 열까요?", parent=self.root):
-            update_checker.open_release_page(url)
+        if not messagebox.askyesno("URY Engine 업데이트", f"새 버전 {version}이 있습니다.\n설치 파일을 다운로드할까요?", parent=self.root):
+            return
+
+        def download():
+            try:
+                installer = update_checker.download_latest_installer()
+                if installer:
+                    update_checker.open_installer(installer)
+                    message = f"다운로드 완료:\n{installer}\n\n열린 설치 파일로 업데이트를 진행해주세요."
+                else:
+                    update_checker.open_release_page(url)
+                    message = "설치 파일이 없어 공식 릴리즈 페이지를 열었습니다."
+                self.root.after(0, lambda: messagebox.showinfo("업데이트", message, parent=self.root))
+            except Exception as error:
+                message = f"다운로드에 실패했습니다.\n{error}"
+                self.root.after(0, lambda: messagebox.showwarning("업데이트", message, parent=self.root))
+
+        threading.Thread(target=download, daemon=True).start()
 
     def check_compliance_agreement(self, force=False):
         if not force and self.settings.get("compliance_agreed", False):
@@ -732,7 +757,7 @@ class UnifiedDashboardApp:
         hdr_frame = tk.Frame(dialog, bg="#ffffff", padx=20, pady=14, highlightthickness=1, highlightbackground="#e2e8f0")
         hdr_frame.pack(side=tk.TOP, fill=tk.X)
 
-        tk.Label(hdr_frame, text="🎓 URY Engine 저작권 준수 및 학업 윤리 서약서", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#1c4732").pack(anchor=tk.W)
+        tk.Label(hdr_frame, text="🎓 URY Engine 저작권 준수 및 학업 윤리 서약서", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
         tk.Label(hdr_frame, text="대한민국 저작권법 제30조(사적이용을 위한 복제) 및 대학 학업 윤리 가이드라인", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(anchor=tk.W, pady=(3, 0))
 
         # 2. 하단 서약 확인 및 버튼 프레임 (하단 최우선 고정 -> 창 크기에 상관없이 항상 100% 노출!)
@@ -784,9 +809,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # 클릭 가능한 인터랙티브 서약 동의 카드 (전체 영역 반응형)
         card_agree = tk.Frame(
             btm_frame,
-            bg="#f0fdf4",
+            bg=self.accent_color("#f0fdf4"),
             highlightthickness=1,
-            highlightbackground="#86efac",
+            highlightbackground=self.accent_color("#86efac"),
             padx=12,
             pady=8,
             cursor="hand2"
@@ -797,8 +822,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             card_agree,
             text="☑",
             font=("Pretendard", 12, "bold"),
-            bg="#f0fdf4",
-            fg="#166534",
+            bg=self.accent_color("#f0fdf4"),
+            fg=self.accent_color("#166534"),
             cursor="hand2"
         )
         chk_icon.pack(side=tk.LEFT, padx=(0, 8))
@@ -807,17 +832,17 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             card_agree,
             text="[필수] 상기 저작권법 제30조 준수 및 외부 배포 금지 서약 내용을 확인하였으며, 전적으로 동의합니다.",
             font=("Pretendard", 9, "bold"),
-            bg="#f0fdf4",
-            fg="#166534",
+            bg=self.accent_color("#f0fdf4"),
+            fg=self.accent_color("#166534"),
             cursor="hand2"
         )
         chk_text.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         def update_toggle_ui():
             if agree_var.get():
-                card_agree.config(bg="#f0fdf4", highlightbackground="#86efac")
-                chk_icon.config(text="☑", bg="#f0fdf4", fg="#166534")
-                chk_text.config(bg="#f0fdf4", fg="#166534")
+                card_agree.config(bg=self.accent_color("#f0fdf4"), highlightbackground=self.accent_color("#86efac"))
+                chk_icon.config(text="☑", bg=self.accent_color("#f0fdf4"), fg=self.accent_color("#166534"))
+                chk_text.config(bg=self.accent_color("#f0fdf4"), fg=self.accent_color("#166534"))
             else:
                 card_agree.config(bg="#f8fafc", highlightbackground="#cbd5e1")
                 chk_icon.config(text="☐", bg="#f8fafc", fg="#64748b")
@@ -899,8 +924,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(
             btn_row,
             text="✍️  서약 및 전체 동의하고 URY Engine 시작",
-            bg="#1c4732",
-            hover_bg="#265e43",
+            bg=self.accent_color("#1c4732"),
+            hover_bg=self.accent_color("#265e43"),
             radius=8,
             height=34,
             font=("Pretendard", 10, "bold"),
@@ -972,6 +997,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         if not re.fullmatch(r"#[0-9a-fA-F]{6}", color_hex):
             messagebox.showwarning("색상 입력", "HEX 색상은 #1C4732 형식으로 입력해주세요.")
             return False
+        self._accent_values = self.accent_values()
         self.theme_accent = color_hex.upper()
         self.settings["theme_accent"] = self.theme_accent
         config_manager.save_settings(self.settings)
@@ -997,42 +1023,77 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         except Exception:
             pass
 
-    def toggle_theme(self):
-        self.theme_mode = "dark" if self.theme_mode == "light" else "light"
-        self.settings["theme_mode"] = self.theme_mode
-        config_manager.save_settings(self.settings)
-        self.setup_styles()
-        self.refresh_theme_widgets()
+    def accent_color(self, base):
+        """Derive brand shades from the selected accent."""
+        accent = getattr(self, "theme_accent", "#1C4732")
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+            accent = "#1C4732"
+        shades = {
+            "#1c4732": 0, "#265e43": -0.12, "#255e42": -0.12,
+            "#143525": -0.25, "#143324": -0.25, "#14281e": -0.45,
+            "#166534": -0.2, "#15803d": -0.1, "#26543e": -0.15,
+            "#d8f3dc": 0.82, "#e8f5ed": 0.90, "#f0fdf4": 0.96,
+            "#dcfce7": 0.88, "#bbf7d0": 0.75, "#86efac": 0.6,
+            "#82a585": 0.45,
+        }
+        amount = shades.get(base.lower())
+        if amount is None:
+            return base
+        rgb = [int(accent[i:i + 2], 16) for i in (1, 3, 5)]
+        rgb = [round(c + (255 - c) * amount) if amount >= 0
+               else round(c * (1 + amount)) for c in rgb]
+        return "#" + "".join(f"{c:02X}" for c in rgb)
+
+    def accent_values(self):
+        bases = ('#1c4732', '#265e43', '#255e42', '#143525', '#143324', '#14281e', '#166534', '#15803d', '#26543e', '#d8f3dc', '#e8f5ed', '#f0fdf4', '#dcfce7', '#bbf7d0', '#86efac', '#82a585')
+        return {self.accent_color(base).lower(): base for base in bases}
 
     def refresh_theme_widgets(self):
-        is_dark = (self.theme_mode == "dark")
-        accent = getattr(self, "theme_accent", "#1c4732")
-        if hasattr(self, "theme_toggle_btn"):
-            self.theme_toggle_btn.config(
-                text=" ☀️ 라이트 모드 " if is_dark else " 🌙 다크 모드 ",
-                bg="#26543e" if is_dark else "#143324",
-                fg="#fbf9f4"
-            )
-        if hasattr(self, "tab_theme_toggle_btn"):
-            self.tab_theme_toggle_btn.config(
-                text=" ☀️ 라이트 모드로 전환 " if is_dark else " 🌙 다크 모드로 전환 ",
-                bg="#26543e" if is_dark else "#e2e8f0",
-                fg="#fbf9f4" if is_dark else "#14281e"
-            )
-        if hasattr(self, "header_frame"):
-            self.header_frame.configure(style="Header.TFrame")
-        if hasattr(self, "sem_badge_label"):
-            self.sem_badge_label.config(
-                bg="#143324" if not is_dark else "#1a382b",
-                fg="#d8f3dc"
-            )
-        if hasattr(self, "api_badge_label"):
-            has_key = len(self.settings.get("gemini_api_key", "").strip()) >= 10
-            api_fg = "#4ade80" if has_key else "#f87171"
-            self.api_badge_label.config(
-                bg="#143324" if not is_dark else "#1a382b",
-                fg=api_fg
-            )
+        accent = getattr(self, "theme_accent", "#1C4732")
+        def refresh(widget):
+            roles = getattr(widget, "_accent_roles", {})
+            options = widget.keys()
+            custom = isinstance(widget, SquareRoundButton)
+            names = (("normal_bg", "normal_fg", "hover_bg", "active_bg") if custom else
+                     ("background", "foreground", "activebackground", "activeforeground",
+                      "insertbackground", "selectbackground", "selectforeground",
+                      "highlightbackground", "highlightcolor"))
+            for name in names:
+                if not custom and name not in options:
+                    continue
+                current = str(getattr(widget, name) if custom else widget.cget(name))
+                role, last = roles.get(name, (None, None))
+                if current != last:
+                    role = self._accent_values.get(str(current).lower())
+                roles[name] = (role, current)
+                if role is not None:
+                    value = self.accent_color(role)
+                    roles[name] = (role, value)
+                    if custom:
+                        setattr(widget, name, value)
+                    else:
+                        widget.configure(**{name: value})
+            widget._accent_roles = roles
+            if custom:
+                widget.draw()
+            if isinstance(widget, tk.Text):
+                for tag in widget.tag_names():
+                    for option in ("foreground", "background"):
+                        color = widget.tag_cget(tag, option)
+                        key = (tag, option)
+                        role, last = roles.get(key, (None, None))
+                        if color != last:
+                            role = self._accent_values.get(str(color).lower())
+                        roles[key] = (role, color)
+                        if role:
+                            value = self.accent_color(role)
+                            widget.tag_configure(tag, **{option: value})
+                            roles[key] = (role, value)
+            for child in widget.winfo_children():
+                refresh(child)
+
+        refresh(self.root)
+        self._accent_values = self.accent_values()
         if hasattr(self, "accent_preview_chip"):
             self.accent_preview_chip.config(bg=accent)
         if hasattr(self, "accent_hex_label"):
@@ -1051,7 +1112,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             cur_dir = os.path.dirname(os.path.abspath(__file__))
             root_dir = os.path.abspath(os.path.join(cur_dir, "..", ".."))
             ico_file = os.path.join(root_dir, "app_icon.ico")
-            png_file = os.path.join(root_dir, "app_icon.png")
+            candidates = [
+                os.path.join(root_dir, "..", "assets", "ury_engine_icon.png"),
+                os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "ury_engine_icon.png"),
+            ]
+            png_file = next((p for p in candidates if os.path.isfile(p)), "")
+            self.app_icon_source = png_file
             if os.path.exists(ico_file) and sys.platform == "win32":
                 self.root.iconbitmap(ico_file)
             elif os.path.exists(png_file):
@@ -1068,14 +1134,33 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     def apply_theme_icon(self):
         """선택한 대학 색상으로 실행 중 창 아이콘을 즉시 갱신한다."""
         try:
-            icon = tk.PhotoImage(width=32, height=32)
             accent = getattr(self, "theme_accent", "#1C4732")
-            icon.put(accent, to=(0, 0, 32, 32))
-            icon.put("#FFFFFF", to=(7, 7, 11, 23))
-            icon.put("#FFFFFF", to=(21, 7, 25, 23))
-            icon.put("#FFFFFF", to=(11, 20, 21, 25))
+            from PIL import Image, ImageColor, ImageTk
+            image = Image.open(self.app_icon_source).convert("RGBA").resize((256, 256), Image.Resampling.LANCZOS)
+            target_hue = colorsys.rgb_to_hsv(*(v / 255 for v in ImageColor.getrgb(accent)))[0]
+            pixels = []
+            for red, green, blue, alpha in image.getdata():
+                hue, saturation, value = colorsys.rgb_to_hsv(red / 255, green / 255, blue / 255)
+                if saturation > .18 and green >= red * .8 and green >= blue * .8:
+                    red, green, blue = (round(v * 255) for v in colorsys.hsv_to_rgb(target_hue, saturation, value))
+                pixels.append((red, green, blue, alpha))
+            image.putdata(pixels)
+            icon = ImageTk.PhotoImage(image)
+            header_icon = ImageTk.PhotoImage(image.resize((32, 32), Image.Resampling.LANCZOS))
             self.icon_img = icon
+            self.header_icon_img = header_icon
             self.root.iconphoto(True, icon)
+            if hasattr(self, "header_icon_label"):
+                self.header_icon_label.configure(image=header_icon)
+            if sys.platform == "darwin":
+                from AppKit import NSApplication, NSImage
+                from Foundation import NSData
+                output = io.BytesIO()
+                image.save(output, format="PNG")
+                png = output.getvalue()
+                data = NSData.dataWithBytes_length_(png, len(png))
+                dock_icon = NSImage.alloc().initWithData_(data)
+                NSApplication.sharedApplication().setApplicationIconImage_(dock_icon)
         except Exception:
             pass
 
@@ -1302,13 +1387,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         style = ttk.Style()
         style.theme_use("clam")
 
-        is_dark = getattr(self, "theme_mode", "light") == "dark"
-        bg_main = "#17211D" if is_dark else "#f6f8fa"
-        bg_card = "#223028" if is_dark else "#ffffff"
+        bg_main = "#f6f8fa"
+        bg_card = "#ffffff"
         bg_header = bg_card
-        border_c = "#3D5146" if is_dark else "#e2e8f0"
-        fg_main = "#F1F5F9" if is_dark else "#0f172a"
-        fg_muted = "#B7C7BD" if is_dark else "#64748b"
+        border_c = "#e2e8f0"
+        fg_main = "#0f172a"
+        fg_muted = "#64748b"
         accent = getattr(self, "theme_accent", "#1C4732")
 
         self.root.configure(bg=bg_main)
@@ -1338,10 +1422,10 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         # 버튼들
         style.configure("Primary.TButton", font=f_title, background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Primary.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.map("Primary.TButton", background=[("active", self.accent_color("#265e43")), ("disabled", "#94a3b8")])
 
         style.configure("Action.TButton", font=("Pretendard", 10, "bold"), background=accent, foreground="#ffffff", borderwidth=0)
-        style.map("Action.TButton", background=[("active", "#265e43"), ("disabled", "#94a3b8")])
+        style.map("Action.TButton", background=[("active", self.accent_color("#265e43")), ("disabled", "#94a3b8")])
 
         style.configure("Secondary.TButton", font=f_body, background="#e2e8f0", foreground=fg_main, borderwidth=0)
         style.map("Secondary.TButton", background=[("active", "#cbd5e1")])
@@ -1352,7 +1436,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # 트리뷰 (과목 테이블)
         style.configure("Treeview.Heading", font=("Pretendard", 10, "bold"), background="#f1f5f9", foreground=fg_main)
         style.configure("Treeview", font=f_body, rowheight=28, background=bg_card, fieldbackground=bg_card, foreground=fg_main)
-        style.map("Treeview", background=[("selected", "#e8f5ed")], foreground=[("selected", "#1c4732")])
+        style.map("Treeview", background=[("selected", self.accent_color("#e8f5ed"))], foreground=[("selected", self.accent_color("#1c4732"))])
 
         # 라벨프레임
         style.configure("TLabelframe", background=bg_card, bordercolor=border_c, borderwidth=1)
@@ -1370,13 +1454,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         title_row = tk.Frame(left, bg="#ffffff")
         title_row.pack(anchor=tk.W, pady=(12, 0))
-        if hasattr(self, "icon_img"):
+        if hasattr(self, "header_icon_img"):
             try:
-                tk.Label(title_row, image=self.icon_img, bg="#ffffff").pack(side=tk.LEFT, padx=(0, 6))
+                self.header_icon_label = tk.Label(title_row, image=self.header_icon_img, bg="#ffffff")
+                self.header_icon_label.pack(side=tk.LEFT, padx=(0, 6))
             except Exception:
                 pass
-        tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.7.9", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.8.0", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -1404,43 +1489,18 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         api_key = self.settings.get("gemini_api_key", "").strip()
         has_key = len(api_key) >= 10
         api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = "#15803d" if has_key else "#b91c1c"
-        api_bg = "#f0fdf4" if has_key else "#fef2f2"
+        api_fg = self.accent_color("#15803d") if has_key else "#b91c1c"
+        api_bg = self.accent_color("#f0fdf4") if has_key else "#fef2f2"
         self.api_badge_label = tk.Label(right, text=api_text, font=("Pretendard", 8, "bold"), bg=api_bg, fg=api_fg, relief=tk.FLAT, padx=8, pady=4, cursor="hand2")
         self.api_badge_label.pack(side=tk.LEFT, pady=16)
         self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(3))
 
-        # 중앙: 시안 2 플로팅 알약형 세그먼트 탭바 (반응형 콤팩트 크기)
-        center = tk.Frame(self.header_frame, bg="#ffffff")
-        center.pack(side=tk.LEFT, expand=True)
-
-        pill_wrap = tk.Frame(center, bg="#f1f5f9", padx=3, pady=3)
-        pill_wrap.pack()
-
-        self.tab_pills = []
         self.tab_defs = [
-            ("🎙️ Studio", 0),
-            ("📝 Exam", 1),
-            ("💬 Tutor", 2),
+            ("✦  Studio", 0),
+            ("✓  Quiz & Exam", 1),
+            ("⌁  Chat with Notes", 2),
             ("⚙️ Settings", 3),
         ]
-
-        for text, idx in self.tab_defs:
-            is_active = (idx == 0)
-            btn = SquareRoundButton(
-                pill_wrap,
-                text=text,
-                command=lambda i=idx: self.switch_to_tab(i),
-                bg="#1c4732" if is_active else "#f1f5f9",
-                fg="#ffffff" if is_active else "#475569",
-                hover_bg="#265e43" if is_active else "#e2e8f0",
-                radius=9,
-                height=30,
-                font=("Pretendard", 9, "bold"),
-                parent_bg="#f1f5f9"
-            )
-            btn.pack(side=tk.LEFT, padx=1)
-            self.tab_pills.append(btn)
 
     def update_api_status_badge(self):
         """헤더의 API 상태 배지를 현재 설정값에 맞춰 갱신"""
@@ -1449,8 +1509,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         api_key = self.settings.get("gemini_api_key", "").strip()
         has_key = len(api_key) >= 10
         api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = "#15803d" if has_key else "#b91c1c"
-        api_bg = "#f0fdf4" if has_key else "#fef2f2"
+        api_fg = self.accent_color("#15803d") if has_key else "#b91c1c"
+        api_bg = self.accent_color("#f0fdf4") if has_key else "#fef2f2"
         self.api_badge_label.config(text=api_text, bg=api_bg, fg=api_fg)
 
 
@@ -1459,7 +1519,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             self.notebook.select(idx)
             for i, pill in enumerate(self.tab_pills):
                 if i == idx:
-                    pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
+                    pill.config(bg=self.accent_color("#1c4732"), fg="#ffffff", hover_bg=self.accent_color("#265e43"))
                 else:
                     pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
             self.on_tab_changed()
@@ -1467,8 +1527,28 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             pass
 
     def create_tabs(self):
-        self.notebook = ttk.Notebook(self.root, style="Hidden.TNotebook")
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=16, pady=(12, 16))
+        shell = tk.Frame(self.root, bg="#f6f8fa")
+        shell.pack(fill=tk.BOTH, expand=True)
+        sidebar = tk.Frame(shell, bg="#ffffff", width=172, highlightthickness=1, highlightbackground="#e2e8f0")
+        self.sidebar_frame = sidebar
+        sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 0))
+        sidebar.pack_propagate(False)
+        tk.Label(sidebar, text="WORKSPACE", font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W, padx=16, pady=(20, 8))
+        self.tab_pills = []
+        for text, idx in self.tab_defs:
+            active = idx == 0
+            button = SquareRoundButton(
+                sidebar, text=text, command=lambda i=idx: self.switch_to_tab(i),
+                bg=self.accent_color("#1c4732") if active else "#ffffff",
+                fg="#ffffff" if active else "#334155",
+                hover_bg=self.accent_color("#265e43") if active else "#f1f5f9",
+                radius=9, width=140, height=38, font=("Pretendard", 9, "bold"), parent_bg="#ffffff")
+            button.pack(padx=16, pady=3)
+            self.tab_pills.append(button)
+        tk.Label(sidebar, text="자료 → 노트 → 시험 → 질문", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8", wraplength=155, justify=tk.LEFT).pack(side=tk.BOTTOM, anchor=tk.W, padx=16, pady=18)
+
+        self.notebook = ttk.Notebook(shell, style="Hidden.TNotebook")
+        self.notebook.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=16, pady=(12, 16))
 
         # 탭 1: 🎙️ 학습노트 생성 스튜디오
         self.tab_studio = ttk.Frame(self.notebook, padding="10")
@@ -1499,7 +1579,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             if hasattr(self, "tab_pills"):
                 for i, pill in enumerate(self.tab_pills):
                     if i == cur_idx:
-                        pill.config(bg="#1c4732", fg="#ffffff", hover_bg="#265e43")
+                        pill.config(bg=self.accent_color("#1c4732"), fg="#ffffff", hover_bg=self.accent_color("#265e43"))
                     else:
                         pill.config(bg="#f1f5f9", fg="#475569", hover_bg="#e2e8f0")
             current_tab = self.notebook.tab(self.notebook.select(), "text").strip()
@@ -1536,8 +1616,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         studio_container = tk.Frame(self.tab_studio, bg="#f5f6f8")
         studio_container.pack(fill=tk.BOTH, expand=True)
 
-        studio_container.columnconfigure(0, weight=5, uniform="studio_col")
-        studio_container.columnconfigure(1, weight=5, uniform="studio_col")
+        studio_container.columnconfigure(0, weight=6, uniform="studio_col")
+        studio_container.columnconfigure(1, weight=4, uniform="studio_col")
         studio_container.rowconfigure(0, weight=1)
 
         # =============================================================
@@ -1554,7 +1634,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         s1_head = tk.Frame(left_content, bg="#ffffff")
         s1_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(s1_head, text=" 1 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s1_head, text=" 1 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(s1_head, text="Step 1. Course Selection (과목 및 수업 정보)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
         tk.Label(s1_head, text="2026년 2학기", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(side=tk.RIGHT)
 
@@ -1581,7 +1661,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 9),
             bg="#f8fafc",
             fg="#0f172a",
-            insertbackground="#1c4732",
+            insertbackground=self.accent_color("#1c4732"),
             relief=tk.FLAT,
             bd=0,
             takefocus=True
@@ -1636,7 +1716,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         self.s2_head = tk.Frame(left_content, bg="#ffffff")
         self.s2_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(self.s2_head, text=" 2 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(self.s2_head, text=" 2 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(self.s2_head, text="Step 2. Content Input (음성 & 슬라이드 투입)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
 
         self.audio_select_frame = tk.Frame(left_content, bg="#ffffff")
@@ -1677,13 +1757,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ).pack(side=tk.LEFT)
 
         # 등록된 오디오 캡슐 칩 컨테이너 (말랑하고 유려한 디자인)
-        self.audio_chip_frame = tk.Frame(self.audio_select_frame, bg="#f0fdf4", highlightthickness=1, highlightbackground="#bbf7d0", padx=12, pady=10)
+        self.audio_chip_frame = tk.Frame(self.audio_select_frame, bg=self.accent_color("#f0fdf4"), highlightthickness=1, highlightbackground=self.accent_color("#bbf7d0"), padx=12, pady=10)
         self.audio_chip_frame.pack(fill=tk.X, pady=(2, 8))
 
-        self.audio_chip_title = tk.Label(self.audio_chip_frame, text="🎙️ 선택된 음성 파일이 없습니다.", font=("Pretendard", 9, "bold"), bg="#f0fdf4", fg="#166534")
+        self.audio_chip_title = tk.Label(self.audio_chip_frame, text="🎙️ 선택된 음성 파일이 없습니다.", font=("Pretendard", 9, "bold"), bg=self.accent_color("#f0fdf4"), fg=self.accent_color("#166534"))
         self.audio_chip_title.pack(side=tk.LEFT)
 
-        self.audio_chip_badge = tk.Label(self.audio_chip_frame, text="미연동", font=("Pretendard", 8, "bold"), bg="#dcfce7", fg="#15803d", padx=6, pady=2)
+        self.audio_chip_badge = tk.Label(self.audio_chip_frame, text="미연동", font=("Pretendard", 8, "bold"), bg=self.accent_color("#dcfce7"), fg=self.accent_color("#15803d"), padx=6, pady=2)
         self.audio_chip_badge.pack(side=tk.RIGHT)
 
         # 숨겨진 데이터 변수 및 이전 호환용 더미 리스트박스
@@ -1716,7 +1796,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(slide_btn_row, text="➕  슬라이드 추가...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="📷  칠판 판서...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_blackboard_photo, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="☐ 전체 해제", bg="#fef2f2", hover_bg="#fee2e2", fg="#dc2626", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.deselect_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
-        SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg="#f0fdf4", hover_bg="#dcfce7", fg="#166534", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
+        SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg=self.accent_color("#f0fdf4"), hover_bg=self.accent_color("#dcfce7"), fg=self.accent_color("#166534"), radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
         SquareRoundButton(slide_btn_row, text="🔄 새로고침", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#64748b", radius=8, height=30, font=("Pretendard", 8), command=self.refresh_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
 
         # 등록된 슬라이드 카드 칩 컨테이너
@@ -1753,7 +1833,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         s3_head = tk.Frame(left_content, bg="#ffffff")
         s3_head.pack(fill=tk.X, pady=(0, 6))
-        tk.Label(s3_head, text=" 3 ", font=("Pretendard", 9, "bold"), bg="#1c4732", fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s3_head, text=" 3 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(s3_head, text="Step 3. Process & Refine (분석 모드)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
 
         self.no_audio_var = tk.BooleanVar(value=False)
@@ -1769,8 +1849,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             left_content,
             text="💡 슬라이드 집중 독학 모드가 활성화되었습니다.\n음성 녹음 없이도 공식 슬라이드 내용만을 정밀 파싱하여 체계적인 시험 강의노트를 생성합니다.",
             font=("Pretendard", 8),
-            bg="#f0fdf4",
-            fg="#166534",
+            bg=self.accent_color("#f0fdf4"),
+            fg=self.accent_color("#166534"),
             justify=tk.LEFT,
             padx=10,
             pady=8
@@ -1795,9 +1875,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.generate_studio_btn = SquareRoundButton(
             act_row_top,
             text="✨  완벽 학습노트 및 출판용 PDF 생성",
-            bg="#1c4732",
-            hover_bg="#265e43",
-            active_bg="#143324",
+            bg=self.accent_color("#1c4732"),
+            hover_bg=self.accent_color("#265e43"),
+            active_bg=self.accent_color("#143324"),
             radius=9,
             height=38,
             font=("Pretendard", 10, "bold"),
@@ -1875,7 +1955,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         b_left = tk.Frame(paper_banner, bg="#ffffff")
         b_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        tk.Label(b_left, text="📖  LIVE STUDY NOTE PREVIEW", font=("Pretendard", 8, "bold"), bg="#dcfce7", fg="#166534", padx=6, pady=2).pack(anchor=tk.W)
+        tk.Label(b_left, text="📖  LIVE STUDY NOTE PREVIEW", font=("Pretendard", 8, "bold"), bg=self.accent_color("#dcfce7"), fg=self.accent_color("#166534"), padx=6, pady=2).pack(anchor=tk.W)
         self.preview_title_label = tk.Label(b_left, text="제 1강: 핵심 강의노트 및 시험 족보 프리뷰", font=("Pretendard", 12, "bold"), bg="#ffffff", fg="#0f172a")
         self.preview_title_label.pack(anchor=tk.W, pady=(2, 0))
         tk.Label(b_left, text="교수님 육성 강조 포인트 & 실전 모의시험 10문항 자동 색인", font=("Pretendard", 8), bg="#ffffff", fg="#64748b").pack(anchor=tk.W)
@@ -1889,7 +1969,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # 1. Key Concepts 카드
         card_kc = tk.Frame(p_stack, bg="#f8fafc", highlightthickness=1, highlightbackground="#edf2f7", padx=10, pady=6)
         card_kc.pack(fill=tk.X, pady=(0, 4))
-        tk.Label(card_kc, text="📌  핵심 개념 요약 (Key Concepts)", font=("Pretendard", 9, "bold"), bg="#f8fafc", fg="#1c4732").pack(anchor=tk.W)
+        tk.Label(card_kc, text="📌  핵심 개념 요약 (Key Concepts)", font=("Pretendard", 9, "bold"), bg="#f8fafc", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
         tk.Label(card_kc, text="• 데이터 독립성: 논리적 구조 변경 시 응용 프로그램 영향 차단\n• 3단계 스키마 구조: 외부(개별 뷰) ➔ 개념(전체 논리) ➔ 내부(물리 저장)\n• DBMS 필수 특징: 자기 기술성, 동시성 제어(ACID), 무결성 보장", font=("Pretendard", 8), bg="#f8fafc", fg="#334155", justify=tk.LEFT).pack(anchor=tk.W, padx=(10, 0), pady=(1, 0))
 
         # 2. Exam Tips 카드 (따뜻한 앰버 톤)
@@ -1918,7 +1998,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         tk.Label(c_status_row, textvariable=self.studio_status_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#475569").pack(side=tk.LEFT)
 
         self.studio_eta_var = tk.StringVar(value="")
-        tk.Label(c_status_row, textvariable=self.studio_eta_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg="#1c4732").pack(side=tk.RIGHT)
+        tk.Label(c_status_row, textvariable=self.studio_eta_var, font=("Pretendard", 8, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.RIGHT)
 
         # 터미널 콘솔 로그 창 (fill=tk.BOTH, expand=True로 하단 빈 공간 완벽 활용)
         txt_wrap = tk.Frame(console_box, bg="#ffffff")
@@ -1988,9 +2068,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         if fpath and os.path.exists(fpath):
             fname = os.path.basename(fpath)
             fsize_mb = os.path.getsize(fpath) / (1024 * 1024)
-            self.audio_chip_frame.config(bg="#f0fdf4", highlightbackground="#bbf7d0")
-            self.audio_chip_title.config(text=f"🎙️  {fname} ({fsize_mb:.1f} MB)", bg="#f0fdf4", fg="#166534")
-            self.audio_chip_badge.config(text="✓ 연동 완료", bg="#dcfce7", fg="#15803d")
+            self.audio_chip_frame.config(bg=self.accent_color("#f0fdf4"), highlightbackground=self.accent_color("#bbf7d0"))
+            self.audio_chip_title.config(text=f"🎙️  {fname} ({fsize_mb:.1f} MB)", bg=self.accent_color("#f0fdf4"), fg=self.accent_color("#166534"))
+            self.audio_chip_badge.config(text="✓ 연동 완료", bg=self.accent_color("#dcfce7"), fg=self.accent_color("#15803d"))
         elif fpath:
             fname = os.path.basename(fpath)
             self.audio_chip_frame.config(bg="#fefce8", highlightbackground="#fef08a")
@@ -2571,9 +2651,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 10),
             bg="#ffffff",
             fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            insertbackground=self.accent_color("#1c4732"),
+            selectbackground=self.accent_color("#d8f3dc"),
+            selectforeground=self.accent_color("#14281e"),
             relief=tk.FLAT,
             highlightthickness=1,
             highlightbackground="#cbd5e1",
@@ -2615,12 +2695,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         btn_bar = ttk.Frame(form)
         btn_bar.pack(fill=tk.X, pady=(8, 0))
 
-        SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg="#1c4732", hover_bg="#265e43", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg="#205c3b", hover_bg="#2a774d", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="✍️ 답안 채점", bg="#285943", hover_bg="#357357", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_grading_dialog_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="⚡ 치트시트 생성", bg="#3a6652", hover_bg="#4a8067", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
-        self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
+        SquareRoundButton(btn_bar, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
+        self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
         self.exam_open_pdf_btn.pack(side=tk.LEFT)
 
         # 실시간 진행 상황 및 로그 콘솔 프레임 (ETA & Progress Bar)
@@ -3240,7 +3320,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # Header banner
         header = ttk.Frame(dialog, padding="12 10")
         header.pack(fill=tk.X)
-        ttk.Label(header, text=f"[{cname}] 실전 모의시험 정밀 채점기", font=("Pretendard", 12, "bold"), foreground="#1c4732").pack(anchor=tk.W)
+        ttk.Label(header, text=f"[{cname}] 실전 모의시험 정밀 채점기", font=("Pretendard", 12, "bold"), foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
         ttk.Label(header, text="학생 답안을 입력하시면 AI 채점관이 공식 정답표 1:1 대조 및 서술형 키워드(60%)+논리(40%) 기준표에 따라 예상 등급과 취약점을 분석합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(2, 0))
 
         # Selection bar
@@ -3351,7 +3431,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 return
 
             grade_btn.config(state="disabled")
-            status_lbl.config(text="답안 분석 및 평가 리포트 생성 중입니다... (약 10~20초 소요)", foreground="#1c4732")
+            status_lbl.config(text="답안 분석 및 평가 리포트 생성 중입니다... (약 10~20초 소요)", foreground=self.accent_color("#1c4732"))
 
             def worker():
                 try:
@@ -3413,7 +3493,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.tutor_course_combo.bind("<<ComboboxSelected>>", lambda e: self.on_tutor_course_changed())
 
         # 담당 조교 닉네임 표시 및 변경
-        self.tutor_name_badge = ttk.Label(top_bar, text="전담: 수석 조교", font=("Pretendard", 10, "bold"), foreground="#1c4732")
+        self.tutor_name_badge = ttk.Label(top_bar, text="전담: 수석 조교", font=("Pretendard", 10, "bold"), foreground=self.accent_color("#1c4732"))
         self.tutor_name_badge.pack(side=tk.LEFT, padx=(0, 4))
         ttk.Button(top_bar, text="✏️ 닉네임", style="Secondary.TButton", command=self.rename_tutor_nickname_dialog).pack(side=tk.LEFT)
 
@@ -3483,7 +3563,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         btn_box.pack(side=tk.RIGHT, fill=tk.Y)
 
         ttk.Button(btn_box, text="📎 자료 첨부...", style="Secondary.TButton", command=self.attach_tutor_material_file).pack(fill=tk.X, pady=(0, 4))
-        self.tutor_send_btn = SquareRoundButton(btn_box, text="질문 전송 (Enter)", bg="#1c4732", hover_bg="#265e43", radius=8, height=36, font=("Pretendard", 10, "bold"), command=self.send_tutor_message)
+        self.tutor_send_btn = SquareRoundButton(btn_box, text="질문 전송 (Enter)", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=36, font=("Pretendard", 10, "bold"), command=self.send_tutor_message)
         self.tutor_send_btn.pack(fill=tk.BOTH, expand=True, ipadx=10)
 
 
@@ -3761,7 +3841,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
             top_f = tk.Frame(dlg, bg="#ffffff", padx=16, pady=12, highlightthickness=1, highlightbackground="#e2e8f0")
             top_f.pack(fill=tk.X)
-            tk.Label(top_f, text=f"📑 [{cname}] 공식 강의계획서 관리", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#1c4732").pack(anchor=tk.W)
+            tk.Label(top_f, text=f"📑 [{cname}] 공식 강의계획서 관리", font=("Pretendard", 11, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
             tk.Label(top_f, text="PDF, HTML(웹 강의계획서), DOCX, MD 등 복수 등록이 가능합니다.", font=("Pretendard", 8), bg="#ffffff", fg="#64748b").pack(anchor=tk.W, pady=(2, 0))
 
             body_f = tk.Frame(dlg, bg="#f8fafc", padx=16, pady=12)
@@ -3780,7 +3860,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 selectmode=tk.SINGLE,
                 yscrollcommand=sb.set,
                 bg="#ffffff", fg="#1e293b",
-                selectbackground="#d8f3dc", selectforeground="#14281e",
+                selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"),
                 relief=tk.SOLID, bd=1
             )
             sb.config(command=lb.yview)
@@ -4047,9 +4127,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 10),
             bg="#ffffff",
             fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            insertbackground=self.accent_color("#1c4732"),
+            selectbackground=self.accent_color("#d8f3dc"),
+            selectforeground=self.accent_color("#14281e"),
             relief=tk.FLAT,
             highlightthickness=1,
             highlightbackground="#cbd5e1",
@@ -4068,9 +4148,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 10),
             bg="#ffffff",
             fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            insertbackground=self.accent_color("#1c4732"),
+            selectbackground=self.accent_color("#d8f3dc"),
+            selectforeground=self.accent_color("#14281e"),
             relief=tk.FLAT,
             highlightthickness=1,
             highlightbackground="#cbd5e1",
@@ -4092,9 +4172,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 10),
             bg="#ffffff",
             fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
+            insertbackground=self.accent_color("#1c4732"),
+            selectbackground=self.accent_color("#d8f3dc"),
+            selectforeground=self.accent_color("#14281e"),
             relief=tk.FLAT,
             highlightthickness=1,
             highlightbackground="#cbd5e1",
@@ -4104,19 +4184,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.api_entry.bind("<Button-1>", lambda e: self.api_entry.focus_set())
         self.add_context_menu(self.api_entry)
 
-        SquareRoundButton(api_row, text="💾 설정 저장", bg="#1c4732", hover_bg="#265e43", radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
+        SquareRoundButton(api_row, text="💾 설정 저장", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
         SquareRoundButton(api_row, text="🔄 업데이트 확인", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=32, font=("Pretendard", 9, "bold"), command=lambda: self.check_for_updates(manual=True)).pack(side=tk.RIGHT, padx=(0, 6))
 
         theme_frame = ttk.LabelFrame(self.tab_settings, text=" 🎨 대학별 테마 ", padding="10")
         theme_frame.pack(fill=tk.X, pady=(0, 8))
         theme_row = ttk.Frame(theme_frame)
         theme_row.pack(fill=tk.X)
-        self.tab_theme_toggle_btn = SquareRoundButton(
-            theme_row, text="", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e",
-            radius=8, height=28, font=("Pretendard", 8, "bold"),
-            command=self.toggle_theme, parent_bg="#ffffff"
-        )
-        self.tab_theme_toggle_btn.pack(side=tk.LEFT, padx=(0, 8))
         self.accent_preview_chip = tk.Label(theme_row, width=3, height=1, bg=self.theme_accent, relief=tk.FLAT)
         self.accent_preview_chip.pack(side=tk.LEFT, padx=(0, 6))
         self.accent_hex_label = ttk.Label(theme_row, text="")
@@ -4126,7 +4200,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                                    bg="#ffffff", fg="#0f172a", relief=tk.SOLID, bd=1)
         theme_hex_entry.pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(
-            theme_row, text="HEX 적용", bg="#1c4732", hover_bg="#265e43", radius=8, height=28,
+            theme_row, text="HEX 적용", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=28,
             font=("Pretendard", 8, "bold"), command=lambda: self.set_theme_accent(self.theme_hex_var.get()),
             parent_bg="#ffffff"
         ).pack(side=tk.LEFT, padx=(0, 6))
@@ -4150,7 +4224,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             res_info_row,
             text=f"현재 창 크기: {cur_w} × {cur_h} px  (모서리 드래그로 자유롭게 크기 조절 가능)",
             font=("Pretendard", 9, "bold"),
-            foreground="#1c4732"
+            foreground=self.accent_color("#1c4732")
         )
         self.res_status_label.pack(side=tk.LEFT)
 
@@ -4248,8 +4322,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(
             custom_row,
             text="크기 적용",
-            bg="#1c4732",
-            hover_bg="#265e43",
+            bg=self.accent_color("#1c4732"),
+            hover_bg=self.accent_color("#265e43"),
             radius=8,
             height=28,
             font=("Pretendard", 9, "bold"),
@@ -4295,8 +4369,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         c_btn_row = ttk.Frame(self.tab_settings)
         c_btn_row.pack(fill=tk.X, pady=(0, 8))
 
-        SquareRoundButton(c_btn_row, text="➕  과목 추가", bg="#1c4732", hover_bg="#265e43", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.add_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
-        SquareRoundButton(c_btn_row, text="✏️  선택 과목 수정", bg="#e2e8f0", hover_bg="#cbd5e1", fg="#14281e", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.edit_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(c_btn_row, text="➕  과목 추가", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.add_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
+        SquareRoundButton(c_btn_row, text="✏️  선택 과목 수정", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.edit_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
         SquareRoundButton(c_btn_row, text="🗑️  과목 삭제", bg="#fee2e2", hover_bg="#fecaca", fg="#dc2626", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.delete_course_action).pack(side=tk.LEFT)
 
         # 하단 전체 파이프라인 일괄 수동 실행 옵션 (사용자가 원할 때만 실행)
@@ -4432,14 +4506,14 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         ttk.Label(form, text="과목명:").pack(anchor=tk.W, pady=(0, 2))
         name_var = tk.StringVar(value=course_data.get("course_name", ""))
-        name_entry = tk.Entry(form, textvariable=name_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground="#1c4732", selectbackground="#d8f3dc", selectforeground="#14281e", relief=tk.SOLID, bd=1, takefocus=True)
+        name_entry = tk.Entry(form, textvariable=name_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground=self.accent_color("#1c4732"), selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"), relief=tk.SOLID, bd=1, takefocus=True)
         name_entry.pack(fill=tk.X, pady=(0, 6))
         name_entry.bind("<Button-1>", lambda e: name_entry.focus_set())
         self.add_context_menu(name_entry)
 
         ttk.Label(form, text="전담 조교 닉네임 (예: 데베박사, 회계요정):").pack(anchor=tk.W, pady=(0, 2))
         tutor_var = tk.StringVar(value=course_data.get("tutor_name", f"{course_data.get('course_name', '')} 수석 조교" if course_data.get('course_name') else "수석 조교"))
-        tutor_entry = tk.Entry(form, textvariable=tutor_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground="#1c4732", selectbackground="#d8f3dc", selectforeground="#14281e", relief=tk.SOLID, bd=1, takefocus=True)
+        tutor_entry = tk.Entry(form, textvariable=tutor_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground=self.accent_color("#1c4732"), selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"), relief=tk.SOLID, bd=1, takefocus=True)
         tutor_entry.pack(fill=tk.X, pady=(0, 6))
         tutor_entry.bind("<Button-1>", lambda e: tutor_entry.focus_set())
         self.add_context_menu(tutor_entry)
@@ -4467,7 +4541,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             selectmode=tk.SINGLE,
             yscrollcommand=syl_scrollbar.set,
             bg="#f8fafc", fg="#1e293b",
-            selectbackground="#d8f3dc", selectforeground="#14281e",
+            selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"),
             relief=tk.SOLID, bd=1,
         )
         syl_scrollbar.config(command=syl_listbox.yview)
@@ -4540,7 +4614,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         ttk.Label(form, text="폴더명:").pack(anchor=tk.W, pady=(0, 2))
         folder_var = tk.StringVar(value=course_data.get("folder_name", ""))
-        folder_entry = tk.Entry(form, textvariable=folder_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground="#1c4732", selectbackground="#d8f3dc", selectforeground="#14281e", relief=tk.SOLID, bd=1, takefocus=True)
+        folder_entry = tk.Entry(form, textvariable=folder_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground=self.accent_color("#1c4732"), selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"), relief=tk.SOLID, bd=1, takefocus=True)
         folder_entry.pack(fill=tk.X, pady=(0, 6))
         folder_entry.bind("<Button-1>", lambda e: folder_entry.focus_set())
         self.add_context_menu(folder_entry)
@@ -4549,7 +4623,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         ttk.Label(form, text="총 강의/학습 차시 수 (기본 16차시, 개인공부/자격증 시 자유 변경):").pack(anchor=tk.W, pady=(0, 2))
         weeks_var = tk.StringVar(value=str(course_data.get("total_weeks", 16)))
-        weeks_entry = tk.Entry(form, textvariable=weeks_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground="#1c4732", selectbackground="#d8f3dc", selectforeground="#14281e", relief=tk.SOLID, bd=1, takefocus=True)
+        weeks_entry = tk.Entry(form, textvariable=weeks_var, font=("Pretendard", 10), bg="#ffffff", fg="#0f172a", insertbackground=self.accent_color("#1c4732"), selectbackground=self.accent_color("#d8f3dc"), selectforeground=self.accent_color("#14281e"), relief=tk.SOLID, bd=1, takefocus=True)
         weeks_entry.pack(fill=tk.X, pady=(0, 6))
         weeks_entry.bind("<Button-1>", lambda e: weeks_entry.focus_set())
         self.add_context_menu(weeks_entry)
