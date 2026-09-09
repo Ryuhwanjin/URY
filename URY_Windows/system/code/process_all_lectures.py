@@ -81,6 +81,8 @@ def stream_gemini_response(request, timeout=240, progress_fn=None):
                 progress_fn(received_chars)
 
     with urllib.request.urlopen(request, timeout=timeout) as response:
+        if progress_fn:
+            progress_fn(0)
         event = []
         for raw_line in response:
             line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
@@ -1039,6 +1041,16 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
             try:
                 log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
                 last_progress = [0.0]
+                wait_stop = threading.Event()
+
+                def wait_ticker():
+                    elapsed = 0
+                    while not wait_stop.wait(5):
+                        elapsed += 5
+                        log(f"  ⏳ [{model}] Gemini 서버 응답 대기 중 ({elapsed}초)...", step=2)
+
+                ticker = threading.Thread(target=wait_ticker, daemon=True)
+                ticker.start()
 
                 def on_stream_progress(char_count):
                     check_cancel()
@@ -1047,7 +1059,11 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                         log(f"  ✍️ [{model}] AI 응답 수신 중 ({char_count:,}자)...", step=2)
                         last_progress[0] = now
 
-                note_text, usage = stream_gemini_response(req, timeout=240, progress_fn=on_stream_progress)
+                try:
+                    note_text, usage = stream_gemini_response(req, timeout=240, progress_fn=on_stream_progress)
+                finally:
+                    wait_stop.set()
+                    ticker.join(timeout=1)
                 if usage:
                     log(
                         "  📊 토큰 사용량: "
