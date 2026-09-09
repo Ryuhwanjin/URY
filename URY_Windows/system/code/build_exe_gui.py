@@ -15,6 +15,13 @@ try:
 except ImportError:
     tk = None
 
+HIDDEN_MODULES = (
+    "audio_recorder", "config_manager", "doc_parser", "dynamic_slide_integrator",
+    "generate_cheatsheet", "generate_master_bible", "generate_mock_exams",
+    "generate_pdfs", "generate_roadmap", "lecture_tutor", "pdf_viewer",
+    "process_all_lectures", "sync_markdown_vault", "update_checker",
+)
+
 def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
     try:
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +52,8 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
             "--name", "URY_Engine",
             "--add-data", f"{os.path.join(root_dir, 'system')}{os.pathsep}system"
         ]
+        for module in HIDDEN_MODULES:
+            cmd.extend(["--hidden-import", module])
         if os.path.exists(ico_file):
             cmd.extend(["--icon", ico_file])
         cmd.append(main_script)

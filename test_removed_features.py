@@ -23,6 +23,12 @@ class RemovedFeaturesTest(unittest.TestCase):
             root_fn = source[source.index("def get_root_workspace"):source.index("\nSCRIPT_DIR =")]
             self.assertNotIn('"Documents" not in env_ws', root_fn)
 
+    def test_windows_builder_bundles_runtime_loaded_modules(self):
+        source = (Path(__file__).parent / "URY_Windows/system/code/build_exe_gui.py").read_text(encoding="utf-8")
+        for module in ("process_all_lectures", "lecture_tutor", "generate_pdfs", "update_checker"):
+            self.assertIn(f'"{module}"', source)
+        self.assertIn('"--hidden-import", module', source)
+
 
 if __name__ == "__main__":
     unittest.main()
