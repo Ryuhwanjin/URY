@@ -29,6 +29,15 @@ class RemovedFeaturesTest(unittest.TestCase):
             self.assertIn(f'"{module}"', source)
         self.assertIn('"--hidden-import", module', source)
 
+    def test_unused_cross_platform_and_advanced_modules_are_deleted(self):
+        for platform in ("URY_macOS", "URY_Windows"):
+            code_dir = Path(__file__).parent / platform / "system/code"
+            self.assertFalse((code_dir / "dynamic_slide_integrator.py").exists())
+            self.assertFalse((code_dir / "sync_markdown_vault.py").exists())
+        mac_code = Path(__file__).parent / "URY_macOS/system/code"
+        self.assertFalse((mac_code / "build_exe_gui.py").exists())
+        self.assertFalse((mac_code / "test_win_environment.py").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

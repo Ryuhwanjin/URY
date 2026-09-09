@@ -16,10 +16,10 @@ except ImportError:
     tk = None
 
 HIDDEN_MODULES = (
-    "audio_recorder", "config_manager", "doc_parser", "dynamic_slide_integrator",
+    "audio_recorder", "config_manager", "doc_parser",
     "generate_cheatsheet", "generate_master_bible", "generate_mock_exams",
     "generate_pdfs", "generate_roadmap", "lecture_tutor", "pdf_viewer",
-    "process_all_lectures", "sync_markdown_vault", "update_checker",
+    "process_all_lectures", "update_checker",
 )
 
 def run_build_process(target_install_dir, update_status_cb, on_complete_cb):

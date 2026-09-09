@@ -35,10 +35,10 @@ class PriorityCodeLoader:
     def find_spec(self, fullname, path=None, target=None):
         our_mods = {
             "config_manager", "settings_gui", "process_all_lectures",
-            "generate_pdfs", "doc_parser", "dynamic_slide_integrator",
+            "generate_pdfs", "doc_parser",
             "auto_organize", "generate_master_bible", "generate_mock_exams",
             "generate_cheatsheet", "generate_roadmap", "lecture_tutor",
-            "audio_recorder", "pdf_viewer", "sync_markdown_vault"
+            "audio_recorder", "pdf_viewer"
         }
         if fullname in our_mods:
             target_path = os.path.join(self.code_dir, f"{fullname}.py")
@@ -850,9 +850,8 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
     사용자가 직접 선택한 과목, 음성 파일(옵션), 슬라이드 PDF(옵션)를 기반으로
     1. Gemini AI로 고품질 강의노트(마크다운) 생성 (100% 완전성 & 한/영 1:1 대칭 보장)
     2. .markdown_cache에 적재
-    3. dynamic_slide_integrator로 슬라이드 도표 자동 추출 및 임베드
-    4. generate_pdfs로 출판용 PDF 렌더링
-    5. 실시간 진행 로그 및 ETA 콜백 전달
+    3. generate_pdfs로 출판용 PDF 렌더링
+    4. 실시간 진행 로그 및 ETA 콜백 전달
     """
     def check_cancel():
         if cancel_check and cancel_check():

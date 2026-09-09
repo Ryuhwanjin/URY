@@ -7,10 +7,8 @@
 0단계: generate_roadmap.py          -> 목표 학점(A+) 맞춤형 16주 학습 로드맵 마크다운 생성
 1단계: auto_organize.py             -> 수신함 새 녹음 파일만 시간표 기반 자동 분류 및 이동
 2단계: process_all_lectures.py      -> 새로운 강의만 자동 감지하여 Gemini AI 음성 분석 및 한/영 노트 누적 적재
-3단계: dynamic_slide_integrator.py  -> 강의자료 업데이트 시 슬라이드 도표 자동 추출 & 마크다운 임베드
 4단계: generate_pdfs.py            -> 문장 중간 잘림 방지 CSS 적용, 최종 업데이트 일자 PDF 생성 & 구버전 삭제
 5단계: generate_mock_exams.py      -> 과목별 AI 모의시험 PDF 생성 (정답 및 해설은 무조건 마지막 페이지 배치)
-6단계: sync_markdown_vault.py      -> 모든 마크다운 파일을 하나의 중앙 보관함('마크다운_강의노트/')에 자동 집결
 =============================================================================
 """
 
@@ -62,12 +60,10 @@ sys.stdout = TeeLogger(log_file_path)
 import generate_roadmap
 import auto_organize
 import process_all_lectures
-import dynamic_slide_integrator
 import generate_pdfs
 import generate_mock_exams
-import sync_markdown_vault
 
-TOTAL_STAGES = 6
+TOTAL_STAGES = 4
 
 def print_stage(stage_num, title, pipeline_start_time):
     pct = int((stage_num / TOTAL_STAGES) * 100)
@@ -151,36 +147,22 @@ def main():
     except Exception as e:
         print(f"❌ [2단계 오류] 강의노트 생성 중 문제 발생: {e}")
 
-    # [3단계] PPT 슬라이드 핵심 도표/사진 자동 추출
-    print_stage(3, "[3단계] PPT 슬라이드 핵심 도표/사진 자동 추출 및 임베드 (동적 감지)", start_time)
-    try:
-        dynamic_slide_integrator.sync_and_embed_all_slides_dynamically(target_courses=target_courses)
-    except Exception as e:
-        print(f"❌ [3단계 오류] 슬라이드 이미지 추출 중 문제 발생: {e}")
-
     # [4단계] 가독성 극대화 출판용 PDF 렌더링
-    print_stage(4, "[4단계] 출판용 PDF 렌더링 (문장 잘림 방지 & 구버전 자동 삭제)", start_time)
+    print_stage(3, "[3단계] 출판용 PDF 렌더링 (문장 잘림 방지 & 구버전 자동 삭제)", start_time)
     try:
         generate_pdfs.generate_all_pdfs(target_courses=target_courses)
     except Exception as e:
         print(f"❌ [4단계 오류] PDF 렌더링 중 문제 발생: {e}")
 
     # [5단계] 과목별 AI 모의시험 PDF 생성
-    print_stage(5, "[5단계] 과목별 AI 모의시험 PDF 생성 (정답은 가장 마지막 페이지)", start_time)
+    print_stage(4, "[4단계] 과목별 AI 모의시험 PDF 생성 (정답은 가장 마지막 페이지)", start_time)
     try:
         generate_mock_exams.generate_all_mock_exams(target_courses=target_courses)
     except Exception as e:
         print(f"❌ [5단계 오류] 모의시험 생성 중 문제 발생: {e}")
 
-    # [6단계] 마크다운 파일 중앙 보관함 집결
-    print_stage(6, "[6단계] 모든 마크다운 파일 중앙 보관함 집결 ('.마크다운_강의노트/')", start_time)
-    try:
-        sync_markdown_vault.sync_markdown_files()
-    except Exception as e:
-        print(f"❌ [6단계 오류] 마크다운 보관함 동기화 중 문제 발생: {e}")
-
     # 완료 시 100% 출력
-    print_stage(6, "[완료] 파이프라인 전체 완료 및 수강 학기 리포트 발행", start_time)
+    print_stage(4, "[완료] 파이프라인 전체 완료 및 수강 학기 리포트 발행", start_time)
 
     # -------------------------------------------------------------
     # 최종 결과 리포트 출력

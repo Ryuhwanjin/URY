@@ -31,10 +31,10 @@ class PriorityCodeLoader:
     def find_spec(self, fullname, path=None, target=None):
         our_mods = {
             "config_manager", "settings_gui", "process_all_lectures",
-            "generate_pdfs", "doc_parser", "dynamic_slide_integrator",
+            "generate_pdfs", "doc_parser",
             "auto_organize", "generate_master_bible", "generate_mock_exams",
             "generate_cheatsheet", "generate_roadmap", "lecture_tutor",
-            "audio_recorder", "pdf_viewer", "sync_markdown_vault"
+            "audio_recorder", "pdf_viewer"
         }
         if fullname in our_mods:
             target_path = os.path.join(self.code_dir, f"{fullname}.py")
