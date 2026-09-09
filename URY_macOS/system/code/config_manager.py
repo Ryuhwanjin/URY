@@ -24,10 +24,10 @@ except Exception:
     pass
 
 def get_root_workspace():
-    # 1. 환경변수 WORKSPACE_DIR이 명시되어 있는 경우 (단, Documents 제외)
+    # 1. 실행기가 지정한 워크스페이스를 우선 사용한다. 설치 폴더를 옮겨도 그대로 따라간다.
     if os.environ.get("WORKSPACE_DIR"):
         env_ws = os.path.abspath(os.environ["WORKSPACE_DIR"])
-        if "Documents" not in env_ws and env_ws.rstrip("/") not in ("/Applications", "/System/Applications", "/Library") and not env_ws.startswith("/Volumes/") and os.access(env_ws, os.W_OK):
+        if env_ws.rstrip("/") not in ("/Applications", "/System/Applications", "/Library") and not env_ws.startswith("/Volumes/") and os.access(env_ws, os.W_OK):
             return env_ws
 
     # 2. 기본 워크스페이스: 무조건 바탕화면 ~/Desktop/URY_Engine 확정!
