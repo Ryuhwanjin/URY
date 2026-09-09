@@ -9,10 +9,8 @@
 
 import os
 import sys
-import shutil
 import zipfile
 import subprocess
-from datetime import datetime
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 MACOS_DIR = os.path.join(ROOT_DIR, "URY_macOS")
@@ -20,196 +18,19 @@ WIN_DIR = os.path.join(ROOT_DIR, "URY_Windows")
 DIST_DIR = os.path.join(ROOT_DIR, "배포")
 
 VERSION = "v0.7.9"
+PRIVATE_FILES = {".env", "settings.json", "processed_history.json"}
+PRIVATE_DIRS = {"__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images"}
 
-def sync_system_files():
-    """macOS 및 Windows 배포 폴더 간 system(code, prompts 등) 및 App bundle 내부 소스 1:1 동기화"""
-    print("🔄 [1/4] macOS 및 Windows 릴리즈 소스코드 동기화 중...")
-    win_system = os.path.join(WIN_DIR, "system")
-    mac_system = os.path.join(MACOS_DIR, "system")
 
-    if os.path.exists(win_system):
-        # macOS 전용 native binary(mac_audio_rec)를 먼저 보존한다.
-        mac_rec = os.path.join(mac_system, "bin", "mac_audio_rec")
-        preserved_recorder = None
-
-        if os.path.isfile(mac_rec):
-            preserved_recorder = os.path.join(
-                ROOT_DIR,
-                "scratch",
-                "preserved_mac_audio_rec"
-            )
-            os.makedirs(os.path.dirname(preserved_recorder), exist_ok=True)
-            shutil.copy2(mac_rec, preserved_recorder)
-            print("  🔒 mac_audio_rec 보호 백업 완료")
-
-        # Windows system을 기준으로 macOS 공통 소스를 동기화한다.
-        if os.path.exists(mac_system):
-            shutil.rmtree(mac_system)
-
-        shutil.copytree(win_system, mac_system)
-
-        # macOS 전용 recorder 복원
-        if preserved_recorder and os.path.isfile(preserved_recorder):
-            restore_dir = os.path.join(mac_system, "bin")
-            os.makedirs(restore_dir, exist_ok=True)
-
-            restored_recorder = os.path.join(
-                restore_dir,
-                "mac_audio_rec"
-            )
-
-            shutil.copy2(preserved_recorder, restored_recorder)
-            os.chmod(
-                restored_recorder,
-                os.stat(restored_recorder).st_mode | 0o111
-            )
-
-            print("  ✅ macOS native mac_audio_rec 복원 완료")
-
-        print("  ✅ macOS system 공통 소스 동기화 완료!")
-
-    # macOS URY Engine.app Bundle 내부 code 및 설정관리자.py 동기화
-    src_code = os.path.join(win_system, "code")
-    app_code = os.path.join(MACOS_DIR, "URY Engine.app", "Contents", "Resources", "code")
-    if os.path.exists(src_code) and os.path.exists(os.path.dirname(app_code)):
-        if os.path.exists(app_code):
-            shutil.rmtree(app_code)
-        shutil.copytree(src_code, app_code)
-        print("  ✅ macOS URY Engine.app 번들 내부 code 동기화 완료!")
-
-    # macOS native audio recorder를 앱 번들에 포함한다.
-    mac_rec_src = os.path.join(
-        mac_system,
-        "bin",
-        "mac_audio_rec"
-    )
-
-    app_bin_dir = os.path.join(
-        MACOS_DIR,
-        "URY Engine.app",
-        "Contents",
-        "Resources",
-        "bin"
-    )
-
-    app_rec_dst = os.path.join(
-        app_bin_dir,
-        "mac_audio_rec"
-    )
-
-    if not os.path.isfile(mac_rec_src):
-        raise FileNotFoundError(
-            f"❌ macOS native recorder가 없습니다: {mac_rec_src}"
-        )
-
-    os.makedirs(app_bin_dir, exist_ok=True)
-
-    shutil.copy2(
-        mac_rec_src,
-        app_rec_dst
-    )
-
-    os.chmod(
-        app_rec_dst,
-        os.stat(app_rec_dst).st_mode | 0o111
-    )
-
-    print(f"  ✅ mac_audio_rec → {app_rec_dst}")
-
-    # architecture 확인
-    result = subprocess.run(
-        ["file", app_rec_dst],
-        capture_output=True,
-        text=True,
-        check=False
-    )
-
-    print("  🔎", result.stdout.strip())
-
-    if "arm64" not in result.stdout:
-        print("  ⚠️ 경고: mac_audio_rec가 arm64가 아닙니다.")
-
-    runner_src = os.path.join(ROOT_DIR, "설정관리자.py")
-    if os.path.exists(runner_src):
-        shutil.copy2(runner_src, os.path.join(MACOS_DIR, "설정관리자.py"))
-        app_res_runner = os.path.join(MACOS_DIR, "URY Engine.app", "Contents", "Resources", "설정관리자.py")
-        if os.path.exists(os.path.dirname(app_res_runner)):
-            shutil.copy2(runner_src, app_res_runner)
-        print("  ✅ 설정관리자.py 최신 스크립트 이식 완료!")
-
-    # 루트 매뉴얼 & PDF 가이드 동기화
-    for doc_name in ["USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf"]:
-        for d in [MACOS_DIR, WIN_DIR]:
-            sp = os.path.join(ROOT_DIR, doc_name)
-            if not os.path.exists(sp):
-                sp = os.path.join(WIN_DIR, doc_name)
-            dp = os.path.join(d, doc_name)
-            if os.path.exists(sp) and os.path.abspath(sp) != os.path.abspath(dp):
-                shutil.copy2(sp, dp)
-    print("  ✅ USER_GUIDE.pdf 및 시스템 안내 PDF 최신화 동기화 완료!")
-
-def sanitize_personal_configs():
-    """배포용 빌드 전 개인 설정(API Key, 개인 캐시, 히스토리, 임시 데이터) 100% 원천 삭제 및 초기화"""
-    print("🧹 [보안/개인정보 정제] 배포용 환경 초기화 진행 중...")
-    
-    # 1. 모든 .env 파일 API Key 초기화
-    for base in [MACOS_DIR, WIN_DIR, ROOT_DIR]:
-        for root, dirs, files in os.walk(base):
-            for file in files:
-                if file == ".env":
-                    env_p = os.path.join(root, file)
-                    try:
-                        with open(env_p, "w", encoding="utf-8") as f:
-                            f.write("GEMINI_API_KEY=\n")
-                    except Exception:
-                        pass
-
-    # 2. 모든 settings.json API Key 및 과목 정보 초기화
-    empty_settings = {
-        "gemini_api_key": "",
-        "semester": "2026년 2학기",
-        "semester_start_date": "20260901",
-        "semester_end_date": "20261220",
-        "global_language_mode": "both",
-        "courses": []
-    }
-    for base in [MACOS_DIR, WIN_DIR]:
-        for root, dirs, files in os.walk(base):
-            for file in files:
-                if file == "settings.json":
-                    sp = os.path.join(root, file)
-                    try:
-                        import json
-                        with open(sp, "w", encoding="utf-8") as f:
-                            json.dump(empty_settings, f, ensure_ascii=False, indent=2)
-                    except Exception:
-                        pass
-
-    # 3. 임시 캐시, 히스토리, .DS_Store, pycache 삭제
-    for base in [MACOS_DIR, WIN_DIR]:
-        for root, dirs, files in os.walk(base, topdown=False):
-            for file in files:
-                if file in [".DS_Store", "processed_history.json"] or file.endswith(".tmp.html") or file.endswith(".clean.md"):
-                    try:
-                        os.remove(os.path.join(root, file))
-                    except Exception:
-                        pass
-            for d in dirs:
-                if d in ["__pycache__", ".markdown_cache"]:
-                    try:
-                        shutil.rmtree(os.path.join(root, d))
-                    except Exception:
-                        pass
-
-    print("  ✅ 개인 API Key, 캐시, 히스토리 데이터 100% 완전 삭제 및 초기화 완료!")
 
 def make_zip_archive(source_dir, output_zip_path):
     """지정 폴더를 릴리즈 ZIP 파일로 압축"""
     print(f"📦 압축 파일 생성 중: {os.path.basename(output_zip_path)}...")
     with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(source_dir):
+            dirs[:] = [d for d in dirs if d not in PRIVATE_DIRS and not d.startswith(".")]
             for file in files:
-                if file.startswith('.') or file.endswith('.pyc') or file == '.DS_Store':
+                if file.startswith('.') or file.endswith('.pyc') or file == '.DS_Store' or file in PRIVATE_FILES:
                     continue
                 file_path = os.path.join(root, file)
                 arcname = os.path.relpath(file_path, os.path.dirname(source_dir))
@@ -222,9 +43,8 @@ def build_all_releases():
     print(f"🚀 URY Engine {VERSION} macOS & Windows 듀얼 동시 배포 파이프라인 가동")
     print("=========================================================\n")
 
-    # 1. 소스코드 동기화 및 개인정보 초기화
-    sync_system_files()
-    sanitize_personal_configs()
+    # 원본 소스와 로컬 설정은 절대 수정하지 않는다.
+    print("🔒 원본 소스·개인 설정은 건드리지 않고 현재 상태를 패키징합니다.")
 
     # 2. macOS 전용 빌드 (DMG + ZIP)
     print("\n🍏 [2/4] macOS 배포 패키징 중...")
