@@ -798,7 +798,7 @@ class UnifiedDashboardApp:
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
         terms_text = """[제1조: 사적 이용을 위한 복제 목적 한정 (저작권법 제30조)]
-본 소프트웨어(URY Engine)로 처리되는 강의 음성 녹음, 강의 슬라이드, 필기 사진 및 AI가 생성한 모든 산출물(학습노트, 모의고사, 치트시트)은 수강생 본인의 '개인 학업 복습 및 시험 대비'를 위한 사적 이용 목적으로만 사용되어야 합니다.
+본 소프트웨어(URY Engine)로 처리되는 강의 음성 녹음, 강의 슬라이드, 필기 사진 및 AI가 생성한 모든 산출물(학습노트, 모의고사, 벼락치기 정리노트)은 수강생 본인의 '개인 학업 복습 및 시험 대비'를 위한 사적 이용 목적으로만 사용되어야 합니다.
 
 [제2조: 무단 배포, 공유 및 상업적 판매 엄금 (저작권법 제136조)]
 교수자의 강의 및 강의자료는 저작권법의 보호를 받는 지적재산입니다. 수강생은 생성된 강의노트나 모의고사, 원본 자료를 에브리타임, 카카오톡 단톡방, 인터넷 카페, SNS, 해피캠퍼스 등에 배포·공유·전재·판매할 수 없으며, 이를 위반하여 발생하는 모든 민·형사상 법적 책임은 이용자 본인에게 귀속됩니다.
@@ -3242,7 +3242,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.exam_start_time = time.time()
         self.exam_current_eta = 20
         self.exam_progress["value"] = 15
-        self.exam_status_var.set(f"[{cname}] {exam_type} 3분 치트시트(1-Page) 분석 및 생성 준비 중...")
+        self.exam_status_var.set(f"[{cname}] {exam_type} 벼락치기 정리노트 분석 및 생성 준비 중...")
         self.exam_eta_var.set("⏱️ 경과: 00:00 | 남은 시간: 약 20초")
         self.update_exam_timer()
 
@@ -3250,7 +3250,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.exam_log_text.delete("1.0", tk.END)
         self.exam_log_text.config(state=tk.DISABLED)
 
-        self.append_exam_log(f"🚀 [{cname}] {exam_type} A4 1-Page 초고밀도 치트시트 파이프라인 가동", "step")
+        self.append_exam_log(f"🚀 [{cname}] {exam_type} 벼락치기 정리노트 생성 시작", "step")
         self.append_exam_log(f"   • 시험 구분: {exam_type} | 출제 범위: {scope}", "normal")
         if selected_files:
             self.append_exam_log(f"   • 선택된 학습자료: {len(selected_files)}개 항목 반영", "highlight")
@@ -3275,8 +3275,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     self.exam_progress["value"] = 100
                     elapsed = int(time.time() - self.exam_start_time)
                     self.exam_eta_var.set(f"✅ 완성 (총 {elapsed}초)")
-                    self.exam_status_var.set(f"🎉 [{cname}] 3분 치트시트(A4 1-Page) 제작 완료!")
-                    self.append_exam_log(f"🎉 [{cname}] 3분 치트시트 PDF 제작 완료: {os.path.basename(pdf_file)}", "success")
+                    self.exam_status_var.set(f"🎉 [{cname}] 벼락치기 정리노트 제작 완료!")
+                    self.append_exam_log(f"🎉 [{cname}] 벼락치기 정리노트 PDF 제작 완료: {os.path.basename(pdf_file)}", "success")
                     self.append_exam_log(f"   • 저장 위치: {pdf_file}", "highlight")
 
                     self.last_exam_content = content
@@ -3284,29 +3284,29 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     self.exam_preview_text.insert(tk.END, content)
 
                     config_manager.send_system_notification(
-                        title="⚡ 3분 치트시트 제작 완료",
-                        message=f"[{cname}] {exam_type} A4 1페이지 초고밀도 치트시트 제작 완료!"
+                        title="⚡ 벼락치기 정리노트 제작 완료",
+                        message=f"[{cname}] {exam_type} 벼락치기 정리노트 제작 완료!"
                     )
                     self.last_exam_pdf = pdf_file
                     if hasattr(self, "exam_open_pdf_btn"):
                         self.exam_open_pdf_btn.config(state="normal")
                     view_now = messagebox.askyesno(
-                        "치트시트 PDF 생성 완료",
-                        f"🎉 [{cname}] {exam_type} 3분 핵심 치트시트(A4 1-Page)가 성공적으로 제작되었습니다!\n\n• 파일명: {os.path.basename(pdf_file)}\n\n지금 바로 앱 내 라이브 뷰어로 확인하시겠습니까?",
+                        "벼락치기 정리노트 PDF 생성 완료",
+                        f"🎉 [{cname}] {exam_type} 벼락치기 정리노트가 성공적으로 제작되었습니다!\n\n• 파일명: {os.path.basename(pdf_file)}\n\n지금 바로 앱 내 라이브 뷰어로 확인하시겠습니까?",
                         parent=self.root
                     )
                     if view_now:
-                        self.open_pdf_viewer(pdf_file, title=f"치트시트 — {os.path.basename(pdf_file)}")
+                        self.open_pdf_viewer(pdf_file, title=f"벼락치기 정리노트 — {os.path.basename(pdf_file)}")
 
                 self.root.after(0, on_success)
             except Exception as e:
                 def on_error():
                     self.exam_is_running = False
                     self.exam_progress["value"] = 0
-                    self.exam_status_var.set("❌ 치트시트 생성 중 오류 발생")
+                    self.exam_status_var.set("❌ 벼락치기 정리노트 생성 중 오류 발생")
                     self.exam_eta_var.set("❌ 오류")
                     self.append_exam_log(f"❌ 오류 발생: {e}", "error")
-                    messagebox.showerror("생성 오류", f"치트시트 생성 중 오류 발생: {e}")
+                    messagebox.showerror("생성 오류", f"벼락치기 정리노트 생성 중 오류 발생: {e}")
                 self.root.after(0, on_error)
 
         threading.Thread(target=worker, daemon=True).start()
