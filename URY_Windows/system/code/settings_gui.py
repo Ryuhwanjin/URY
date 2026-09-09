@@ -971,6 +971,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.settings["theme_accent"] = self.theme_accent
         config_manager.save_settings(self.settings)
         self.setup_styles()
+        self.apply_theme_icon()
         self.refresh_theme_widgets()
         return True
 
@@ -1055,6 +1056,21 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 icon_data = base64.b64decode(APP_ICON_PNG)
                 self.icon_img = tk.PhotoImage(data=icon_data)
                 self.root.iconphoto(True, self.icon_img)
+        except Exception:
+            pass
+        self.apply_theme_icon()
+
+    def apply_theme_icon(self):
+        """선택한 대학 색상으로 실행 중 창 아이콘을 즉시 갱신한다."""
+        try:
+            icon = tk.PhotoImage(width=32, height=32)
+            accent = getattr(self, "theme_accent", "#1C4732")
+            icon.put(accent, to=(0, 0, 32, 32))
+            icon.put("#FFFFFF", to=(7, 7, 11, 23))
+            icon.put("#FFFFFF", to=(21, 7, 25, 23))
+            icon.put("#FFFFFF", to=(11, 20, 21, 25))
+            self.icon_img = icon
+            self.root.iconphoto(True, icon)
         except Exception:
             pass
 
