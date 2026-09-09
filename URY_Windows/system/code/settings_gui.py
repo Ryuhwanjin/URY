@@ -1736,6 +1736,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             else:
                 self.slide_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
             return "break"
+        self._on_slide_wheel = _on_slide_wheel
         self.slide_canvas.bind("<MouseWheel>", _on_slide_wheel)
         self.slide_inner_frame.bind("<MouseWheel>", _on_slide_wheel)
 
@@ -2235,6 +2236,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
             badge = tk.Label(card, text="✓ 포함", font=("Pretendard", 8, "bold"), bg="#eff6ff", fg="#2563eb", padx=6, pady=1)
             badge.pack(side=tk.RIGHT)
+            for widget in (card, chk, badge):
+                widget.bind("<MouseWheel>", self._on_slide_wheel)
 
             def make_toggle_cb(b=badge, v=var):
                 def on_toggle(*_):

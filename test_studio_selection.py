@@ -40,6 +40,13 @@ class StudioSelectionTest(unittest.TestCase):
                 self.assertEqual(external.read_bytes(), b"original")
                 self.assertEqual(other.read_bytes(), b"existing")
 
+    def test_slide_cards_forward_mouse_wheel_to_the_canvas(self):
+        for platform in ("URY_macOS", "URY_Windows"):
+            source = (Path(__file__).parent / platform / "system/code/settings_gui.py").read_text(encoding="utf-8")
+            self.assertIn("self._on_slide_wheel = _on_slide_wheel", source)
+            self.assertIn("for widget in (card, chk, badge):", source)
+            self.assertIn('widget.bind("<MouseWheel>", self._on_slide_wheel)', source)
+
 
 if __name__ == "__main__":
     unittest.main()
