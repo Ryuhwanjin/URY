@@ -58,6 +58,45 @@ except ImportError:
 WORKSPACE_DIR = config_manager.WORKSPACE_DIR
 
 
+def stream_gemini_response(request, timeout=240, progress_fn=None):
+    """Gemini SSE 응답을 추가 의존성 없이 조각별로 합친다."""
+    chunks = []
+    received_chars = 0
+    usage = {}
+
+    def consume(data):
+        nonlocal received_chars, usage
+        if not data:
+            return
+        payload = json.loads(data)
+        usage = payload.get("usageMetadata") or usage
+        candidates = payload.get("candidates", [])
+        if candidates:
+            for part in candidates[0].get("content", {}).get("parts", []):
+                text = part.get("text", "")
+                if text:
+                    chunks.append(text)
+                    received_chars += len(text)
+            if progress_fn:
+                progress_fn(received_chars)
+
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        event = []
+        for raw_line in response:
+            line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
+            if not line:
+                consume("\n".join(event))
+                event.clear()
+            elif line.startswith("data:"):
+                event.append(line[5:].lstrip())
+        consume("\n".join(event))
+
+    text = "".join(chunks).strip()
+    if not text:
+        raise RuntimeError("Gemini 스트리밍 응답에 강의노트 내용이 없습니다.")
+    return text, usage
+
+
 def load_course_material_context(course_dir: str, week_num: int = None) -> str:
     """
     강의자료 폴더 내의 멀티포맷 문서(.pdf, .pptx, .hwpx, .ipynb 등)를 doc_parser로 파싱하여
@@ -518,7 +557,7 @@ The following content was ALREADY synthesized in the earlier session of Week {we
             }],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 16384
+                "maxOutputTokens": 8192
             }
         }
 
@@ -981,7 +1020,7 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
             "contents": [{"parts": full_parts}],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 16384
+                "maxOutputTokens": 8192
             }
         }
         models_to_try = config_manager.get_supported_gemini_models(api_key)[:3]
@@ -989,7 +1028,7 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
         log(f"  ℹ️ [구글 최신 모델 순서 자동 감지]: {top_display} 등 {len(models_to_try)}개 모델 준비 완료", step=2)
         for model in models_to_try:
             check_cancel()
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
             req = urllib.request.Request(
                 url,
                 data=json.dumps(payload).encode("utf-8"),
@@ -999,32 +1038,16 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
             check_cancel()
             try:
                 log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
-                req_resp = [None, None]
+                last_progress = [0.0]
 
-                def do_call():
-                    try:
-                        with urllib.request.urlopen(req, timeout=240) as resp:
-                            req_resp[0] = resp.read()
-                    except Exception as ex:
-                        req_resp[1] = ex
-
-                call_th = threading.Thread(target=do_call, daemon=True)
-                call_th.start()
-
-                elapsed_wait = 0
-                while call_th.is_alive():
+                def on_stream_progress(char_count):
                     check_cancel()
-                    time.sleep(1)
-                    elapsed_wait += 1
-                    if elapsed_wait % 5 == 0:
-                        dots = "." * ((elapsed_wait // 5) % 4 + 1)
-                        log(f"  ⏳ [{model}] AI 강의 심층 분석 및 강의노트 실시간 조판 중{dots} ({elapsed_wait}초 경과)", step=2)
+                    now = time.monotonic()
+                    if now - last_progress[0] >= 5:
+                        log(f"  ✍️ [{model}] AI 응답 수신 중 ({char_count:,}자)...", step=2)
+                        last_progress[0] = now
 
-                if req_resp[1] is not None:
-                    raise req_resp[1]
-
-                res = json.loads(req_resp[0].decode("utf-8"))
-                usage = res.get("usageMetadata", {})
+                note_text, usage = stream_gemini_response(req, timeout=240, progress_fn=on_stream_progress)
                 if usage:
                     log(
                         "  📊 토큰 사용량: "
@@ -1033,12 +1056,7 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                         f"합계 {usage.get('totalTokenCount', 0):,}",
                         step=2,
                     )
-                candidates = res.get("candidates", [])
-                if candidates and "content" in candidates[0]:
-                    parts = candidates[0]["content"].get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
-                raise RuntimeError(f"응답 데이터 형식 불일치 ({res.get('promptFeedback', '알 수 없는 응답')})")
+                return note_text
             except urllib.error.HTTPError as e:
                 check_cancel()
                 try:
@@ -1082,8 +1100,8 @@ Context: {source_desc}
 
 Produce a rigorous, publication-grade academic lecture note in English for exam preparation.
 
-[Guidelines - 100% Comprehensive Coverage & Fluff-Free Academic Rigor]
-* Strictly cover 100% of all theoretical topics, definitions, sub-bullets, mathematical derivations, business case studies, and instructor tips without any omission or excessive summarization.
+[Guidelines - Complete Core Coverage & Fluff-Free Academic Rigor]
+* Cover every core topic, definition, formula, meaningful example, and instructor emphasis while removing repetition and low-value detail.
 * Filter out all casual jokes, personal anecdotes, and off-topic digressions ("잡소리") to keep the content purely academic and maximally thorough.
 * DO NOT generate any bracket tags (e.g., `[Slide 1]`, `[Slide 2~3]`, `[🎙️ Spoken]`, `[📖 Textbook]`, `[Tagged]`). Write in clean, publication-ready academic prose.
 * DO NOT output raw ASCII art boxes (e.g. `┌─┐`, `│`, `└─┘`, `+---+`) or repetitive ASCII divider lines (`==========`). Instead, use clean Markdown tables, headings, or blockquotes.
@@ -1098,7 +1116,7 @@ Format:
 - Include only attendance codes, quizzes, deadlines, or course policies that appear in the provided source.
 
 ## 💡 2. In-Depth Theoretical & Conceptual Analysis
-- Zero filler or off-topic chitchat: Exhaustive, granular, and publication-grade academic analysis of all course concepts, theories, models, and slide bullet points.
+- Zero filler or off-topic chitchat: concise, publication-grade analysis focused on concepts, theories, models, and exam-relevant slide points.
 - Provide fully articulated theoretical explanations, derivations, mathematical formulations (LaTeX/KaTeX), architecture diagrams, and comparison tables.
 - Specific business scenarios, numerical examples, and professor's academic emphasis explained in maximum depth.
 
@@ -1186,7 +1204,7 @@ Tone: Professional academic publication tone."""
 학생이 복습 및 중간/기말고사에 완벽하게 대비할 수 있도록 매우 체계적이고 깊이 있는 강의노트를 작성해 주세요.
 
 [🚨 내용 완전성 및 4개 섹션 완결 원칙]
-- 슬라이드 및 교재에 포함된 모든 공식 정의, 세부 불렛포인트, 예시, 비즈니스/수학적 사례, 수식, 표의 내용을 단 하나도 요약하여 누락하지 말고 100% 완전하게 한국어로 번역 및 상세 해설할 것.
+- 슬라이드와 강의의 핵심 정의, 공식, 사례, 교수자 강조사항을 빠뜨리지 않되 반복 설명과 중복 사례는 압축할 것.
 - 핵심 전문 용어는 반드시 `한글 번역 (English Official Term)` 형태로 병기할 것.
 - 아스키 박스 그림(`┌─┐`, `│`, `└─┘`, `+---+`)이나 반복선(`==========`)을 절대 출력하지 마십시오. 표(Markdown Table)나 표준 인용구(`>`)를 사용하십시오.
 - 본문 문장 사이에 `[Slide 1]`, `[Slide 2~3]`, `[🎙️ 음성]`, `[📖 교재]`, `[Tagged]` 같은 대괄호 태그나 슬라이드 번호 태그를 절대로 생성하지 마십시오. 100% 깔끔한 학술 서술체로 작성하십시오.

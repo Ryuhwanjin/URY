@@ -28,10 +28,10 @@ class SelectedMaterialsOnlyTest(unittest.TestCase):
         for platform in ("URY_macOS", "URY_Windows"):
             source = (Path(__file__).parent.parent / platform / "system/code/process_all_lectures.py").read_text(encoding="utf-8")
             custom_source = source[source.index("def generate_custom_lecture_note("):]
-            self.assertIn("urlopen(req, timeout=240)", custom_source)
+            self.assertIn("stream_gemini_response(req, timeout=240", custom_source)
             self.assertIn("중복 사용량 방지를 위해 자동 재시도하지 않습니다", custom_source)
             self.assertIn("get_supported_gemini_models(api_key)[:3]", custom_source)
-            self.assertIn("usageMetadata", custom_source)
+            self.assertIn("토큰 사용량", custom_source)
             self.assertNotIn("backoff_delays", custom_source)
 
 
