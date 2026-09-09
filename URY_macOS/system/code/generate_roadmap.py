@@ -31,7 +31,7 @@ def extract_course_week_topics(cname):
             break
 
     course_dir = config_manager.get_course_dir(folder)
-    cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder)
+    cache_dir = config_manager.get_markdown_cache_dir(folder)
     notes_dir = os.path.join(course_dir, "강의노트")
 
     # 1. .markdown_cache 및 사용자 강의노트 탐색하여 실제 강의 주제 추출

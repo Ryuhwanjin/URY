@@ -80,7 +80,7 @@ def compute_file_fingerprint(filepath):
         return os.path.basename(filepath)
 
 def get_history_ledger_path():
-    path = os.path.join(WORKSPACE_DIR, ".markdown_cache", "processed_history.json")
+    path = get_markdown_cache_dir("processed_history.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -136,6 +136,23 @@ def get_current_semester():
     settings = load_settings()
     return settings.get("semester", "2026년 2학기")
 
+def get_markdown_cache_dir(*parts):
+    """Resolve the active semester at call time, including after a UI switch."""
+    semester = get_current_semester()
+    cache = os.path.join(WORKSPACE_DIR, semester, ".markdown_cache", *parts)
+    if len(parts) == 1 and parts[0] != "processed_history.json":
+        # Recover only notes whose semester is known from their enclosing folder.
+        import shutil
+        notes = os.path.join(WORKSPACE_DIR, semester, parts[0], "강의노트")
+        for root, _, files in os.walk(notes):
+            for name in files:
+                if name.endswith(".md"):
+                    target = os.path.join(cache, name.lstrip("."))
+                    if not os.path.exists(target):
+                        os.makedirs(cache, exist_ok=True)
+                        shutil.copy2(os.path.join(root, name), target)
+    return cache
+
 def get_semester_dir(semester=None):
     """현재 수강 학기 디렉터리 반환 (예: /Users/.../2026년 2학기)"""
     sem = semester or get_current_semester()
@@ -184,6 +201,14 @@ def load_settings():
             "global_language_mode": "both",
             "courses": []
         }
+
+    # Older settings keep the active courses at the top level.
+    semester = data.get("semester", "2026년 2학기")
+    data.setdefault("semester_courses", {})[semester] = data.get("courses", [])
+    data.setdefault("semester_periods", {})[semester] = {
+        "start": data.get("semester_start_date", ""),
+        "end": data.get("semester_end_date", ""),
+    }
 
     # 기본 tutor_name 보정
     for c in data.get("courses", []):
@@ -317,6 +342,12 @@ def ensure_all_course_folders(data):
 def save_settings(data):
     """settings.json 저장 및 .env, 시간표.json, 과목별 폴더트리 동기화"""
     global SETTINGS_PATH, ENV_PATH, TIMETABLE_PATH, WORKSPACE_DIR
+    semester = data.get("semester", "2026년 2학기")
+    data.setdefault("semester_courses", {})[semester] = data.get("courses", [])
+    data.setdefault("semester_periods", {})[semester] = {
+        "start": data.get("semester_start_date", ""),
+        "end": data.get("semester_end_date", ""),
+    }
     target_path = SETTINGS_PATH
     try:
         if os.path.dirname(target_path):
@@ -654,7 +685,7 @@ def create_sample_test_files():
     os.makedirs(mat_dir, exist_ok=True)
     
     # 1. 샘플 강의노트 마크다운을 캐시에 작성
-    cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder_name)
+    cache_dir = get_markdown_cache_dir(folder_name)
     os.makedirs(cache_dir, exist_ok=True)
     
     sample_md_content = f"""# 📘 [{first_course}] 1주차 강의노트 (2026-2학기)

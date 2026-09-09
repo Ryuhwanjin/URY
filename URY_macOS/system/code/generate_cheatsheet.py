@@ -285,9 +285,9 @@ def generate_custom_cheatsheet(cname, scope="전범위", exam_type="중간고사
 
     if not collected_text:
         # 자동 스캔 (.markdown_cache 또는 강의노트/)
-        cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder_name)
+        cache_dir = config_manager.get_markdown_cache_dir(folder_name)
         if not os.path.exists(cache_dir):
-            cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", cname)
+            cache_dir = config_manager.get_markdown_cache_dir(cname)
         if os.path.exists(cache_dir):
             for mdf in sorted(glob.glob(os.path.join(cache_dir, "*.md"))):
                 txt = extract_text_from_file(mdf)

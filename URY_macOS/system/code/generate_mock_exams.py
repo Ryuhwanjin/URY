@@ -185,7 +185,7 @@ def call_gemini(prompt, max_retries=3):
                         candidates = res.get("candidates", [])
                         if candidates and "content" in candidates[0]:
                             parts = candidates[0]["content"].get("parts", [])
-                            if parts and "text" in parts[0]:
+                            if parts and parts[0].get("text", "").strip():
                                 return parts[0]["text"].strip()
                 except urllib.error.HTTPError as e:
                     if e.code in (429, 503):
@@ -209,26 +209,7 @@ def call_gemini(prompt, max_retries=3):
                 except Exception:
                     break
 
-    return """# 📝 [URY Engine] 주차별 실전 예상문제 & AI 모의고사 (1주차)
-> **평가 원칙**: 객관식 10문항 | 정답 및 상세 해설은 가장 마지막 페이지에 수록
-
-[Part 1: Exam Questions (실전 예상문제지)]
-
-### Q1. 핵심 개념 및 주요 이론에 대한 가장 올바른 설명은?
-A. 이론적 기본 원칙을 정확하게 적용한 사례이다.
-B. 용어의 개념적 정의를 오해한 단순 오답이다.
-C. 본 과목의 핵심 가치 및 적용 범위에 부합한다.
-D. 실무 관점에서의 적절한 대처 방안이다.
-
----
-
-[Part 2: Step-by-Step Answer Key & Detailed Solution (정답 및 상세 해설)]
-
-### 📌 정답표 (Answer Key)
-| 문항 | 정답 | 출제 포인트 및 해설 |
-|---|---|---|
-| Q1 | C | 핵심 이론 및 기본 적용 범위에 근거한 최선의 모범 답안입니다. |
-"""
+    raise RuntimeError("Gemini 생성에 실패했습니다. API 키, 사용량 한도 및 연결 상태를 확인해주세요.")
 
 def compile_pdf(md_path, pdf_path, title):
     folder_dir = os.path.dirname(md_path)
@@ -439,9 +420,9 @@ def generate_all_mock_exams(target_courses=None, force=False):
         md_path = os.path.join(folder_dir, output_md)
         pdf_path = os.path.join(folder_dir, output_pdf)
 
-        cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder)
+        cache_dir = config_manager.get_markdown_cache_dir(folder)
         if not os.path.exists(cache_dir):
-            cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", cname)
+            cache_dir = config_manager.get_markdown_cache_dir(cname)
 
         md_files = glob.glob(os.path.join(cache_dir, "*.md")) if os.path.exists(cache_dir) else []
         if not md_files:
@@ -522,9 +503,9 @@ def generate_custom_mock_exam(cname, scope="전범위", question_count=10, quest
     exam_dir = os.path.join(course_dir, "예상문제")
     os.makedirs(exam_dir, exist_ok=True)
 
-    cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder)
+    cache_dir = config_manager.get_markdown_cache_dir(folder)
     if not os.path.exists(cache_dir):
-        cache_dir = os.path.join(WORKSPACE_DIR, ".markdown_cache", cname)
+        cache_dir = config_manager.get_markdown_cache_dir(cname)
 
     log_func("📂 출제 참고 학습 자료 스캔 및 텍스트 취합 중...")
     lecture_text = ""

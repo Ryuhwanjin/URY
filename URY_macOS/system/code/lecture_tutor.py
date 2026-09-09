@@ -106,8 +106,8 @@ def get_course_knowledge_base(cname, max_chars=40000):
 
     # 1. .markdown_cache 수집 (가장 고품질 마크다운 노트)
     cache_dirs = [
-        os.path.join(WORKSPACE_DIR, ".markdown_cache", folder_name),
-        os.path.join(WORKSPACE_DIR, ".markdown_cache", cname)
+        config_manager.get_markdown_cache_dir(folder_name),
+        config_manager.get_markdown_cache_dir(cname)
     ]
     for c_dir in cache_dirs:
         if os.path.exists(c_dir):

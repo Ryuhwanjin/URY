@@ -48,7 +48,6 @@ if getattr(sys, "frozen", False):
 
 import config_manager
 WORKSPACE_DIR = config_manager.WORKSPACE_DIR
-CACHE_DIR = os.path.join(WORKSPACE_DIR, ".markdown_cache")
 
 import tempfile
 
@@ -853,6 +852,9 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
     # 3. 고품질 PDF 렌더링 (100% Chromium Headless 전용 렌더러 - render_pdf.py 와 동일 플래그)
     pdf_rendered = False
     browser_bin = find_chromium_browser()
+    os.makedirs(os.path.dirname(os.path.abspath(pdf_output_path)), exist_ok=True)
+    render_dir = tempfile.TemporaryDirectory(prefix="ury-render-", dir=os.path.dirname(os.path.abspath(pdf_output_path)))
+    pending_pdf = os.path.join(render_dir.name, "output.pdf")
 
     if browser_bin and os.path.exists(browser_bin):
         print(f"[{display_name}] 브라우저 기반 PDF 렌더링 시도 ({os.path.basename(browser_bin)})...")
@@ -864,18 +866,23 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
             "--disable-dev-shm-usage",
             "--no-pdf-header-footer",
             "--run-all-compositor-stages-before-draw",
-            f"--print-to-pdf={pdf_output_path}",
+            f"--print-to-pdf={pending_pdf}",
             html_path
         ]
         try:
             res = subprocess.run(cmd_browser, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
-            if os.path.exists(pdf_output_path) and os.path.getsize(pdf_output_path) > 100:
+            if res.returncode == 0 and os.path.exists(pending_pdf) and os.path.getsize(pending_pdf) > 100:
+                os.replace(pending_pdf, pdf_output_path)
                 pdf_rendered = True
                 print(f"[{display_name}] ✨ Chromium Headless 고품질 PDF 출판 성공! ({round(os.path.getsize(pdf_output_path)/1024/1024, 2)}MB)")
         except Exception as e:
             print(f"[Warn] 브라우저 렌더링 알림: {e}")
     else:
         print(f"[Error] [{display_name}] Chromium 계열 브라우저(Google Chrome, MS Edge, Naver Whale, Brave)를 찾을 수 없습니다.")
+
+    render_dir.cleanup()
+    if not pdf_rendered:
+        raise RuntimeError(f"[{display_name}] PDF 렌더링 실패. 기존 PDF는 유지했습니다.")
 
     if os.path.exists(html_path):
         try:
@@ -914,7 +921,7 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
 def process_course_pdfs(course_folder, cname, en_prefix):
     """과목별로 주차별 개별 학습노트 및 전체 통합본 PDF를 일괄 컴파일 (캐시 + 사용자 폴더 양방향 탐색)"""
     root_ws = config_manager.get_root_workspace()
-    cache_dir = os.path.join(root_ws, ".markdown_cache", course_folder)
+    cache_dir = config_manager.get_markdown_cache_dir(course_folder)
     course_dir = config_manager.get_course_dir(course_folder)
     notes_dir = os.path.join(course_dir, "강의노트")
     os.makedirs(notes_dir, exist_ok=True)
@@ -944,13 +951,6 @@ def process_course_pdfs(course_folder, cname, en_prefix):
     if not md_files:
         return
 
-    # 루트 notes_dir 폴더에 오판 방치된 PDF 파일들 정리
-    for orphan in glob.glob(os.path.join(notes_dir, "*.pdf")) + glob.glob(os.path.join(notes_dir, ".*.pdf")):
-        try:
-            os.remove(orphan)
-        except Exception:
-            pass
-
     for md_p in md_files:
         fname = os.path.basename(md_p)
         clean_fname = fname.lstrip('.')
@@ -971,13 +971,6 @@ def process_course_pdfs(course_folder, cname, en_prefix):
                 display_name = f"{en_prefix} (Combined)"
 
             pdf_p = os.path.join(comb_dir, dated_name)
-
-            for old_f in glob.glob(os.path.join(comb_dir, f"{base_name}*.pdf")):
-                if os.path.basename(old_f) != dated_name:
-                    try:
-                        os.remove(old_f)
-                    except Exception:
-                        pass
 
             convert_single_md_to_pdf(md_p, pdf_p, display_name, comb_dir)
 

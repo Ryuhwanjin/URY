@@ -20,6 +20,7 @@ import json
 import subprocess
 import traceback
 import threading
+import queue
 from datetime import datetime, date, timedelta
 
 if sys.platform == "win32":
@@ -598,6 +599,14 @@ class UnifiedDashboardApp:
         self.settings = config_manager.load_settings()
         self.theme_mode = self.settings.get("theme_mode", "light")
         self.theme_accent = self.settings.get("theme_accent", "#1c4732")
+        active_semester = self.settings.get("semester", "2026년 2학기")
+        self.semester_courses = dict(self.settings.get("semester_courses", {}))
+        self.semester_courses.setdefault(active_semester, list(self.settings.get("courses", [])))
+        self.semester_periods = dict(self.settings.get("semester_periods", {}))
+        self.semester_periods.setdefault(active_semester, {
+            "start": self.settings.get("semester_start_date", "2026-09-01"),
+            "end": self.settings.get("semester_end_date", "2026-12-21"),
+        })
 
         # 창모드 해상도 자동 감지 및 1280x820 최소 해상도 보장 설정
         self.root.resizable(True, True)
@@ -634,7 +643,8 @@ class UnifiedDashboardApp:
         # 시네마틱 스플래시 오프닝 구동 (메인 창 잠시 은닉)
         self.root.withdraw()
         self.splash = CinematicSplashScreen(self.root, on_finish=self.on_splash_done)
-        self.courses = list(self.settings.get("courses", []))
+        self.courses = list(self.semester_courses[active_semester])
+        self.settings["courses"] = self.courses
         self.selected_courses_for_run = set()
         self.last_generated_pdf = None
         self.studio_start_time = 0
@@ -1246,7 +1256,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         menu.add_separator()
         menu.add_command(label="⛶ 전체 화면 전환 (Cmd+F)", command=self.toggle_fullscreen)
-        menu.add_command(label="⚙️ 상세 해상도 설정...", command=lambda: self.switch_to_tab(4))
+        menu.add_command(label="⚙️ 상세 해상도 설정...", command=lambda: self.switch_to_tab(3))
 
         try:
             x = self.res_quick_btn.winfo_rootx()
@@ -1372,7 +1382,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         api_bg = "#f0fdf4" if has_key else "#fef2f2"
         self.api_badge_label = tk.Label(right, text=api_text, font=("Pretendard", 8, "bold"), bg=api_bg, fg=api_fg, relief=tk.FLAT, padx=8, pady=4, cursor="hand2")
         self.api_badge_label.pack(side=tk.LEFT, pady=16)
-        self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(4))
+        self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(3))
 
         # 중앙: 시안 2 플로팅 알약형 세그먼트 탭바 (반응형 콤팩트 크기)
         center = tk.Frame(self.header_frame, bg="#ffffff")
@@ -1386,9 +1396,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             ("🎙️ Studio", 0),
             ("📝 Exam", 1),
             ("💬 Tutor", 2),
-            ("📊 Dashboard", 3),
-            ("⚙️ Settings", 4),
-            ("🛠️ Advanced", 5),
+            ("⚙️ Settings", 3),
         ]
 
         for text, idx in self.tab_defs:
@@ -1482,6 +1490,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             if hasattr(self, combo_name):
                 combo = getattr(self, combo_name)
                 combo.config(values=course_names)
+                if not course_names:
+                    combo.set("")
                 if course_names and (not combo.get() or combo.get() not in course_names):
                     combo.set(course_names[0])
         if hasattr(self, "on_studio_course_changed"):
@@ -1849,7 +1859,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         # 3대 핵심 구조화 프리뷰 카드 스택 (여백 최적화)
         p_stack = tk.Frame(right_card, bg="#ffffff")
-        p_stack.pack(fill=tk.X, padx=16, pady=(0, 6))
+        # Static example cards are not generated output; keep the live log visible.
 
         # 1. Key Concepts 카드
         card_kc = tk.Frame(p_stack, bg="#f8fafc", highlightthickness=1, highlightbackground="#edf2f7", padx=10, pady=6)
@@ -1918,6 +1928,22 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_log_text.tag_config("normal", foreground="#e2e8f0")
 
         self.append_studio_log("준비 완료: 음성/슬라이드를 선택한 뒤 [학습노트 및 출판용 PDF 생성]을 클릭하세요.", "normal")
+        self.studio_events = queue.Queue()
+        self.root.after(100, self.drain_studio_events)
+
+    def drain_studio_events(self):
+        for _ in range(100):
+            try:
+                kind, args = self.studio_events.get_nowait()
+            except queue.Empty:
+                break
+            if kind == "log":
+                self.on_studio_log_event(*args)
+            elif kind == "success":
+                self.on_studio_generation_success(*args)
+            elif kind == "error":
+                self.on_studio_generation_error(*args)
+        self.root.after(100, self.drain_studio_events)
 
     def update_preview_paper_header(self):
         """과목 및 주차 변경 시 우측 페이퍼 제목 실시간 갱신"""
@@ -2002,9 +2028,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
     def browse_studio_slides(self):
         cname = self.studio_course_combo.get().strip()
+        if not cname:
+            messagebox.showwarning("과목 선택", "먼저 과목을 선택해주세요.")
+            return
         folder = self.get_course_folder(cname)
         course_dir = config_manager.get_course_dir(folder)
         slides_dir = os.path.join(course_dir, "강의자료")
+        os.makedirs(slides_dir, exist_ok=True)
 
         fpaths = self.ask_open_files_safe(
             title="강의 슬라이드 및 자료 선택 (PDF, PPTX, HWPX, IPYNB, PY, DOCX, SQL 등)",
@@ -2021,19 +2051,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             ]
         )
         if fpaths:
-            os.makedirs(slides_dir, exist_ok=True)
-            for fp in fpaths:
-                dest = os.path.join(slides_dir, os.path.basename(fp))
-                if os.path.abspath(fp) != os.path.abspath(dest):
-                    try:
-                        shutil.move(fp, dest)
-                    except Exception:
-                        try:
-                            shutil.copy2(fp, dest)
-                            os.remove(fp)
-                        except Exception:
-                            pass
-            self.refresh_studio_slides()
+            self.refresh_studio_slides(selected_paths=fpaths)
 
     def get_course_folder(self, cname):
         for c in self.courses:
@@ -2115,7 +2133,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         for var in self.slide_check_vars.values():
             var.set(False)
 
-    def refresh_studio_slides(self):
+    def refresh_studio_slides(self, selected_paths=None):
+        previous = {path: var.get() for path, var in self.slide_check_vars.items()}
         for widget in self.slide_inner_frame.winfo_children():
             widget.destroy()
         self.slide_check_vars.clear()
@@ -2125,6 +2144,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             return
         folder = self.get_course_folder(cname)
         course_dir = config_manager.get_course_dir(folder)
+        if getattr(self, "_slide_course_dir", None) != course_dir:
+            previous = {}
+            self._slide_extra_paths = []
+            self._slide_course_dir = course_dir
+        if selected_paths is not None:
+            self._slide_extra_paths = list(selected_paths)
+            previous = {path: True for path in selected_paths}
 
         search_dirs = [os.path.join(course_dir, "강의자료"), course_dir]
         SUPPORTED_EXTS = (".pdf", ".pptx", ".ppt", ".hwpx", ".hwp", ".ipynb", ".py", ".sql", ".docx")
@@ -2143,6 +2169,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                         if fpath not in found_files:
                             found_files.append(fpath)
 
+        found_files.extend(path for path in self._slide_extra_paths if os.path.isfile(path) and path not in found_files)
         if not found_files:
             empty_lbl = tk.Label(
                 self.slide_inner_frame,
@@ -2174,7 +2201,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             ext = os.path.splitext(fname)[1].lower()
             icon, tag = EXT_ICONS.get(ext, ("📁", ext[1:].upper()))
 
-            var = tk.BooleanVar(value=True)
+            var = tk.BooleanVar(value=previous.get(file_path, False))
             self.slide_check_vars[file_path] = var
 
             # 부드러운 카드 타일 UI
@@ -2195,6 +2222,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                         b.config(text="제외됨", bg="#f1f5f9", fg="#94a3b8")
                 return on_toggle
             var.trace_add("write", make_toggle_cb())
+            make_toggle_cb()()
 
     def execute_studio_generation(self):
         cname = self.studio_course_combo.get().strip()
@@ -2249,7 +2277,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     pass
 
                 def log_cb(msg, step=None, eta=None):
-                    self.root.after(0, lambda: self.on_studio_log_event(msg, step, eta))
+                    self.studio_events.put(("log", (msg, step, eta)))
 
                 result = process_all_lectures.generate_custom_lecture_note(
                     cname=cname,
@@ -2261,11 +2289,11 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     log_callback=log_cb,
                     cancel_check=lambda: self.studio_cancel_requested
                 )
-                self.root.after(0, lambda: self.on_studio_generation_success(result))
+                self.studio_events.put(("success", (result,)))
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                self.root.after(0, lambda: self.on_studio_generation_error(str(e)))
+                self.studio_events.put(("error", (str(e),)))
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -2314,7 +2342,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         else:
             eta_str = "진행 중..."
 
-        self.studio_eta_var.set(f"⏱️ 경과: {el_min:02d}:{el_sec:02d} | 남은 시간: {eta_str}")
+        self.studio_eta_var.set(f"⏱️ 경과: {el_min:02d}:{el_sec:02d} | 완료 시간은 응답량에 따라 달라집니다")
 
         if getattr(self, "studio_is_running", False):
             self.root.after(1000, self.update_studio_timer)
@@ -2630,9 +2658,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         found_items = [] # list of (display_label, full_path)
 
         # 1. .markdown_cache 내 주차별 마크다운 노트
-        cache_dir = os.path.join(config_manager.WORKSPACE_DIR, ".markdown_cache", folder)
+        cache_dir = config_manager.get_markdown_cache_dir(folder)
         if not os.path.exists(cache_dir):
-            cache_dir = os.path.join(config_manager.WORKSPACE_DIR, ".markdown_cache", cname)
+            cache_dir = config_manager.get_markdown_cache_dir(cname)
         if os.path.exists(cache_dir):
             for mdf in sorted(glob.glob(os.path.join(cache_dir, "*.md"))):
                 fname = os.path.basename(mdf)
@@ -3894,6 +3922,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.tutor_chat_text.see(tk.END)
 
         self.tutor_send_btn.config(state="disabled")
+        self.tutor_is_running = True
+        self.tutor_course_combo.config(state="disabled")
 
         def worker():
             try:
@@ -3918,12 +3948,16 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     self.tutor_histories[cname].append({"role": "model", "text": answer})
                     self.tutor_snapshots[cname] = self.tutor_chat_text.get("1.0", tk.END)
                     self.tutor_send_btn.config(state="normal")
+                    self.tutor_is_running = False
+                    self.tutor_course_combo.config(state="readonly")
                 self.root.after(0, on_done)
             except Exception as ex:
-                def on_err():
+                def on_err(ex=ex):
                     self.tutor_chat_text.delete(start_idx, tk.END)
                     self.tutor_chat_text.insert(tk.END, f"❌ 오류 발생: {ex}\n\n", "system_info")
                     self.tutor_send_btn.config(state="normal")
+                    self.tutor_is_running = False
+                    self.tutor_course_combo.config(state="readonly")
                 self.root.after(0, on_err)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -4038,7 +4072,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         folder_name = self.get_course_folder(cname)
         cdir = config_manager.get_course_dir(folder_name)
-        cache_c = os.path.join(config_manager.WORKSPACE_DIR, ".markdown_cache", folder_name)
+        cache_c = config_manager.get_markdown_cache_dir(folder_name)
 
         timetable = {}
         if os.path.exists(config_manager.TIMETABLE_PATH):
@@ -4277,24 +4311,16 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         ttk.Label(sem_row, text="수강 학기:", font=("Pretendard", 10, "bold"), width=9).pack(side=tk.LEFT)
         self.semester_var = tk.StringVar(value=self.settings.get("semester", "2026년 2학기"))
-        self.semester_entry = tk.Entry(
+        self.semester_entry = ttk.Combobox(
             sem_row,
             textvariable=self.semester_var,
+            state="readonly",
+            values=self.get_semester_choices(),
             width=14,
-            font=("Pretendard", 10),
-            bg="#ffffff",
-            fg="#0f172a",
-            insertbackground="#1c4732",
-            selectbackground="#d8f3dc",
-            selectforeground="#14281e",
-            relief=tk.FLAT,
-            highlightthickness=1,
-            highlightbackground="#cbd5e1",
-            takefocus=True
+            font=("Pretendard", 10)
         )
         self.semester_entry.pack(side=tk.LEFT, padx=(0, 10))
-        self.semester_entry.bind("<Button-1>", lambda e: self.semester_entry.focus_set())
-        self.add_context_menu(self.semester_entry)
+        self.semester_entry.bind("<<ComboboxSelected>>", self.on_semester_changed)
 
         ttk.Label(sem_row, text="개강일:", font=("Pretendard", 10, "bold")).pack(side=tk.LEFT, padx=(0, 4))
         self.start_date_var = tk.StringVar(value=self.settings.get("semester_start_date", "2026-09-01"))
@@ -4544,12 +4570,70 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             lang = LANG_CODE_TO_LABEL.get(c.get("language_mode", "both"), c.get("language_mode", "both"))
             self.course_tree.insert("", tk.END, values=(idx + 1, cname, tutor, syllabus_status, folder, lang))
 
+    def get_semester_choices(self):
+        choices = set(self.semester_courses)
+        year = datetime.now().year
+        choices.update(f"{y}년 {term}학기" for y in range(year - 2, year + 3) for term in (1, 2))
+        try:
+            choices.update(name for name in os.listdir(WORKSPACE_DIR) if "학기" in name and os.path.isdir(os.path.join(WORKSPACE_DIR, name)))
+        except OSError:
+            pass
+        choices.add(self.settings.get("semester", "2026년 2학기"))
+        return sorted(choices, reverse=True)
+
+    def on_semester_changed(self, _event=None):
+        old = self.settings.get("semester", "2026년 2학기")
+        new = self.semester_var.get().strip()
+        if not new or new == old:
+            return
+        if any(getattr(self, flag, False) for flag in ("studio_is_running", "exam_is_running", "tutor_is_running")):
+            self.semester_var.set(old)
+            messagebox.showwarning("작업 진행 중", "생성이 끝난 뒤 학기를 변경해주세요.")
+            return
+        self.semester_courses[old] = list(self.courses)
+        if not hasattr(self, "_semester_tutor_sessions"):
+            self._semester_tutor_sessions = {}
+        self._semester_tutor_sessions[old] = (
+            getattr(self, "tutor_histories", {}), getattr(self, "tutor_snapshots", {}))
+        self.tutor_histories, self.tutor_snapshots = self._semester_tutor_sessions.setdefault(new, ({}, {}))
+        self.current_tutor_course = None
+        if hasattr(self, "tutor_chat_text"):
+            self.tutor_chat_text.delete("1.0", tk.END)
+        self.semester_periods[old] = {"start": self.start_date_var.get().strip(), "end": self.end_date_var.get().strip()}
+        self.courses = list(self.semester_courses.get(new, []))
+        period = self.semester_periods.get(new)
+        if not period:
+            start, end, _ = config_manager.get_semester_period(new)
+            period = {"start": start.isoformat(), "end": end.isoformat()}
+        self.start_date_var.set(period["start"])
+        self.end_date_var.set(period["end"])
+        self.settings["semester"] = new
+        self.settings["semester_start_date"] = period["start"]
+        self.settings["semester_end_date"] = period["end"]
+        self.semester_periods[new] = dict(period)
+        self.semester_courses[new] = self.courses
+        self.settings["courses"] = self.courses
+        self.settings["semester_courses"] = self.semester_courses
+        self.settings["semester_periods"] = self.semester_periods
+        config_manager.save_settings(self.settings)
+        self.studio_audio_var.set("")
+        self.last_generated_pdf = None
+        self.studio_open_pdf_btn.config(state=tk.DISABLED)
+        self.refresh_studio_slides(selected_paths=[])
+        self.populate_course_table()
+        self.refresh_course_combos()
+        self.sem_badge_label.config(text=f" 📅 {new} ")
+
     def save_settings_action(self):
         self.settings["semester"] = self.semester_var.get().strip()
         self.settings["semester_start_date"] = self.start_date_var.get().strip()
         self.settings["semester_end_date"] = self.end_date_var.get().strip()
         self.settings["gemini_api_key"] = self.api_key_var.get().strip()
         self.settings["courses"] = self.courses
+        self.semester_courses[self.settings["semester"]] = list(self.courses)
+        self.semester_periods[self.settings["semester"]] = {"start": self.settings["semester_start_date"], "end": self.settings["semester_end_date"]}
+        self.settings["semester_courses"] = self.semester_courses
+        self.settings["semester_periods"] = self.semester_periods
         config_manager.save_settings(self.settings)
 
         # 배지 갱신

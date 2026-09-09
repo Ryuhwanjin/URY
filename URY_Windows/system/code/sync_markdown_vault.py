@@ -35,7 +35,7 @@ def sync_markdown_files():
         os.makedirs(dst_dir, exist_ok=True)
 
         # 1. .markdown_cache 내 강의노트 동기화
-        cache_src = os.path.join(WORKSPACE_DIR, ".markdown_cache", cname)
+        cache_src = config_manager.get_markdown_cache_dir(cname)
         if os.path.exists(cache_src):
             for md_file in glob.glob(os.path.join(cache_src, "*.md")):
                 fname = os.path.basename(md_file)

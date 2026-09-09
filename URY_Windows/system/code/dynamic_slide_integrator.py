@@ -165,7 +165,7 @@ def extract_slide_page(pdf_path, page_num, out_dirs, dpi=180, crop_diagram_only=
 def collect_all_markdown_notes(folder_name, course_dir):
     notes = []
     search_dirs = [
-        os.path.join(WORKSPACE_DIR, ".markdown_cache", folder_name),
+        config_manager.get_markdown_cache_dir(folder_name),
         os.path.join(course_dir, "강의노트")
     ]
     for sdir in search_dirs:
@@ -204,7 +204,7 @@ def process_course_slides_dynamic(course_info, slide_paths=None):
     course_dir = config_manager.get_course_dir(folder_name)
     notes_dir = os.path.join(course_dir, "강의노트")
     img_dir_1 = os.path.join(notes_dir, "images")
-    img_dir_2 = os.path.join(WORKSPACE_DIR, ".markdown_cache", folder_name, "images")
+    img_dir_2 = config_manager.get_markdown_cache_dir(folder_name, "images")
     out_dirs = [img_dir_1, img_dir_2]
 
     slide_pdfs = find_slide_pdfs(course_dir, explicit_slide_paths=slide_paths)

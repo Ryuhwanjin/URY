@@ -56,7 +56,6 @@ except ImportError:
     doc_parser = None
 
 WORKSPACE_DIR = config_manager.WORKSPACE_DIR
-CACHE_DIR = os.path.join(WORKSPACE_DIR, ".markdown_cache")
 
 
 def load_course_material_context(course_dir: str, week_num: int = None) -> str:
@@ -251,7 +250,7 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
 
     start_url = f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={api_key}"
     cmd1 = [
-        "curl", "-s", "-D", "-", "-X", "POST", start_url,
+        "curl", "-s", "--connect-timeout", "10", "--max-time", "30", "-D", "-", "-X", "POST", start_url,
         "-H", "X-Goog-Upload-Protocol: resumable",
         "-H", "X-Goog-Upload-Command: start",
         "-H", f"X-Goog-Upload-Header-Content-Length: {file_size}",
@@ -259,7 +258,10 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
         "-H", "Content-Type: application/json",
         "-d", json.dumps({"file": {"display_name": file_name}})
     ]
-    out1 = subprocess.check_output(cmd1).decode("utf-8", errors="ignore")
+    try:
+        out1 = subprocess.check_output(cmd1, timeout=35).decode("utf-8", errors="ignore")
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        raise RuntimeError("파일 업로드 연결 실패 또는 30초 제한시간 초과") from None
     upload_url = None
     for line in out1.splitlines():
         if line.lower().startswith("x-goog-upload-url:"):
@@ -271,7 +273,7 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
         raise Exception("Upload URL 획득 실패: " + out1)
 
     cmd2 = [
-        "curl", "-s", "-X", "POST", upload_url,
+        "curl", "-s", "--connect-timeout", "10", "--max-time", "180", "-X", "POST", upload_url,
         "-H", "X-Goog-Upload-Command: upload, finalize",
         "-H", f"X-Goog-Upload-Offset: 0",
         "-H", f"Content-Type: {mime_type}",
@@ -294,7 +296,9 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
     ticker_th.start()
 
     try:
-        out2 = subprocess.check_output(cmd2).decode("utf-8", errors="ignore")
+        out2 = subprocess.check_output(cmd2, timeout=185).decode("utf-8", errors="ignore")
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        raise RuntimeError("파일 전송 실패 또는 180초 제한시간 초과") from None
     finally:
         stop_event.set()
         ticker_th.join(timeout=1)
@@ -306,16 +310,19 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
     if log_fn:
         log_fn(f"  ⏳ [{file_name}] 파일 전송 완료! Google AI 클라우드 음양 신호 처리 및 인덱싱 대기 중...")
     print(f"[{file_name}] 업로드 완료! 상태 확인 중...")
-    poll_count = 0
+    processing_started = time.monotonic()
     while file_state == "PROCESSING":
-        time.sleep(2)
-        poll_count += 2
+        remaining = 180 - (time.monotonic() - processing_started)
+        if remaining <= 0:
+            raise RuntimeError("Google 파일 처리 대기가 180초를 초과했습니다.")
+        time.sleep(min(2, remaining))
+        poll_count = int(time.monotonic() - processing_started)
         if log_fn:
             log_fn(f"  ⏳ [{file_name}] Google AI 클라우드 음향 신호 처리 및 텍스트 인덱싱 진행 중... ({poll_count}초 경과)")
-        check_url = f"https://generativelanguage.googleapis.com/v1beta/files/{res2['file']['name']}?key={api_key}"
+        check_url = f"https://generativelanguage.googleapis.com/v1beta/{res2['file']['name']}?key={api_key}"
 
         req = urllib.request.Request(check_url)
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=max(0.1, min(15, 180 - (time.monotonic() - processing_started)))) as resp:
             state_data = json.loads(resp.read().decode("utf-8"))
             file_state = state_data.get("state")
             if file_state == "ACTIVE":
@@ -445,7 +452,7 @@ Format:
 """
 
     # 동일 주차 이전 차시 강의노트 감지 (중복 배제 및 진도 연속성)
-    cache_c = os.path.join(CACHE_DIR, course_info["folder_name"])
+    cache_c = config_manager.get_markdown_cache_dir(course_info["folder_name"])
     if not is_english:
         w_path = os.path.join(cache_c, f"{course_info['cname_prefix']}_{week_num}주차_강의노트.md")
     else:
@@ -647,9 +654,9 @@ def append_to_single_note_file(note_path, new_note_content, date_str, week_num, 
         f.write(updated_content)
     print(f"[{os.path.basename(note_path)}] {date_str} 강의노트 저장 완료!")
 
-def save_to_markdown_cache(config, new_note_content, date_str, week_num, is_english=False, source_files=None):
+def save_to_markdown_cache(config, new_note_content, date_str, week_num, is_english=False, source_files=None, session_only=False):
     """주차별 개별 마크다운과 전체 통합본 마크다운을 .markdown_cache/ 및 사용자 강의노트/ 폴더에 동시 저장"""
-    return save_lecture_note_files(new_note_content, date_str, week_num, is_english=is_english, config=config, source_files=source_files)
+    return save_lecture_note_files(new_note_content, date_str, week_num, is_english=is_english, config=config, source_files=source_files, session_only=session_only)
 
 def hide_file_os_agnostic(filepath):
     """macOS(.) 및 Windows(FILE_ATTRIBUTE_HIDDEN 0x02) OS 통합 숨김 처리"""
@@ -666,8 +673,10 @@ def hide_file_os_agnostic(filepath):
                 pass
     return filepath
 
-def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int, is_english: bool = False, config: dict = None, source_files: list = None):
+def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int, is_english: bool = False, config: dict = None, source_files: list = None, session_only: bool = False):
     """주차별 마크다운 노트와 전체 누적 통합본 마크다운 노트를 하위 세부 폴더(N주차, 통합)에만 격리 숨김 저장을 수행"""
+    if not isinstance(new_note_content, str) or not new_note_content.strip():
+        raise RuntimeError("강의노트 응답이 비어 있어 저장하지 않았습니다.")
     if not config:
         config = get_default_config()
 
@@ -675,12 +684,22 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
     user_notes_dir = os.path.join(course_dir, "강의노트")
     user_week_dir = os.path.join(user_notes_dir, f"{week_num}주차")
     user_comb_dir = os.path.join(user_notes_dir, "통합")
-    cache_c = os.path.join(CACHE_DIR, config["folder_name"])
+    cache_c = config_manager.get_markdown_cache_dir(config["folder_name"])
 
     os.makedirs(user_notes_dir, exist_ok=True)
     os.makedirs(user_week_dir, exist_ok=True)
     os.makedirs(user_comb_dir, exist_ok=True)
     os.makedirs(cache_c, exist_ok=True)
+
+    if session_only:
+        if not is_english:
+            w_name = f"{config['cname_prefix']}_{date_str}_선택자료_강의노트.md"
+        else:
+            w_name = f"{config['en_prefix']}_{date_str}_Selected_Materials_Lecture_Notes.md"
+        user_w_path = os.path.join(user_week_dir, f".{w_name}")
+        append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        hide_file_os_agnostic(user_w_path)
+        return [user_w_path]
 
     if not is_english:
         c_name = f"{config['cname_prefix']}_통합강의노트.md"
@@ -749,7 +768,7 @@ def scan_and_process_all_lectures(target_courses=None, target_audio_files=None):
 
         course_dir = resolve_course_dir(config["folder_name"])
         rec_dir = os.path.join(course_dir, "음성녹음")
-        cache_c = os.path.join(CACHE_DIR, config["folder_name"])
+        cache_c = config_manager.get_markdown_cache_dir(config["folder_name"])
         os.makedirs(cache_c, exist_ok=True)
 
         note_ko_comb = os.path.join(cache_c, f"{config['cname_prefix']}_통합강의노트.md")
@@ -876,18 +895,20 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
     if date_str:
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except Exception:
-            target_date = datetime.now().date()
+        except ValueError as exc:
+            raise ValueError("수업 일자는 YYYY-MM-DD 형식의 실제 날짜여야 합니다.") from exc
     else:
         target_date = datetime.now().date()
 
-    if not week_num:
+    if week_num is None or week_num == "":
         week_num = calculate_academic_week(target_date)
     else:
         try:
             week_num = int(week_num)
-        except Exception:
-            week_num = 1
+        except (TypeError, ValueError) as exc:
+            raise ValueError("주차는 1 이상의 정수여야 합니다.") from exc
+        if week_num < 1:
+            raise ValueError("주차는 1 이상의 정수여야 합니다.")
 
     actual_date_str = target_date.strftime("%Y-%m-%d")
     weekday_kr = WEEKDAY_KR[target_date.weekday()]
@@ -1048,35 +1069,6 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                     break
         raise RuntimeError("모든 Gemini 모델 요청에 실패했습니다.")
 
-    # 동일 주차 이전 차시 강의노트 감지 (중복 배제 및 진도 연속성)
-    cache_c = os.path.join(CACHE_DIR, course_cfg["folder_name"])
-    os.makedirs(cache_c, exist_ok=True)
-    prev_ko_path = os.path.join(cache_c, f"{course_cfg['cname_prefix']}_{week_num}주차_강의노트.md")
-    prev_en_path = os.path.join(cache_c, f"{course_cfg['en_prefix']}_Week{week_num}_Lecture_Notes.md")
-
-    prev_ko_content = ""
-    prev_en_content = ""
-    if os.path.exists(prev_ko_path):
-        try:
-            with open(prev_ko_path, "r", encoding="utf-8", errors="ignore") as f:
-                c_raw = f.read().strip()
-                if len(c_raw) > 200 and actual_date_str not in c_raw:
-                    prev_ko_content = c_raw[:9000]
-        except Exception:
-            pass
-
-    if os.path.exists(prev_en_path):
-        try:
-            with open(prev_en_path, "r", encoding="utf-8", errors="ignore") as f:
-                c_raw = f.read().strip()
-                if len(c_raw) > 200 and actual_date_str not in c_raw:
-                    prev_en_content = c_raw[:9000]
-        except Exception:
-            pass
-
-    if prev_ko_content:
-        log(f"  ℹ️ [진도 연속성 감지]: {week_num}주차 이전 차시 강의노트 확인됨 -> 1차시 중복 내용 배제 및 금일 신규 진도 집중 모드 가동", step=2)
-
     # 프롬프트 구성 (100% 완전성 & 한/영 1:1 대칭 보장 & 출처 파일명 명시 & 토큰 절약 테이블화)
     def build_custom_prompt(is_english=False, master_note=None):
         if is_english:
@@ -1124,21 +1116,6 @@ Format:
 
 Tone: Professional academic publication tone."""
 
-            if prev_en_content:
-                base_p += f"""
-
---------------------------------------------------------------------------------
-[🚨 Prior Session Lecture Note Excerpt - Strict Deduplication Reference]
-The following content was ALREADY synthesized in the earlier session of Week {week_num}:
-{prev_en_content}
-
-[Strict Deduplication & Seamless Continuity Directives]
-1. DO NOT duplicate identical theoretical definitions, models, or tables already articulated above.
-2. Condense instructor's introductory review of the previous lecture into 1-2 transition sentences.
-3. Dedicate 90%+ of this note to NEW theoretical progress, new analytical frameworks, derivations, and today's operational announcements.
-4. Synthesize Week {week_num} takeaways and action items cohesively.
---------------------------------------------------------------------------------
-"""
             return base_p
 
         else:
@@ -1242,21 +1219,6 @@ The following content was ALREADY synthesized in the earlier session of Week {we
 
 어조: 전문적이고 깔끔한 강의노트 서술체 (-임, -함 또는 명사형 종결)."""
 
-                if prev_ko_content:
-                    base_p += f"""
-
---------------------------------------------------------------------------------
-[🚨 이전 차시({week_num}주차 앞선 수업) 기작성 강의노트 발췌 - 중복 배제 필수 참고자료]
-아래 내용은 이번 주차 앞선 수업에서 이미 작성되어 학생들에게 배포된 강의노트 본문입니다:
-{prev_ko_content}
-
-[🚨 중복 배제 및 진도 연속성 엄격 원칙 (Zero-Duplication & Continuity)]
-1. [기존 내용 단순 반복 엄금]: 위 1차시 강의노트에 이미 수록된 학술 정의, 기본 개념, 동일한 실전 예시는 이번 2차시 강의노트에서 다시 작성하지 마십시오.
-2. [지난 시간 복습 내용 압축]: 복습 내용은 1~2줄로만 간략히 요약하고 즉시 오늘 수업의 새로운 진도로 넘어가십시오.
-3. [오늘의 신규 진도에 90% 이상 집중]: 오늘 새롭게 등장한 심화 이론, 분석 프레임워크, 수식 유도, 사례에 집중하십시오.
-4. [1주차 주차별 지식 통합]: 키워드 사전과 복습 체크리스트는 1주차 전체를 아우르는 최종 점검 질문으로 구성하십시오.
---------------------------------------------------------------------------------
-"""
                 return base_p
 
     last_content = ""
@@ -1275,7 +1237,7 @@ The following content was ALREADY synthesized in the earlier session of Week {we
         prompt_ko = build_custom_prompt(is_english=False)
         note_ko = call_gemini_with_parts(uploaded_parts, prompt_ko)
         check_cancel()
-        saved = save_to_markdown_cache(course_cfg, note_ko, actual_date_str, week_num, is_english=False, source_files=source_files_dict)
+        saved = save_to_markdown_cache(course_cfg, note_ko, actual_date_str, week_num, is_english=False, source_files=source_files_dict, session_only=True)
         if saved:
             all_saved_mds.extend(saved)
         last_content = note_ko
@@ -1308,7 +1270,7 @@ Translate the following Korean lecture note into publication-grade academic Engl
             note_en = call_gemini_with_parts(uploaded_parts, prompt_en)
 
         check_cancel()
-        saved = save_to_markdown_cache(course_cfg, note_en, actual_date_str, week_num, is_english=True, source_files=source_files_dict)
+        saved = save_to_markdown_cache(course_cfg, note_en, actual_date_str, week_num, is_english=True, source_files=source_files_dict, session_only=True)
         if saved:
             all_saved_mds.extend(saved)
         last_content = note_en
@@ -1332,15 +1294,7 @@ Translate the following Korean lecture note into publication-grade academic Engl
         norm_saved = [unicodedata.normalize("NFC", p) for p in all_saved_mds if p]
         target_mds = set(norm_saved)
 
-        # 강의노트 폴더 내 모든 마크다운 파일 무조건 수집 (NFC 정문화)
-        user_notes_dir_nfc = unicodedata.normalize("NFC", user_notes_dir)
-        if os.path.exists(user_notes_dir_nfc):
-            for mdf in (glob.glob(os.path.join(user_notes_dir_nfc, "*.md")) + glob.glob(os.path.join(user_notes_dir_nfc, ".*.md"))):
-                target_mds.add(unicodedata.normalize("NFC", mdf))
-            for mdf in (glob.glob(os.path.join(user_notes_dir_nfc, "**", "*.md"), recursive=True) + glob.glob(os.path.join(user_notes_dir_nfc, "**", ".*.md"), recursive=True)):
-                target_mds.add(unicodedata.normalize("NFC", mdf))
-
-        log(f"  ℹ️ [PDF 컴파일 대상 마크다운]: {len(target_mds)}개 문서 감지됨", step=4)
+        log(f"  ℹ️ [PDF 컴파일 대상]: 이번에 생성한 {len(target_mds)}개 문서", step=4)
 
         # 1) 마크다운 파일들을 1:1로 직접 즉시 PDF 변환 (100% 누락 원천 차단!)
         for md_p in sorted(list(target_mds)):
@@ -1364,25 +1318,6 @@ Translate the following Korean lecture note into publication-grade academic Engl
                         log(f"  ✅ [{os.path.basename(res_pdf)}] PDF 컴파일 성공", step=4)
             except Exception as e_single:
                 log(f"  ⚠️ 개별 PDF 컴파일 알림: {e_single}", step=4)
-
-        # 2) 과목 전체 PDF 렌더링 파이프라인 (주차별 및 통합본 PDF 100% 동기화)
-        target_keys = list(set([cname, course_cfg.get("name", ""), course_cfg.get("folder_name", "")]))
-        try:
-            generate_pdfs.generate_all_pdfs(target_courses=target_keys)
-        except Exception as e_all:
-            log(f"  ⚠️ 전체 PDF 동기화 알림: {e_all}", step=4)
-
-        # 3) 강의노트 디렉터리 내 생성된 모든 PDF 수집
-        pdf_glob = os.path.join(user_notes_dir_nfc, "**", "*.pdf")
-        for p in glob.glob(pdf_glob, recursive=True):
-            p_nfc = unicodedata.normalize("NFC", p)
-            if p_nfc not in generated_pdfs:
-                generated_pdfs.append(p_nfc)
-        pdf_root_glob = os.path.join(user_notes_dir_nfc, "*.pdf")
-        for p in glob.glob(pdf_root_glob):
-            p_nfc = unicodedata.normalize("NFC", p)
-            if p_nfc not in generated_pdfs:
-                generated_pdfs.append(p_nfc)
 
         log(f"  ✅ 출판용 PDF 렌더링 완료 ({len(generated_pdfs)}개 문서 감지됨)", step=4, eta=1)
     except Exception as e:

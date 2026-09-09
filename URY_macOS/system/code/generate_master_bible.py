@@ -25,7 +25,6 @@ import config_manager
 import generate_pdfs
 
 WORKSPACE_DIR = config_manager.WORKSPACE_DIR
-CACHE_DIR = os.path.join(WORKSPACE_DIR, ".markdown_cache")
 
 
 def generate_master_bible(course_folder_name: str, target_weeks: list = None, exam_type: str = "중간고사"):
@@ -36,7 +35,7 @@ def generate_master_bible(course_folder_name: str, target_weeks: list = None, ex
     api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
     
     course_dir = config_manager.get_course_dir(course_folder_name)
-    cache_c = os.path.join(CACHE_DIR, course_folder_name)
+    cache_c = config_manager.get_markdown_cache_dir(course_folder_name)
 
     if not os.path.exists(cache_c):
         return {"status": "error", "message": f"마크다운 캐시 폴더가 존재하지 않습니다: {cache_c}"}
