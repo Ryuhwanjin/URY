@@ -265,6 +265,15 @@ LANG_CODE_TO_LABEL = {
     "en": "영문 (English) 전용"
 }
 
+UNIVERSITY_THEMES = {
+    "서울대학교": "#003478", "연세대학교": "#003C71", "고려대학교": "#8B1E3F",
+    "성균관대학교": "#0B4DA2", "한양대학교": "#0E4A84", "서강대학교": "#A50034",
+    "중앙대학교": "#005BAC", "경희대학교": "#8B2332", "한국외국어대학교": "#002D72",
+    "이화여자대학교": "#00664F", "부산대학교": "#005BAA", "경북대학교": "#B5121B",
+    "전남대학교": "#006B54", "전북대학교": "#0054A6", "충남대학교": "#003B70",
+    "충북대학교": "#8A1538", "강원대학교": "#004B8D", "제주대학교": "#005A9C",
+}
+
 PERIOD_OPTIONS = [
     "D-1 (벼락치기 총정리)",
     "D-3 (초단기 핵심정복)",
@@ -1500,6 +1509,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             ("✓  Quiz & Exam", 1),
             ("⌁  Chat with Notes", 2),
             ("⚙️ Settings", 3),
+            ("↻  업데이트", 4),
+            ("?  기능 설명", 5),
+            ("§  이용약관 · 윤리", 6),
         ]
 
     def update_api_status_badge(self):
@@ -1570,6 +1582,18 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.notebook.add(self.tab_settings, text=" 설정 ")
         self.build_settings_tab()
 
+        self.tab_update = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.tab_update, text=" 업데이트 ")
+        self.build_update_tab()
+
+        self.tab_features = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.tab_features, text=" 기능 설명 ")
+        self.build_features_tab()
+
+        self.tab_terms = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.tab_terms, text=" 이용약관 및 윤리 ")
+        self.build_terms_tab()
+
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
     def on_tab_changed(self, event=None):
@@ -1634,7 +1658,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         s1_head = tk.Frame(left_content, bg="#ffffff")
         s1_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(s1_head, text=" 1 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s1_head, text="①", font=("Pretendard", 14, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(s1_head, text="Step 1. Course Selection (과목 및 수업 정보)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
         tk.Label(s1_head, text="2026년 2학기", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(side=tk.RIGHT)
 
@@ -1694,7 +1718,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         col_part = tk.Frame(row_dt, bg="#ffffff")
         col_part.pack(side=tk.RIGHT, fill=tk.X)
         tk.Label(col_part, text="Part (수업 파트):", font=("Pretendard", 9, "bold"), bg="#ffffff", fg="#475569").pack(anchor=tk.W, pady=(0, 2))
-        PART_OPTIONS = ["1부 (전반부)", "2부 (후반부)", "3부 (마무리)", "통합 (단일 음성)"]
+        PART_OPTIONS = ["1부", "2부", "3부"]
         self.studio_part_combo = ttk.Combobox(col_part, values=PART_OPTIONS, state="readonly", font=("Pretendard", 9, "bold"), width=12)
         self.studio_part_combo.set(PART_OPTIONS[0])
         self.studio_part_combo.pack(fill=tk.X)
@@ -1707,6 +1731,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.studio_lang_combo = ttk.Combobox(row_lang, values=LANG_OPTIONS, state="readonly", font=("Pretendard", 9))
         self.studio_lang_combo.set(LANG_OPTIONS[0])
         self.studio_lang_combo.pack(fill=tk.X)
+        self.studio_lang_combo.bind("<<ComboboxSelected>>", self.save_studio_language)
 
         # 부드러운 구분선
         tk.Frame(left_content, bg="#f1f5f9", height=1).pack(fill=tk.X, pady=(0, 12))
@@ -1716,7 +1741,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         self.s2_head = tk.Frame(left_content, bg="#ffffff")
         self.s2_head.pack(fill=tk.X, pady=(0, 10))
-        tk.Label(self.s2_head, text=" 2 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(self.s2_head, text="②", font=("Pretendard", 14, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(self.s2_head, text="Step 2. Content Input (음성 & 슬라이드 투입)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
 
         self.audio_select_frame = tk.Frame(left_content, bg="#ffffff")
@@ -1793,7 +1818,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # 슬라이드 조작 버튼
         slide_btn_row = tk.Frame(left_content, bg="#ffffff")
         slide_btn_row.pack(fill=tk.X, pady=(0, 8))
-        SquareRoundButton(slide_btn_row, text="➕  슬라이드 추가...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
+        SquareRoundButton(slide_btn_row, text="📂  강의자료 폴더 열기", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="📷  칠판 판서...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_blackboard_photo, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="☐ 전체 해제", bg="#fef2f2", hover_bg="#fee2e2", fg="#dc2626", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.deselect_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
         SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg=self.accent_color("#f0fdf4"), hover_bg=self.accent_color("#dcfce7"), fg=self.accent_color("#166534"), radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
@@ -1833,7 +1858,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # -------------------------------------------------------------
         s3_head = tk.Frame(left_content, bg="#ffffff")
         s3_head.pack(fill=tk.X, pady=(0, 6))
-        tk.Label(s3_head, text=" 3 ", font=("Pretendard", 9, "bold"), bg=self.accent_color("#1c4732"), fg="#ffffff", padx=5, pady=2).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(s3_head, text="③", font=("Pretendard", 14, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(s3_head, text="Step 3. Process & Refine (분석 모드)", font=("Pretendard", 11, "bold"), bg="#ffffff", fg="#0f172a").pack(side=tk.LEFT)
 
         self.no_audio_var = tk.BooleanVar(value=False)
@@ -2144,22 +2169,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         slides_dir = os.path.join(course_dir, "강의자료")
         os.makedirs(slides_dir, exist_ok=True)
 
-        fpaths = self.ask_open_files_safe(
-            title="강의 슬라이드 및 자료 선택 (PDF, PPTX, HWPX, IPYNB, PY, DOCX, SQL 등)",
-            initialdir=slides_dir if os.path.exists(slides_dir) else course_dir,
-            filetypes=[
-                ("모든 지원 자료", "*.pdf *.pptx *.ppt *.hwpx *.hwp *.ipynb *.py *.sql *.docx"),
-                ("PDF 문서", "*.pdf"),
-                ("PPT 슬라이드", "*.pptx *.ppt"),
-                ("한글 문서", "*.hwpx *.hwp"),
-                ("파이썬/주피터", "*.ipynb *.py"),
-                ("SQL 쿼리", "*.sql"),
-                ("Word 문서", "*.docx"),
-                ("모든 파일", "*.*")
-            ]
-        )
-        if fpaths:
-            self.refresh_studio_slides(selected_paths=fpaths)
+        if sys.platform == "darwin":
+            subprocess.call(["open", slides_dir])
+        elif sys.platform == "win32":
+            os.startfile(slides_dir)
+        else:
+            subprocess.call(["xdg-open", slides_dir])
 
     def get_course_folder(self, cname):
         for c in self.courses:
@@ -2173,6 +2188,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             return
         folder = self.get_course_folder(cname)
         course_dir = config_manager.get_course_dir(folder)
+        cdata = self.get_course_data(cname)
+        self.studio_lang_combo.set(LANG_CODE_TO_LABEL.get(cdata.get("language_mode", "both"), LANG_OPTIONS[0]))
 
         # 1. 감지된 오디오 파일 목록 갱신
         self.detected_audio_paths = []
@@ -2230,6 +2247,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         # 2. 슬라이드 목록 갱신
         self.refresh_studio_slides()
+
+    def save_studio_language(self, event=None):
+        cname = self.studio_course_combo.get().strip()
+        for course in self.courses:
+            if course.get("course_name") == cname:
+                course["language_mode"] = LANG_LABEL_TO_CODE.get(self.studio_lang_combo.get(), "both")
+                self.settings["courses"] = self.courses
+                config_manager.save_settings(self.settings)
+                break
 
     def select_all_studio_slides(self):
         """스튜디오 강의 슬라이드 전체 선택"""
@@ -2674,7 +2700,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ttk.Button(mat_ctrl, text="📚 마스터 바이블", style="Secondary.TButton", command=self.run_master_bible_generation).pack(side=tk.RIGHT, padx=(3, 0))
         ttk.Button(mat_ctrl, text="✅ 전범위 선택", style="Secondary.TButton", command=self.select_all_exam_materials).pack(side=tk.RIGHT, padx=(3, 0))
         ttk.Button(mat_ctrl, text="❌ 전체 해제", style="Secondary.TButton", command=self.clear_all_exam_materials).pack(side=tk.RIGHT, padx=(3, 0))
-        ttk.Button(mat_ctrl, text="➕ 자료 추가", style="Secondary.TButton", command=self.add_custom_exam_material).pack(side=tk.RIGHT, padx=(3, 0))
+        ttk.Button(mat_ctrl, text="📂 강의노트 폴더", style="Secondary.TButton", command=self.add_custom_exam_material).pack(side=tk.RIGHT, padx=(3, 0))
 
         # 스크롤 가능한 체크박스 캔버스 (높이 85로 여백 최적화)
         canvas_wrap = ttk.Frame(mat_frame)
@@ -2696,9 +2722,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         btn_bar.pack(fill=tk.X, pady=(8, 0))
 
         SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg="#205c3b", hover_bg="#2a774d", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="✍️ 답안 채점", bg="#285943", hover_bg="#357357", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_grading_dialog_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="⚡ 치트시트 생성", bg="#3a6652", hover_bg="#4a8067", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
+        SquareRoundButton(btn_bar, text="⚡ 벼락치기 정리노트", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
         self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
         self.exam_open_pdf_btn.pack(side=tk.LEFT)
@@ -2858,25 +2883,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.exam_scope_var.set("사용자 직접 지정 범위")
 
     def add_custom_exam_material(self):
-        fpaths = self.ask_open_files_safe(
-            title="출제 범위에 추가할 학습 자료 (마크다운 또는 PDF) 선택",
-            filetypes=[("학습 자료", "*.md *.pdf *.txt"), ("모든 파일", "*.*")]
-        )
-        if not fpaths:
+        cname = self.exam_course_combo.get().strip()
+        if not cname:
+            messagebox.showwarning("과목 선택", "먼저 과목을 선택해주세요.")
             return
-        for fpath in fpaths:
-            if fpath not in self.exam_material_vars:
-                var = tk.BooleanVar(value=True)
-                self.exam_material_vars[fpath] = var
-                fname = os.path.basename(fpath)
-                chk = ttk.Checkbutton(
-                    self.exam_mat_inner,
-                    text=f"📂 [추가자료] {fname}",
-                    variable=var,
-                    command=self.on_exam_material_toggled
-                )
-                chk.pack(anchor=tk.W, padx=6, pady=2)
-        self.on_exam_material_toggled()
+        notes_dir = os.path.join(config_manager.get_course_dir(self.get_course_folder(cname)), "강의노트")
+        os.makedirs(notes_dir, exist_ok=True)
+        if sys.platform == "darwin": subprocess.call(["open", notes_dir])
+        elif sys.platform == "win32": os.startfile(notes_dir)
+        else: subprocess.call(["xdg-open", notes_dir])
 
     def append_exam_log(self, text, tag="normal"):
         if not hasattr(self, "exam_log_text"):
@@ -4097,6 +4112,62 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     # =========================================================================
     # 탭 4: ⚙️ 과목 및 시스템 설정
     # =========================================================================
+    def build_info_page(self, parent, title, subtitle, body):
+        card = ttk.LabelFrame(parent, text=f" {title} ", padding="18")
+        card.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(card, text=subtitle, font=("Pretendard", 11, "bold"),
+                  foreground=self.accent_color("#1c4732")).pack(anchor=tk.W, pady=(0, 12))
+        text = tk.Text(card, wrap=tk.WORD, font=("Pretendard", 10), bg="#ffffff", fg="#334155",
+                       relief=tk.FLAT, padx=12, pady=12, spacing2=4)
+        scrollbar = ttk.Scrollbar(card, orient=tk.VERTICAL, command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        text.insert("1.0", body)
+        text.configure(state=tk.DISABLED)
+        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def build_update_tab(self):
+        card = ttk.LabelFrame(self.tab_update, text=" URY Engine 업데이트 ", padding="20")
+        card.pack(fill=tk.X)
+        ttk.Label(card, text="현재 버전  v0.8.0", font=("Pretendard", 15, "bold"),
+                  foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
+        ttk.Label(card, text="GitHub Release에서 새 설치 파일을 확인합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(4, 16))
+        SquareRoundButton(card, text="↻  지금 업데이트 확인", bg=self.accent_color("#1c4732"),
+                          hover_bg=self.accent_color("#265e43"), radius=8, height=36,
+                          font=("Pretendard", 10, "bold"),
+                          command=lambda: self.check_for_updates(manual=True)).pack(anchor=tk.W)
+
+    def build_features_tab(self):
+        self.build_info_page(self.tab_features, "기능 설명", "자료를 넣고, 노트를 만들고, 시험과 질문으로 복습하세요.", """① Studio
+과목과 수업 일자를 선택하고 녹음·강의자료를 연결해 강의노트와 PDF를 생성합니다.
+
+② Quiz & Exam
+생성된 강의노트를 선택해 모의시험, 학습 로드맵, 벼락치기 정리노트를 만듭니다.
+
+③ Chat with Notes
+과목별 강의노트를 근거로 질문하고 답변을 받을 수 있습니다.
+
+④ Settings
+학기, 과목, Gemini API 키, 출력 언어, 대학별 포인트 색상을 관리합니다.
+
+파일과 생성 결과는 선택한 학기·과목 폴더에 저장됩니다.""")
+
+    def build_terms_tab(self):
+        self.build_info_page(self.tab_terms, "이용약관 및 학업 윤리", "강의자료와 녹음은 개인 학습 범위에서만 사용하세요.", """1. 사적 이용
+URY Engine의 녹음, 강의자료 및 AI 생성물은 본인의 학업 복습과 시험 대비 목적으로만 사용합니다.
+
+2. 무단 배포 금지
+교수자의 강의와 자료 및 이를 기반으로 만든 결과물을 외부에 공유·판매·전재하지 않습니다.
+
+3. 녹음 동의
+수업 녹음은 교수자와 학교 규정이 허용하는 범위에서 진행하며 타인의 음성권과 개인정보를 존중합니다.
+
+4. AI 결과 확인
+AI 생성 내용은 오류가 있을 수 있으며 최종 학습·제출 전 사용자가 직접 사실을 확인합니다.
+
+5. 로컬 저장
+강의자료와 생성물은 사용자 컴퓨터에 저장됩니다. Gemini 처리 시 선택한 자료가 해당 API로 전송될 수 있습니다.""")
+
     def build_settings_tab(self):
         # 상단 설정 카드 (학기 & API Key)
         top_frame = ttk.LabelFrame(self.tab_settings, text=" 학기 및 Gemini API 설정 ", padding="10")
@@ -4185,8 +4256,6 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.add_context_menu(self.api_entry)
 
         SquareRoundButton(api_row, text="💾 설정 저장", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
-        SquareRoundButton(api_row, text="🔄 업데이트 확인", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=32, font=("Pretendard", 9, "bold"), command=lambda: self.check_for_updates(manual=True)).pack(side=tk.RIGHT, padx=(0, 6))
-
         theme_frame = ttk.LabelFrame(self.tab_settings, text=" 🎨 대학별 테마 ", padding="10")
         theme_frame.pack(fill=tk.X, pady=(0, 8))
         theme_row = ttk.Frame(theme_frame)
@@ -4204,11 +4273,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             font=("Pretendard", 8, "bold"), command=lambda: self.set_theme_accent(self.theme_hex_var.get()),
             parent_bg="#ffffff"
         ).pack(side=tk.LEFT, padx=(0, 6))
-        for label, color in (("고려대", "#8B1E3F"), ("서울대", "#003478"), ("연세대", "#003C71")):
-            SquareRoundButton(
-                theme_row, text=label, bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=28,
-                font=("Pretendard", 8), command=lambda c=color: self.set_theme_accent(c), parent_bg="#ffffff"
-            ).pack(side=tk.LEFT, padx=2)
+        current_school = next((name for name, color in UNIVERSITY_THEMES.items() if color.lower() == self.theme_accent.lower()), "직접 선택")
+        self.university_theme_var = tk.StringVar(value=current_school)
+        university_combo = ttk.Combobox(theme_row, textvariable=self.university_theme_var,
+                                        values=["직접 선택", *UNIVERSITY_THEMES], state="readonly", width=20)
+        university_combo.pack(side=tk.LEFT, padx=(2, 0))
+        university_combo.bind("<<ComboboxSelected>>", lambda e: self.set_theme_accent(
+            UNIVERSITY_THEMES.get(self.university_theme_var.get(), self.theme_hex_var.get())))
         self.refresh_theme_widgets()
 
         # 화면 해상도 및 창모드 크기 조절 카드
@@ -4373,11 +4444,6 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         SquareRoundButton(c_btn_row, text="✏️  선택 과목 수정", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.edit_course_dialog).pack(side=tk.LEFT, padx=(0, 8))
         SquareRoundButton(c_btn_row, text="🗑️  과목 삭제", bg="#fee2e2", hover_bg="#fecaca", fg="#dc2626", radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.delete_course_action).pack(side=tk.LEFT)
 
-        # 하단 전체 파이프라인 일괄 수동 실행 옵션 (사용자가 원할 때만 실행)
-        batch_frame = ttk.LabelFrame(self.tab_settings, text=" 🚀 전체 파이프라인 일괄 수동 실행 (옵션) ", padding="8")
-        batch_frame.pack(fill=tk.X)
-        ttk.Label(batch_frame, text="전체 수신함 녹음 파일 자동 정리 및 모든 과목 일괄 파이프라인을 구동합니다.", style="Muted.TLabel").pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(batch_frame, text="▶ 전체 파이프라인 수동 구동", style="Secondary.TButton", command=self.run_pipeline_thread).pack(side=tk.RIGHT)
 
     def populate_course_table(self):
         for item in self.course_tree.get_children():
@@ -4768,7 +4834,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 if not course:
                     messagebox.showwarning("과목 선택", "녹음할 대상 과목을 먼저 선택해 주세요.")
                     return
-                res = rec.start_recording(course)
+                res = rec.start_recording(course, self.studio_date_var.get().strip())
                 if res.get("status") == "success":
                     self.rec_is_active = True
                     self.rec_start_time = time.time()

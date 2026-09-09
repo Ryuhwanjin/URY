@@ -22,7 +22,8 @@ class ThemeSettingsTest(unittest.TestCase):
             self.assertIn("self.apply_theme_icon()", methods["set_theme_accent"])
             self.assertIn("def apply_theme_icon", source)
             self.assertIn("ury_engine_icon.png", source)
-            self.assertIn("check_for_updates(manual=True)", methods["build_settings_tab"])
+            self.assertIn("check_for_updates(manual=True)", methods["build_update_tab"])
+            self.assertIn("UNIVERSITY_THEMES", source)
             self.assertIn('def check_for_updates(self, manual=False)', source)
 
 

@@ -10,6 +10,7 @@
 import os
 import sys
 import time
+import re
 import subprocess
 import signal
 from datetime import datetime
@@ -82,6 +83,18 @@ def find_mac_recorder_bin():
     return None
 
 
+def build_recording_filename(rec_dir, date_str, course_name, ext):
+    """날짜와 과목명이 드러나는 충돌 없는 녹음 파일명을 만든다."""
+    try:
+        date_str = datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except (TypeError, ValueError):
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    safe_course = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", str(course_name)).strip(" ._") or "과목"
+    prefix = f"{date_str}_{safe_course}_"
+    session_num = 1 + sum(name.startswith(prefix) for name in os.listdir(rec_dir))
+    return f"{prefix}{session_num}교시_실시간녹음.{ext}"
+
+
 class AudioRecorder:
     def __init__(self):
         self.process = None
@@ -89,8 +102,8 @@ class AudioRecorder:
         self.is_recording = False
         self.start_time = None
 
-    def start_recording(self, course_name_or_folder: str) -> dict:
-        """녹음 시작: 지정된 과목의 '음성녹음' 디렉토리에 YYYY-MM-DD_1교시_실시간녹음.m4a 형태로 기록"""
+    def start_recording(self, course_name_or_folder: str, lecture_date: str = None) -> dict:
+        """녹음 시작: 과목 폴더에 YYYY-MM-DD_과목명_1교시_실시간녹음 형식으로 기록."""
         if self.is_recording:
             return {"status": "already_running", "message": "이미 녹음이 진행 중입니다."}
 
@@ -105,15 +118,9 @@ class AudioRecorder:
         rec_dir = os.path.join(course_dir, "음성녹음")
         os.makedirs(rec_dir, exist_ok=True)
 
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        
-        # 오늘 날짜 기존 파일 갯수로 교시 순번 결정
-        existing_files = [f for f in os.listdir(rec_dir) if date_str in f]
-        session_num = len(existing_files) + 1
-        
         mac_bin = find_mac_recorder_bin()
         ext = "m4a" if (sys.platform == "darwin" and mac_bin) else "wav"
-        filename = f"{date_str}_{session_num}교시_실시간녹음.{ext}"
+        filename = build_recording_filename(rec_dir, lecture_date, course_name_or_folder, ext)
         self.output_file = os.path.join(rec_dir, filename)
 
         try:
@@ -213,4 +220,3 @@ class AudioRecorder:
 
 # 글로벌 싱글톤 인스턴스
 recorder_instance = AudioRecorder()
-

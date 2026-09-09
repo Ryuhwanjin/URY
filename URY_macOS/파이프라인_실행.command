@@ -6,10 +6,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
 
-# macOS 보안 격리 차단 자동 해제
-xattr -d com.apple.quarantine "$0" 2>/dev/null || true
-xattr -cr "$DIR" 2>/dev/null || true
-
 PY=""
 CANDIDATES=(
     "/opt/anaconda3/bin/python3"

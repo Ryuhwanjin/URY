@@ -71,7 +71,7 @@ def main():
 
     # 안내 및 유틸리티 파일 복사 (01_macOS_실행하기.command 및 USER_GUIDE.pdf 포함)
     mac_src_dir = os.path.join(root_dir, 'URY_macOS')
-    for extra in ['01_macOS_실행하기.command', '보안경고_자동해제.command', '설정관리자.command', '파이프라인_실행.command', 'USER_GUIDE.pdf', 'USER_GUIDE.md', '시스템_저장경로_안내.pdf', '시스템_저장경로_안내.md']:
+    for extra in ['01_macOS_실행하기.command', '설정관리자.command', '파이프라인_실행.command', 'USER_GUIDE.pdf', 'USER_GUIDE.md', '시스템_저장경로_안내.pdf', '시스템_저장경로_안내.md']:
         p = os.path.join(mac_src_dir, extra)
         if not os.path.exists(p):
             p = os.path.join(root_dir, extra)
