@@ -984,10 +984,9 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                 "maxOutputTokens": 16384
             }
         }
-        models_to_try = config_manager.get_supported_gemini_models(api_key)
+        models_to_try = config_manager.get_supported_gemini_models(api_key)[:3]
         top_display = ", ".join(models_to_try[:3])
         log(f"  ℹ️ [구글 최신 모델 순서 자동 감지]: {top_display} 등 {len(models_to_try)}개 모델 준비 완료", step=2)
-        backoff_delays = [5, 10, 20]
         for model in models_to_try:
             check_cancel()
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -997,75 +996,76 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                 headers={"Content-Type": "application/json"},
                 method="POST"
             )
-            for attempt in range(len(backoff_delays)):
+            check_cancel()
+            try:
+                log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
+                req_resp = [None, None]
+
+                def do_call():
+                    try:
+                        with urllib.request.urlopen(req, timeout=240) as resp:
+                            req_resp[0] = resp.read()
+                    except Exception as ex:
+                        req_resp[1] = ex
+
+                call_th = threading.Thread(target=do_call, daemon=True)
+                call_th.start()
+
+                elapsed_wait = 0
+                while call_th.is_alive():
+                    check_cancel()
+                    time.sleep(1)
+                    elapsed_wait += 1
+                    if elapsed_wait % 5 == 0:
+                        dots = "." * ((elapsed_wait // 5) % 4 + 1)
+                        log(f"  ⏳ [{model}] AI 강의 심층 분석 및 강의노트 실시간 조판 중{dots} ({elapsed_wait}초 경과)", step=2)
+
+                if req_resp[1] is not None:
+                    raise req_resp[1]
+
+                res = json.loads(req_resp[0].decode("utf-8"))
+                usage = res.get("usageMetadata", {})
+                if usage:
+                    log(
+                        "  📊 토큰 사용량: "
+                        f"입력 {usage.get('promptTokenCount', 0):,} / "
+                        f"출력 {usage.get('candidatesTokenCount', 0):,} / "
+                        f"합계 {usage.get('totalTokenCount', 0):,}",
+                        step=2,
+                    )
+                candidates = res.get("candidates", [])
+                if candidates and "content" in candidates[0]:
+                    parts = candidates[0]["content"].get("parts", [])
+                    if parts and "text" in parts[0]:
+                        return parts[0]["text"].strip()
+                raise RuntimeError(f"응답 데이터 형식 불일치 ({res.get('promptFeedback', '알 수 없는 응답')})")
+            except urllib.error.HTTPError as e:
                 check_cancel()
                 try:
-                    log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
-                    req_resp = [None, None]
-
-                    def do_call():
-                        try:
-                            with urllib.request.urlopen(req, timeout=120) as resp:
-                                req_resp[0] = resp.read()
-                        except Exception as ex:
-                            req_resp[1] = ex
-
-                    call_th = threading.Thread(target=do_call, daemon=True)
-                    call_th.start()
-
-                    elapsed_wait = 0
-                    while call_th.is_alive():
-                        check_cancel()
-                        time.sleep(1)
-                        elapsed_wait += 1
-                        if elapsed_wait % 5 == 0:
-                            dots = "." * ((elapsed_wait // 5) % 4 + 1)
-                            log(f"  ⏳ [{model}] AI 강의 심층 분석 및 강의노트 실시간 조판 중{dots} ({elapsed_wait}초 경과)", step=2)
-
-                    if req_resp[1] is not None:
-                        raise req_resp[1]
-
-                    res = json.loads(req_resp[0].decode("utf-8"))
-                    candidates = res.get("candidates", [])
-                    if candidates and "content" in candidates[0]:
-                        parts = candidates[0]["content"].get("parts", [])
-                        if parts and "text" in parts[0]:
-                            return parts[0]["text"].strip()
-                    raise RuntimeError(f"응답 데이터 형식 불일치 ({res.get('promptFeedback', '알 수 없는 응답')})")
-                except urllib.error.HTTPError as e:
-                    check_cancel()
-                    err_body = ""
-                    try:
-                        raw_bytes = e.read().decode("utf-8", errors="ignore")
-                        err_json = json.loads(raw_bytes)
-                        err_body = err_json.get("error", {}).get("message", raw_bytes[:120])
-                    except Exception:
-                        err_body = str(e)
-                    if e.code in (429, 503):
-                        log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
-                        break
-                    if e.code in (500, 502, 504) and attempt < len(backoff_delays) - 1:
-                        delay = backoff_delays[attempt]
-                        log(f"  ⚠️ [{model}] HTTP {e.code} 서버 과부하 감지: {delay}초 후 자동 재시도 ({attempt+1}/{len(backoff_delays)})... ({err_body})", step=2)
-                        time.sleep(delay)
-                        continue
-                    else:
-                        log(f"  ❌ [{model}] HTTP {e.code} 에러: {err_body}", step=2)
-                        break
-                except (urllib.error.URLError, TimeoutError) as e:
-                    check_cancel()
-                    if attempt < len(backoff_delays) - 1:
-                        delay = backoff_delays[attempt]
-                        log(f"  ⚠️ [{model}] 네트워크/타임아웃 감지: {delay}초 후 자동 재시도 ({attempt+1}/{len(backoff_delays)})...", step=2)
-                        time.sleep(delay)
-                        continue
-                    else:
-                        log(f"  ❌ [{model}] 네트워크 연결 오류: {e}", step=2)
-                        break
-                except Exception as e:
-                    check_cancel()
-                    log(f"  ⚠️ [{model}] 호출 예외 ({type(e).__name__}): {e} -> 다음 모델 전환...", step=2)
+                    raw_bytes = e.read().decode("utf-8", errors="ignore")
+                    err_json = json.loads(raw_bytes)
+                    err_body = err_json.get("error", {}).get("message", raw_bytes[:120])
+                except Exception:
+                    err_body = str(e)
+                if e.code == 429 and any(marker in err_body.lower() for marker in ("perday", "per_day", "per day", "daily", "rpd")):
+                    raise RuntimeError("Gemini 일일 요청 한도(RPD)가 소진되었습니다. 자동 재시도하지 않습니다.") from None
+                if e.code in (429, 503):
+                    log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
                     break
+                log(f"  ⚠️ [{model}] HTTP {e.code} 요청 실패 -> 다음 모델로 전환합니다. ({err_body})", step=2)
+                break
+            except (urllib.error.URLError, TimeoutError) as e:
+                check_cancel()
+                reason = getattr(e, "reason", e)
+                if isinstance(reason, TimeoutError):
+                    raise RuntimeError("Gemini AI 생성이 240초를 초과했습니다. 중복 사용량 방지를 위해 자동 재시도하지 않습니다.") from None
+                raise RuntimeError(f"Gemini API 연결에 실패했습니다: {reason}") from None
+            except RuntimeError:
+                raise
+            except Exception as e:
+                check_cancel()
+                log(f"  ⚠️ [{model}] 호출 예외 ({type(e).__name__}): {e} -> 다음 모델 전환...", step=2)
+                break
         raise RuntimeError("모든 Gemini 모델 요청에 실패했습니다.")
 
     # 프롬프트 구성 (100% 완전성 & 한/영 1:1 대칭 보장 & 출처 파일명 명시 & 토큰 절약 테이블화)
