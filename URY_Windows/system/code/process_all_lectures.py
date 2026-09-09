@@ -1087,7 +1087,7 @@ Produce a rigorous, publication-grade academic lecture note in English for exam 
 * Filter out all casual jokes, personal anecdotes, and off-topic digressions ("잡소리") to keep the content purely academic and maximally thorough.
 * DO NOT generate any bracket tags (e.g., `[Slide 1]`, `[Slide 2~3]`, `[🎙️ Spoken]`, `[📖 Textbook]`, `[Tagged]`). Write in clean, publication-ready academic prose.
 * DO NOT output raw ASCII art boxes (e.g. `┌─┐`, `│`, `└─┘`, `+---+`) or repetitive ASCII divider lines (`==========`). Instead, use clean Markdown tables, headings, or blockquotes.
-* Format grading policies, evaluation criteria, and assessment weights strictly as a concise Markdown Table (`| Assessment Component | Weight (%) | Operational Details & Policies |`). Do NOT write repetitive paragraphs for every single grade letter.
+* Include grading policies, evaluation criteria, or assessment weights only when they appear in the provided source. If included, use a concise Markdown table; never invent them.
 * You MUST fully write all 4 sections to the very end without cutting off early: Section 1, Section 2 (deep theory & diagrams), Section 3 (keywords table & takeaways), and Section 4 (Action checklist).
 
 Format:
@@ -1095,8 +1095,7 @@ Format:
 > 📌 **Course**: {cname} | **Week**: Week {week_num} | **Date**: {actual_date_str} ({weekday_en})
 
 ## 📌 1. Class Announcements & Operational Guidelines
-- Attendance verification codes, quiz announcements, homework deadlines, course policies with exact timestamps.
-- Assessment Breakdown Table (`| Assessment Component | Weight (%) | Operational Details & Policies |`).
+- Include only attendance codes, quizzes, deadlines, or course policies that appear in the provided source.
 
 ## 💡 2. In-Depth Theoretical & Conceptual Analysis
 - Zero filler or off-topic chitchat: Exhaustive, granular, and publication-grade academic analysis of all course concepts, theories, models, and slide bullet points.
@@ -1138,7 +1137,7 @@ Tone: Professional academic publication tone."""
 2. [표 및 시각 요소 엄격 준수]:
    - 아스키 박스 그림(`┌─┐`, `│`, `└─┘`, `+---+`)이나 반복선(`==========`)을 절대 출력하지 마십시오. 표(Markdown Table)나 표준 인용구(`>`)를 사용하십시오.
    - 본문 문장 사이에 `[Slide 1]`, `[Slide 2~3]`, `[🎙️ 음성]`, `[📖 교재]`, `[Tagged]` 같은 대괄호 태그나 슬라이드 번호 태그를 절대로 생성하지 마십시오. 100% 깔끔한 학술 서술체로 작성하십시오.
-   - 성적 평가 방식은 영문처럼 `| 평가 항목 | 비중 (%) | 세부 운영 규칙 및 정책 |` 테이블로 깔끔하게 정리할 것 (A+, A0 등 개별 학점 구간을 줄글로 길게 늘여 쓰지 말 것).
+   - 성적 평가 방식은 원본에 명시된 경우에만 `| 평가 항목 | 비중 (%) | 세부 운영 규칙 및 정책 |` 테이블로 정리할 것. 원본에 없으면 추정하거나 작성하지 말 것.
    - 4Ps 분석표, 키워드 사전 표 역시 영문 마스터 노트의 컬럼과 행 구조를 1:1 그대로 유지하여 번역할 것.
 3. [전문 용어 병기]:
    - 핵심 개념은 반드시 `한국어 번역 (English Official Term)` 형태로 병기할 것.
@@ -1155,7 +1154,7 @@ Tone: Professional academic publication tone."""
 > 📌 **과목명**: {cname} | **주차**: {week_num}주차 | **수업 일자**: {actual_date_str} ({weekday_kr})
 
 ## 📌 1. 수업 개요 및 주요 공지사항
-- 평가 기준 테이블 (`| 평가 항목 | 비중 (%) | 세부 운영 규칙 및 정책 |`) 및 출석/과제/시험 규정
+- 원본에 실제로 언급된 출석·과제·시험 공지사항만 정리
 
 ## 💡 2. 핵심 이론 및 상세 개념 분석
 - 영문 마스터 노트의 2.1, 2.2, 2.3 등 모든 이론, 프레임워크, 도표를 100% 대칭 해설
