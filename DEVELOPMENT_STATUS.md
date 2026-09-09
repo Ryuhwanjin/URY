@@ -5,9 +5,12 @@
 ## 진행 중
 
 - 최적화 앱 실사용 확인 필요: Studio 로그에서 `서버 응답 대기` 후 `AI 응답 수신 중`으로 전환되는지 확인
+- 사용자 승인 대기: `IMPLEMENTATION_PLAN.md`의 Phase 1~5 범위와 우선순위
 
 ## 최근 완료
 
+- Codex·Antigravity 공용 인수인계 문서, 기능 현황표, 승인용 구현 계획서 작성
+- Antigravity용 Git 원격·브랜치·안전한 동기화·검증·푸시 절차 기록
 - Gemini 강의노트 생성을 `streamGenerateContent` SSE 방식으로 변경
 - 생성 출력 한도를 16,384에서 8,192토큰으로 조정
 - 핵심 내용은 유지하고 반복·잡담·저가치 세부 설명을 압축하도록 프롬프트 최적화
@@ -27,7 +30,6 @@
 1. 최적화된 스트리밍 강의노트 생성 실사용 테스트
 2. 동일 강의자료 재사용 시 Gemini File API 업로드 캐시 적용
 3. User Guide 실제 앱 스크린샷 추가
-4. Windows UI 마감 및 Windows 설치파일 빌드 검증
 4. Windows UI를 macOS와 동일한 흐름으로 최종 정리
 5. Windows 빌드 환경과 설치 패키지 생성·검증
 6. macOS 후속 안정화 릴리스 및 테스트 릴리스 정리
@@ -37,3 +39,4 @@
 - 전체 테스트: `python3 -B -m unittest discover -s tests`
 - macOS 빌드: `/opt/anaconda3/bin/python3 build_macos_app.py`
 - 사용자 시간표와 로컬 테스트 파일은 커밋 대상에서 제외
+- Codex와 Antigravity 모두 `DEVELOPMENT_STATUS.md`, `FEATURE_MATRIX.md`, `IMPLEMENTATION_PLAN.md`를 공통 기준으로 사용

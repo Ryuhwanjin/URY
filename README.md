@@ -62,5 +62,9 @@ Tk가 포함된 Python 3.13으로 실행합니다. 현재 개발 Mac에서는 �
 
 - [사용 가이드](USER_GUIDE.md)
 - [저장 경로 안내](URY_macOS/시스템_저장경로_안내.md)
+- [현재 개발 현황](DEVELOPMENT_STATUS.md)
+- [기능 구현 현황](FEATURE_MATRIX.md)
+- [승인용 구현 계획](IMPLEMENTATION_PLAN.md)
+- [Antigravity 인수인계](GEMINI.md)
 
 강의 자료와 생성물은 개인 학습 목적으로만 사용하세요.

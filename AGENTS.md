@@ -1,7 +1,9 @@
 # URY Engine 작업 규칙
 
+- 작업 시작 전 `DEVELOPMENT_STATUS.md`, `FEATURE_MATRIX.md`, `IMPLEMENTATION_PLAN.md`를 읽는다.
 - 개발을 시작하거나 종료할 때 루트의 `DEVELOPMENT_STATUS.md`를 갱신한다.
 - 중단될 수 있는 작업은 `진행 중`에 대상 파일, 현재 상태, 바로 다음 명령을 남긴다.
 - 완료 항목은 검증 결과와 커밋을 기록하고 `진행 중`에서 제거한다.
 - 사용자 데이터인 `URY_macOS/system/시간표.json`과 로컬 테스트 파일은 명시적 요청 없이 커밋하지 않는다.
 - macOS와 Windows 공용 Python 코드는 양쪽에 동일하게 반영하고 테스트한다.
+- 계획 변경이나 신규 기능이 생기면 `FEATURE_MATRIX.md`와 `IMPLEMENTATION_PLAN.md`도 함께 갱신한다.
