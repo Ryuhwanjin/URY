@@ -37,8 +37,8 @@ def main():
     subprocess.run(command, cwd=ROOT, check=True)
     app = ROOT / "URY_macOS/URY Engine.app"
     plist = app / "Contents/Info.plist"
-    subprocess.run(["plutil", "-replace", "CFBundleShortVersionString", "-string", "0.8.0", str(plist)], check=True)
-    subprocess.run(["plutil", "-replace", "CFBundleVersion", "-string", "0.8.0", str(plist)], check=True)
+    subprocess.run(["plutil", "-replace", "CFBundleShortVersionString", "-string", "0.9.0", str(plist)], check=True)
+    subprocess.run(["plutil", "-replace", "CFBundleVersion", "-string", "0.9.0", str(plist)], check=True)
     subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)], check=True)
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
     check = subprocess.run([str(app / "Contents/MacOS/URY Engine"), "--smoke-test"],

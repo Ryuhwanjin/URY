@@ -47,8 +47,9 @@ TUTOR_SYSTEM_PROMPT = """당신의 이름은 '{tutor_name}'이며, [{cname}] 과
    - 모든 답변의 마지막에는 반드시 아래 서식에 맞춰 실제로 참조한 원문 문장을 1~2줄 직접 인용하십시오:
      ---
      📌 **[참조 원문 근거]**:
-     • 출처: [참고한 강의노트, 강의계획서, 또는 슬라이드 파일명/주차] (원론적 질문일 경우: '전공 표준 기초 이론')
+     • 출처: `실제 파일명`, Page N (자료에 Page 표기가 없으면 페이지 번호 생략)
      • 원문 발췌: "실제 강의노트 또는 교재에서 발췌한 핵심 문장..."
+   - 지식 베이스의 `=== [...] ===` 머리글에 적힌 실제 파일명만 사용하십시오. 파일명이나 페이지를 추측하지 마십시오.
 
 5. 💡 [친절하고 명쾌한 눈높이 설명]:
    - 어려운 학술 용어와 공식은 학생이 직관적으로 이해할 수 있도록 일상생활 비유, 실무 예시, 단계별 요약을 곁들여 설명하십시오.
@@ -104,7 +105,20 @@ def get_course_knowledge_base(cname, max_chars=40000):
                 collected_chunks.append(chunk)
                 total_len += len(chunk)
 
-    # 1. .markdown_cache 수집 (가장 고품질 마크다운 노트)
+    # 1. 원본 강의자료를 파일명·PDF 페이지 표기와 함께 수집
+    materials_dir = os.path.join(cdir, "강의자료")
+    if os.path.isdir(materials_dir):
+        for source_file in sorted(glob.glob(os.path.join(materials_dir, "*"))):
+            if not os.path.isfile(source_file) or total_len >= max_chars:
+                continue
+            source_text = extract_text_from_file(source_file)
+            if source_text:
+                fname = os.path.basename(source_file)
+                chunk = f"\n\n=== [원본 강의자료: {fname}] ===\n{source_text[:10000]}"
+                collected_chunks.append(chunk)
+                total_len += len(chunk)
+
+    # 2. .markdown_cache 수집 (가장 고품질 마크다운 노트)
     cache_dirs = [
         config_manager.get_markdown_cache_dir(folder_name),
         config_manager.get_markdown_cache_dir(cname)
@@ -119,7 +133,7 @@ def get_course_knowledge_base(cname, max_chars=40000):
                     collected_chunks.append(chunk)
                     total_len += len(chunk)
 
-    # 2. 강의노트 폴더 내 자료
+    # 3. 강의노트 폴더 내 자료
     notes_dir = os.path.join(cdir, "강의노트")
     if os.path.exists(notes_dir) and total_len < max_chars:
         for mdf in sorted(glob.glob(os.path.join(notes_dir, "**", "*.md"), recursive=True)):
@@ -130,7 +144,7 @@ def get_course_knowledge_base(cname, max_chars=40000):
                 collected_chunks.append(chunk)
                 total_len += len(chunk)
 
-    # 3. 예상문제 및 치트시트 폴더
+    # 4. 예상문제 및 벼락치기 정리노트 폴더
     exam_dir = os.path.join(cdir, "예상문제")
     if os.path.exists(exam_dir) and total_len < max_chars:
         for mdf in sorted(glob.glob(os.path.join(exam_dir, "*.md"))):
@@ -166,11 +180,13 @@ def verify_and_guard_answer(answer, kb):
             annotated = annotated.replace(f"({ts})", f"({ts} ⚠️ 원본음성 확인필요)")
 
     # 참조 원문 근거 섹션 유무 확인 및 보정
-    if "📌" not in annotated and "참조 원문" not in annotated:
+    if "출처:" not in annotated and "참조 원문" not in annotated:
+        source_match = re.search(r"=== \[[^\]]*?(?:자료|강의노트|Syllabus)[^:\]]*: ([^\]\)]+)", kb or "")
+        source_name = source_match.group(1).strip() if source_match else "전공 표준 기초 이론"
         if kb and any(k in annotated for k in ["강의", "교수님", "수업"]):
-            annotated += "\n\n---\n📌 **[참조 원문 근거]**: 수업 강의노트 및 슬라이드 교재 참조"
+            annotated += f"\n\n---\n📌 **참조 원문 근거**\n• 출처: `{source_name}`"
         else:
-            annotated += "\n\n---\n📌 **[참조 원문 근거]**: 전공 표준 기초 이론 (강의노트 내 직접 언급 없음)"
+            annotated += "\n\n---\n📌 **참조 원문 근거**\n• 출처: 전공 표준 기초 이론 (강의자료 내 직접 언급 없음)"
 
     return annotated
 

@@ -583,7 +583,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY Engine — Academic Studio v0.8.0")
+        self.root.title("URY Engine — Academic Studio v0.9.0")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -1104,7 +1104,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         refresh(self.root)
         self._accent_values = self.accent_values()
         if hasattr(self, "accent_preview_chip"):
-            self.accent_preview_chip.config(bg=accent)
+            self.accent_preview_chip.itemconfigure(self.accent_preview_dot, fill=accent)
         if hasattr(self, "accent_hex_label"):
             self.accent_hex_label.config(text=f"현재 선택된 포인트 색상: {accent}")
         if hasattr(self, "theme_hex_var"):
@@ -1476,7 +1476,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             except Exception:
                 pass
         tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.8.0", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.9.0", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -1513,11 +1513,11 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.tab_defs = [
             ("✦  Studio", 0),
             ("✓  Quiz & Exam", 1),
-            ("⌁  Chat with Notes", 2),
+            ("⌁  Tutor", 2),
             ("⚙️ Settings", 3),
-            ("↻  업데이트", 4),
-            ("?  기능 설명", 5),
-            ("§  이용약관 · 윤리", 6),
+            ("↻  Updates", 4),
+            ("?  User Guide", 5),
+            ("§  Terms & Ethics", 6),
         ]
 
     def update_api_status_badge(self):
@@ -1589,15 +1589,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.build_settings_tab()
 
         self.tab_update = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_update, text=" 업데이트 ")
+        self.notebook.add(self.tab_update, text=" Updates ")
         self.build_update_tab()
 
         self.tab_features = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_features, text=" 기능 설명 ")
+        self.notebook.add(self.tab_features, text=" User Guide ")
         self.build_features_tab()
 
         self.tab_terms = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(self.tab_terms, text=" 이용약관 및 윤리 ")
+        self.notebook.add(self.tab_terms, text=" Terms & Ethics ")
         self.build_terms_tab()
 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
@@ -1824,7 +1824,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         # 슬라이드 조작 버튼
         slide_btn_row = tk.Frame(left_content, bg="#ffffff")
         slide_btn_row.pack(fill=tk.X, pady=(0, 8))
-        SquareRoundButton(slide_btn_row, text="📂  강의자료 폴더 열기", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
+        SquareRoundButton(slide_btn_row, text="📂  강의자료 선택", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_studio_slides, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="📷  칠판 판서...", bg="#f1f5f9", hover_bg="#e2e8f0", fg="#334155", radius=8, height=30, font=("Pretendard", 9, "bold"), command=self.browse_blackboard_photo, parent_bg="#ffffff").pack(side=tk.LEFT, padx=(0, 4))
         SquareRoundButton(slide_btn_row, text="☐ 전체 해제", bg="#fef2f2", hover_bg="#fee2e2", fg="#dc2626", radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.deselect_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
         SquareRoundButton(slide_btn_row, text="☑️ 전체 선택", bg=self.accent_color("#f0fdf4"), hover_bg=self.accent_color("#dcfce7"), fg=self.accent_color("#166534"), radius=8, height=30, font=("Pretendard", 8, "bold"), command=self.select_all_studio_slides, parent_bg="#ffffff").pack(side=tk.RIGHT, padx=(2, 0))
@@ -2175,12 +2175,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         slides_dir = os.path.join(course_dir, "강의자료")
         os.makedirs(slides_dir, exist_ok=True)
 
-        if sys.platform == "darwin":
-            subprocess.call(["open", slides_dir])
-        elif sys.platform == "win32":
-            os.startfile(slides_dir)
-        else:
-            subprocess.call(["xdg-open", slides_dir])
+        selected = self.ask_open_files_safe(
+            title="강의노트로 변환할 강의자료 복수 선택",
+            initialdir=slides_dir,
+            filetypes=[("강의자료", "*.pdf *.pptx *.ppt *.hwpx *.hwp *.docx *.ipynb *.py *.sql"),
+                       ("모든 파일", "*.*")])
+        if selected:
+            self.refresh_studio_slides(selected_paths=selected)
 
     def get_course_folder(self, cname):
         for c in self.courses:
@@ -2292,28 +2293,13 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             self._slide_extra_paths = list(selected_paths)
             previous = {path: True for path in selected_paths}
 
-        search_dirs = [os.path.join(course_dir, "강의자료"), course_dir]
         SUPPORTED_EXTS = (".pdf", ".pptx", ".ppt", ".hwpx", ".hwp", ".ipynb", ".py", ".sql", ".docx")
-        found_files = []
-        for sdir in search_dirs:
-            if os.path.exists(sdir):
-                for fname in sorted(os.listdir(sdir)):
-                    fpath = os.path.join(sdir, fname)
-                    if not os.path.isfile(fpath):
-                        continue
-                    ext = os.path.splitext(fname)[1].lower()
-                    if ext in SUPPORTED_EXTS:
-                        lower = fname.lower()
-                        if "syllabus" in lower or "강의계획서" in lower:
-                            continue
-                        if fpath not in found_files:
-                            found_files.append(fpath)
-
-        found_files.extend(path for path in self._slide_extra_paths if os.path.isfile(path) and path not in found_files)
+        found_files = [path for path in self._slide_extra_paths
+                       if os.path.isfile(path) and os.path.splitext(path)[1].lower() in SUPPORTED_EXTS]
         if not found_files:
             empty_lbl = tk.Label(
                 self.slide_inner_frame,
-                text="📂 등록된 강의 슬라이드/자료가 없습니다.\n'➕ 슬라이드 추가'를 클릭하여 PDF, PPTX, IPYNB, PY 등 자료를 등록하세요.",
+                text="📂 이번 노트에 사용할 강의자료를 선택하세요.\n'강의자료 선택'을 누르면 현재 과목의 강의자료 폴더가 열립니다.",
                 font=("Pretendard", 9),
                 bg="#f8fafc",
                 fg="#94a3b8",
@@ -4135,7 +4121,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
     def build_update_tab(self):
         card = ttk.LabelFrame(self.tab_update, text=" URY Engine 업데이트 ", padding="20")
         card.pack(fill=tk.X)
-        ttk.Label(card, text="현재 버전  v0.8.0", font=("Pretendard", 15, "bold"),
+        ttk.Label(card, text="현재 버전  v0.9.0", font=("Pretendard", 15, "bold"),
                   foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
         ttk.Label(card, text="GitHub Release에서 새 설치 파일을 확인합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(4, 16))
         SquareRoundButton(card, text="↻  지금 업데이트 확인", bg=self.accent_color("#1c4732"),
@@ -4144,35 +4130,74 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                           command=lambda: self.check_for_updates(manual=True)).pack(anchor=tk.W)
 
     def build_features_tab(self):
-        self.build_info_page(self.tab_features, "기능 설명", "자료를 넣고, 노트를 만들고, 시험과 질문으로 복습하세요.", """① Studio
-과목과 수업 일자를 선택하고 녹음·강의자료를 연결해 강의노트와 PDF를 생성합니다.
+        pages = {
+            "Studio": ("user_guide_studio.png", "① 과목·날짜·주차를 선택합니다.\n② 음성 녹음 또는 기존 오디오를 연결합니다.\n③ 강의자료 폴더에서 이번 노트에 사용할 파일만 복수 선택합니다.\n④ 강의노트 생성을 누르고 진행 로그를 확인합니다."),
+            "Quiz & Exam": ("user_guide_exam.png", "① 대상 과목과 시험 종류를 선택합니다.\n② 강의노트 폴더에서 출제 자료를 준비합니다.\n③ 자료와 범위를 선택합니다.\n④ 모의시험 PDF, 학습 로드맵 또는 벼락치기 정리노트를 생성합니다."),
+            "Tutor": ("user_guide_tutor.png", "① 과목을 선택합니다.\n② 강의 내용에 관해 질문합니다.\n③ 답변 아래 실제 참조 파일명과 페이지 근거를 확인합니다.\n④ 자료에 없는 내용은 전공 기초 설명으로 구분됩니다."),
+            "Settings": ("user_guide_settings.png", "① Gemini API 키를 저장합니다.\n② 학기와 과목을 등록합니다.\n③ 과목별 출력 언어를 선택합니다.\n④ 대학 테마 또는 HEX 색상을 적용합니다."),
+            "Updates": ("user_guide_updates.png", "① Updates 탭에서 확인 버튼을 누릅니다.\n② 새 버전이 있으면 설치 파일 다운로드를 승인합니다.\n③ 다운로드가 끝나면 설치 파일을 열어 기존 앱을 교체합니다."),
+        }
+        container = ttk.Frame(self.tab_features)
+        container.pack(fill=tk.BOTH, expand=True)
+        menu = ttk.Frame(container, width=150)
+        menu.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 12))
+        menu.pack_propagate(False)
+        content = ttk.LabelFrame(container, text=" User Guide ", padding="16")
+        content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.guide_image_label = ttk.Label(content, anchor=tk.CENTER)
+        self.guide_image_label.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
+        self.guide_text_var = tk.StringVar()
+        ttk.Label(content, textvariable=self.guide_text_var, justify=tk.LEFT, font=("Pretendard", 10)).pack(fill=tk.X)
 
-② Quiz & Exam
-생성된 강의노트를 선택해 모의시험, 학습 로드맵, 벼락치기 정리노트를 만듭니다.
+        def show_page(name):
+            filename, instructions = pages[name]
+            self.guide_text_var.set(instructions)
+            candidates = [os.path.join(os.path.dirname(self.app_icon_source), "user_guide", filename),
+                          os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "user_guide", filename)]
+            image_path = next((path for path in candidates if os.path.isfile(path)), "")
+            if image_path:
+                from PIL import Image, ImageTk
+                image = Image.open(image_path).convert("RGB")
+                image.thumbnail((760, 430), Image.Resampling.LANCZOS)
+                self.guide_page_image = ImageTk.PhotoImage(image)
+                self.guide_image_label.configure(image=self.guide_page_image, text="")
+            else:
+                self.guide_image_label.configure(image="", text=f"{name} 화면 안내 이미지")
 
-③ Chat with Notes
-과목별 강의노트를 근거로 질문하고 답변을 받을 수 있습니다.
-
-④ Settings
-학기, 과목, Gemini API 키, 출력 언어, 대학별 포인트 색상을 관리합니다.
-
-파일과 생성 결과는 선택한 학기·과목 폴더에 저장됩니다.""")
+        for name in pages:
+            SquareRoundButton(menu, text=name, bg="#f1f5f9", fg="#334155", hover_bg="#e2e8f0",
+                              radius=8, width=130, height=34, font=("Pretendard", 9, "bold"),
+                              command=lambda page=name: show_page(page)).pack(pady=3)
+        show_page("Studio")
 
     def build_terms_tab(self):
-        self.build_info_page(self.tab_terms, "이용약관 및 학업 윤리", "강의자료와 녹음은 개인 학습 범위에서만 사용하세요.", """1. 사적 이용
-URY Engine의 녹음, 강의자료 및 AI 생성물은 본인의 학업 복습과 시험 대비 목적으로만 사용합니다.
+        self.build_info_page(self.tab_terms, "Terms & Ethics", "본 소프트웨어를 사용하면 아래 사항을 확인하고 동의한 것으로 봅니다.", """1. 허용 목적
+URY Engine은 개인적인 학업 복습과 시험 대비를 위한 보조 도구입니다. 사용자는 관계 법령, 대학 학칙 및 강의별 지침을 준수해야 합니다.
 
-2. 무단 배포 금지
-교수자의 강의와 자료 및 이를 기반으로 만든 결과물을 외부에 공유·판매·전재하지 않습니다.
+2. 자료와 녹음에 대한 사용자 책임
+사용자는 입력·녹음·처리하는 자료에 필요한 권리와 동의를 확보해야 합니다. 교수자와 수강생의 음성·개인정보·저작물을 무단 수집, 복제, 공개, 판매하거나 제3자에게 배포해서는 안 됩니다.
 
-3. 녹음 동의
-수업 녹음은 교수자와 학교 규정이 허용하는 범위에서 진행하며 타인의 음성권과 개인정보를 존중합니다.
+3. 제3자 AI 처리
+선택한 텍스트, 녹음 및 문서는 답변 생성을 위해 사용자가 등록한 Google Gemini API로 전송될 수 있습니다. 제3자 서비스의 약관, 보안, 장애, 사용량 제한 및 데이터 처리에는 해당 제공자의 정책이 적용됩니다.
 
-4. AI 결과 확인
-AI 생성 내용은 오류가 있을 수 있으며 최종 학습·제출 전 사용자가 직접 사실을 확인합니다.
+4. AI 결과와 학업 제출
+AI 결과에는 오류, 누락 또는 부정확한 인용이 포함될 수 있습니다. 사용자는 내용을 직접 검증하고, 과제·시험·연구윤리 및 생성형 AI 사용 규정을 확인해야 합니다. 성적, 합격, 학습성과 또는 특정 결과를 보장하지 않습니다.
 
-5. 로컬 저장
-강의자료와 생성물은 사용자 컴퓨터에 저장됩니다. Gemini 처리 시 선택한 자료가 해당 API로 전송될 수 있습니다.""")
+5. 데이터와 API 키
+자료, API 키, 생성 파일의 접근 통제와 백업은 사용자 책임입니다. 중요한 원본은 별도로 보관하십시오.
+
+6. 보증 및 책임 제한
+소프트웨어는 현 상태로 제공됩니다. 관련 법률이 허용하는 범위에서 개발자는 사용자의 위법·부적절한 이용, 제3자 API 장애, 간접적 손해 또는 사용자가 검증하지 않은 AI 결과로 인한 손해를 책임지지 않습니다. 법률상 배제할 수 없는 책임은 제외되지 않습니다.
+
+7. 중단과 변경
+외부 API, 운영체제 또는 서비스 정책의 변경으로 기능이 달라지거나 중단될 수 있습니다. 약관과 기능은 버전 업데이트 시 변경될 수 있습니다.
+
+8. 준거
+본 안내는 법률 자문이 아니며 대한민국 법률을 기준으로 작성되었습니다. 필요한 경우 자격 있는 전문가의 조언을 받으십시오.
+
+URY Engine — Ultimate Result for You
+Designed & Built by Ryu.H.J
+Built for better learning, not shortcuts.""")
 
     def build_settings_tab(self):
         # 상단 설정 카드 (학기 & API Key)
@@ -4266,7 +4291,8 @@ AI 생성 내용은 오류가 있을 수 있으며 최종 학습·제출 전 사
         theme_frame.pack(fill=tk.X, pady=(0, 8))
         theme_row = ttk.Frame(theme_frame)
         theme_row.pack(fill=tk.X)
-        self.accent_preview_chip = tk.Label(theme_row, width=3, height=1, bg=self.theme_accent, relief=tk.FLAT)
+        self.accent_preview_chip = tk.Canvas(theme_row, width=24, height=24, bg="#f6f8fa", highlightthickness=0)
+        self.accent_preview_dot = self.accent_preview_chip.create_oval(3, 3, 21, 21, fill=self.theme_accent, outline="")
         self.accent_preview_chip.pack(side=tk.LEFT, padx=(0, 6))
         self.accent_hex_label = ttk.Label(theme_row, text="")
         self.accent_hex_label.pack(side=tk.LEFT, padx=(0, 8))
