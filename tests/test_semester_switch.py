@@ -22,7 +22,7 @@ class SemesterSwitchTest(unittest.TestCase):
     def test_round_trip_restores_courses_and_dates(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform):
-                path = Path(__file__).parent / platform / "system/code/settings_gui.py"
+                path = Path(__file__).parent.parent / platform / "system/code/settings_gui.py"
                 tree = ast.parse(path.read_text(encoding="utf-8"))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "UnifiedDashboardApp")
                 method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "on_semester_changed")

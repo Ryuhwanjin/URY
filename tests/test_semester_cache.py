@@ -9,7 +9,7 @@ class SemesterCacheTest(unittest.TestCase):
     def test_same_course_is_isolated_and_original_notes_survive(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform), TemporaryDirectory() as tmp:
-                source = Path(__file__).parent / platform / "system/code/config_manager.py"
+                source = Path(__file__).parent.parent / platform / "system/code/config_manager.py"
                 tree = ast.parse(source.read_text(encoding="utf-8"))
                 fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "get_markdown_cache_dir")
                 semester = ["2026년 2학기"]

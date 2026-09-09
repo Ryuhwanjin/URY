@@ -8,7 +8,7 @@ import unittest
 class StudioLoggingTest(unittest.TestCase):
     def test_worker_events_are_delivered_in_order_on_ui_poll(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            path = Path(__file__).parent / platform / "system/code/settings_gui.py"
+            path = Path(__file__).parent.parent / platform / "system/code/settings_gui.py"
             tree = ast.parse(path.read_text(encoding="utf-8"))
             cls = next(n for n in tree.body if isinstance(n, ast.ClassDef)
                        and n.name == "UnifiedDashboardApp")
@@ -41,7 +41,7 @@ class StudioLoggingTest(unittest.TestCase):
 
     def test_cancel_token_is_scoped_to_one_generation(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            source = (Path(__file__).parent / platform / "system/code/settings_gui.py").read_text(encoding="utf-8")
+            source = (Path(__file__).parent.parent / platform / "system/code/settings_gui.py").read_text(encoding="utf-8")
             self.assertIn("cancel_event = threading.Event()", source)
             self.assertIn("cancel_check=cancel_event.is_set", source)
             self.assertIn("previous_cancel.set()", source)

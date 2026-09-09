@@ -8,7 +8,7 @@ class NavigationTest(unittest.TestCase):
     def test_every_header_button_targets_an_existing_tab(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform):
-                path = Path(__file__).parent / platform / "system/code/settings_gui.py"
+                path = Path(__file__).parent.parent / platform / "system/code/settings_gui.py"
                 tree = ast.parse(path.read_text(encoding="utf-8"))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "UnifiedDashboardApp")
                 methods = {n.name: n for n in cls.body if isinstance(n, ast.FunctionDef)}

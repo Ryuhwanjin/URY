@@ -5,7 +5,7 @@ import unittest
 
 class ReleaseSafetyTest(unittest.TestCase):
     def test_release_build_does_not_mutate_source_or_package_private_data(self):
-        source = (Path(__file__).parent / "build_release_all.py").read_text(encoding="utf-8")
+        source = (Path(__file__).parent.parent / "build_release_all.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         functions = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
         self.assertNotIn("sync_system_files", functions)

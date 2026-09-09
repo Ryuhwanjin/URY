@@ -6,7 +6,7 @@ import unittest
 class ThemeSettingsTest(unittest.TestCase):
     def test_theme_uses_saved_hex_and_has_settings_controls(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            path = Path(__file__).parent / platform / "system/code/settings_gui.py"
+            path = Path(__file__).parent.parent / platform / "system/code/settings_gui.py"
             source = path.read_text(encoding="utf-8")
             tree = ast.parse(source)
             app = next(n for n in tree.body if isinstance(n, ast.ClassDef)

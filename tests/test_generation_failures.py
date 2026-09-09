@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 
 def function(platform, filename, name, namespace):
-    path = Path(__file__).parent / platform / "system/code" / filename
+    path = Path(__file__).parent.parent / platform / "system/code" / filename
     tree = ast.parse(path.read_text(encoding="utf-8"))
     node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name)
     exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), namespace)

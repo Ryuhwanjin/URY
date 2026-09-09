@@ -6,7 +6,7 @@ import unittest
 class SelectedMaterialsOnlyTest(unittest.TestCase):
     def test_custom_generation_has_no_old_note_or_folder_wide_pdf_input(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            source = (Path(__file__).parent / platform / "system/code" / "process_all_lectures.py").read_text(encoding="utf-8")
+            source = (Path(__file__).parent.parent / platform / "system/code" / "process_all_lectures.py").read_text(encoding="utf-8")
             start = source.index("def generate_custom_lecture_note(")
             custom_source = source[start:]
             self.assertIn("session_only=True", custom_source)
@@ -17,7 +17,7 @@ class SelectedMaterialsOnlyTest(unittest.TestCase):
 
     def test_note_prompts_do_not_invent_assessment_rules(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            root = Path(__file__).parent / platform
+            root = Path(__file__).parent.parent / platform
             code = (root / "system/code/process_all_lectures.py").read_text(encoding="utf-8")
             prompt = (root / "system/prompts/강의노트_한국어_프롬프트.txt").read_text(encoding="utf-8")
             self.assertIn("원본에 없으면 추정하거나 작성하지 말 것", code)

@@ -11,7 +11,7 @@ class StudioSelectionTest(unittest.TestCase):
     def test_selected_files_are_passed_without_moving_originals(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform), TemporaryDirectory() as tmp:
-                source = Path(__file__).parent / platform / "system/code/settings_gui.py"
+                source = Path(__file__).parent.parent / platform / "system/code/settings_gui.py"
                 tree = ast.parse(source.read_text(encoding="utf-8"))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "UnifiedDashboardApp")
                 method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "browse_studio_slides")
@@ -42,7 +42,7 @@ class StudioSelectionTest(unittest.TestCase):
 
     def test_slide_cards_forward_mouse_wheel_to_the_canvas(self):
         for platform in ("URY_macOS", "URY_Windows"):
-            source = (Path(__file__).parent / platform / "system/code/settings_gui.py").read_text(encoding="utf-8")
+            source = (Path(__file__).parent.parent / platform / "system/code/settings_gui.py").read_text(encoding="utf-8")
             self.assertIn("self._on_slide_wheel = _on_slide_wheel", source)
             self.assertIn("for widget in (card, chk, badge):", source)
             self.assertIn('widget.bind("<MouseWheel>", self._on_slide_wheel)', source)

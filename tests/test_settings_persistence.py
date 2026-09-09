@@ -11,7 +11,7 @@ class SettingsPersistenceTest(unittest.TestCase):
     def test_active_edits_survive_reload_without_changing_other_semester(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform), TemporaryDirectory() as tmp:
-                path = Path(__file__).parent / platform / "system/code/config_manager.py"
+                path = Path(__file__).parent.parent / platform / "system/code/config_manager.py"
                 tree = ast.parse(path.read_text(encoding="utf-8"))
                 functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)
                              and n.name in ("load_settings", "save_settings")]
