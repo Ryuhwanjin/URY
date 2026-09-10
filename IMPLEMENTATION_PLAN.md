@@ -146,4 +146,5 @@ macOS Phase 1 안정화와 Phase 2 정식 릴리즈는 v0.9.5에서 완료했다
 - 기능 상태 변화는 `FEATURE_MATRIX.md`에 반영한다.
 - 계획 범위 또는 우선순위 변화는 이 문서에 반영한다.
 - Codex는 `AGENTS.md`, Antigravity는 `GEMINI.md`에서 동일한 문서 체인으로 진입한다.
+- GPT(Codex)가 구현·검증·병합·릴리즈의 최종 결정을 담당하고, Antigravity는 더블체크와 아이디어 제안만 수행한다.
 - 승인되지 않은 Phase는 구현하지 않는다.
