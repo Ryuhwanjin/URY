@@ -68,7 +68,7 @@
 | macOS 앱 빌드 | 완료 | Apple Silicon ad-hoc 서명 `URY.app` 빌드 성공 |
 | macOS DMG v0.9.1 | 완료 | GitHub 정식 릴리즈와 DMG·macOS/Windows ZIP asset 업로드 완료 |
 | 업데이트 인식 | 완료 | GitHub 최신 릴리즈 태그 비교·다운로드 경로 검증 |
-| macOS 후속 DMG v0.9.5 | 진행 중 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치. DMG·macOS/Windows ZIP 공개 릴리즈 검증 중 |
+| macOS 후속 DMG v0.9.5 | 진행 중 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치의 DMG·macOS/Windows ZIP 공개 릴리즈 업로드 진행 |
 | Apple Developer 서명·공증 | 제외 | 개발자 가입 없이 시스템 설정 안내 방식 사용 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | PyInstaller 산출물명을 `URY.exe`로 정리, 최신 Windows 환경 빌드 검증 필요 |
