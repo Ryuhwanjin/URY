@@ -51,11 +51,11 @@ for /f "delims=" %%i in ('where python 2^>nul') do (
 :NO_PY
 echo [˸] ̽ ġǾ  ʾ ġ Ϸ    մϴ.
 echo.
-echo [ ]   ý  (%USERPROFILE%\Documents\URY_Engine)...
-if exist "%USERPROFILE%\Documents\URY_Engine" rmdir /s /q "%USERPROFILE%\Documents\URY_Engine"
+echo [ ]   ý  (%USERPROFILE%\Documents\URY)...
+if exist "%USERPROFILE%\Documents\URY" rmdir /s /q "%USERPROFILE%\Documents\URY"
 
-echo [ ] ȭ ġ/  (%USERPROFILE%\Desktop\URY_Engine)...
-if exist "%USERPROFILE%\Desktop\URY_Engine" rmdir /s /q "%USERPROFILE%\Desktop\URY_Engine"
+echo [ ] ȭ ġ/  (%USERPROFILE%\Desktop\URY)...
+if exist "%USERPROFILE%\Desktop\URY" rmdir /s /q "%USERPROFILE%\Desktop\URY"
 
 echo.
 echo URY Engine ڿ ϰ  Ǿϴ.

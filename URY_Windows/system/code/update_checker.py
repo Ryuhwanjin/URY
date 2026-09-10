@@ -9,9 +9,9 @@ import webbrowser
 from pathlib import Path
 
 
-CURRENT_VERSION = "v0.9.2"
-LATEST_RELEASE_URL = "https://api.github.com/repos/Ryuhwanjin/URY_engine/releases/latest"
-RELEASES_PAGE_URL = "https://github.com/Ryuhwanjin/URY_engine/releases/latest"
+CURRENT_VERSION = "v0.9.3"
+LATEST_RELEASE_URL = "https://api.github.com/repos/Ryuhwanjin/URY/releases/latest"
+RELEASES_PAGE_URL = "https://github.com/Ryuhwanjin/URY/releases/latest"
 
 
 def _version_key(value):

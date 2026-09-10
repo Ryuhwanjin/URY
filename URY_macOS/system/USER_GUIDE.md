@@ -1,4 +1,4 @@
-# URY v0.9.2 User Guide
+# URY v0.9.3 User Guide
 
 macOS·Windows 공통 사용 설명서
 Designed & Built by Ryu.H.J
@@ -12,13 +12,13 @@ Designed & Built by Ryu.H.J
 4. 저장하면 다음 구조가 만들어집니다.
 
 ```
-~/Desktop/URY_Engine/
+~/Desktop/URY/
 └── <학기>/<과목>/
     ├── 음성녹음  강의자료  강의노트  예상문제  과제  강의계획서
 ```
 
 API Key와 설정은 `workspace/system/settings.json`, `.env`에 저장됩니다. 새 URY 앱과 이전 버전이 같은
-`~/Desktop/URY_Engine`을 읽는 것은 기존 과목·API 설정을 보존하기 위한 의도된 동작입니다. 앱 버전별 데이터는
+`~/Desktop/URY`를 읽습니다. 앱 버전별 데이터는
 자동 분리되지 않으며, 학기 폴더만 분리됩니다. 반드시 현재 학기와 과목을 확인한 뒤 자료를 선택하세요.
 
 ## Studio

@@ -66,7 +66,7 @@
 | macOS 앱 빌드 | 완료 | Apple Silicon ad-hoc 서명 `URY.app` 빌드 성공 |
 | macOS DMG v0.9.1 | 완료 | GitHub 정식 릴리즈와 DMG·macOS/Windows ZIP asset 업로드 완료 |
 | 업데이트 인식 | 완료 | GitHub 최신 릴리즈 태그 비교·다운로드 경로 검증 |
-| macOS 후속 DMG v0.9.2 | 완료 | API 수동 재확인과 Dock 아이콘 여백 보정 포함, GitHub 정식 릴리즈·업데이트 감지 검증 완료 |
+| macOS 후속 DMG v0.9.3 | 완료 | 기본 사용자 폴더를 `~/Desktop/URY`로 변경하고 새 GitHub 저장소 주소로 업데이트 경로를 갱신한 DMG·macOS/Windows ZIP 릴리즈 완료 |
 | Apple Developer 서명·공증 | 제외 | 개발자 가입 없이 시스템 설정 안내 방식 사용 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | PyInstaller 산출물명을 `URY.exe`로 정리, 최신 Windows 환경 빌드 검증 필요 |

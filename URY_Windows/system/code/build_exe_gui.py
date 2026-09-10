@@ -30,10 +30,10 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         if not os.path.exists(win_dir):
             win_dir = root_dir
 
-        # 바탕화면(Desktop) 선택 시 _internal 및 exe가 바탕화면 최상위에 드러나지 않도록 URY_Engine 전용 하위 폴더 자동 캡슐화
+        # 바탕화면(Desktop) 선택 시 _internal 및 exe가 바탕화면 최상위에 드러나지 않도록 URY 전용 하위 폴더 자동 캡슐화
         base_folder = os.path.basename(os.path.abspath(target_install_dir)).lower()
         if base_folder in ("desktop", "바탕화면", "바탕 화면"):
-            target_install_dir = os.path.join(target_install_dir, "URY_Engine")
+            target_install_dir = os.path.join(target_install_dir, "URY")
 
         update_status_cb(10, "[1/5] PyInstaller 빌드 환경 패키지 검사 중...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -128,7 +128,7 @@ class ExeBuilderGUI:
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'+{x}+{y}')
 
-        default_target = os.path.expanduser("~/Desktop/URY_Engine")
+        default_target = os.path.expanduser("~/Desktop/URY")
 
         style = ttk.Style()
         style.theme_use('clam')

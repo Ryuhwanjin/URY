@@ -4,6 +4,7 @@
 
 ## 진행 중
 
+- v0.9.3 경로·저장소명 정리 완료: 사용자 워크스페이스 기본 폴더를 `~/Desktop/URY`로 변경하고 기존 Desktop 폴더는 내용 보존한 채 이름만 변경. 새 `Ryuhwanjin/URY` 릴리즈 업로드 완료
 - v0.9.2 릴리즈 완료: Settings 수동 API 재확인 1개 기능과 Dock 아이콘 12% 안전 여백 보정 포함. 다음 개발은 사용자 승인 후 Windows 실기기 QA 또는 Phase 1 업로드 캐시 중 하나만 선택
 - Phase 1 진행: 모델 라우팅·영구 Studio 로그 반영 완료, 다음은 실제 429/503 API 회귀시험과 동일 파일 업로드 캐시
 - 사용자 승인 대기: `IMPLEMENTATION_PLAN.md`의 Phase 1~5 범위와 우선순위
@@ -15,6 +16,7 @@
 - v0.9.1 배포 후보 점검 완료: 34개 테스트 통과(1개 환경 의존 제외), AST·공용 코드 동기화·diff·비밀값 검사 통과. `URY.app` CFBundle 0.9.1, ad-hoc 서명·`GUI_SMOKE_OK` 통과. `배포/URY_Engine_v0.9.1.dmg`(약 62.8MB) 마운트·앱 smoke test 및 SHA-256 확인. macOS/Windows ZIP에서 `.env`·설정·시간표·생성 이력 제외를 재검증
 - v0.9.2 후속 후보 점검 완료: API `연결 확인` 단일 기능을 macOS·Windows에 동기화하고 34개 테스트 통과. 아이콘 ICNS 알파 영역을 84%→약 76%로 조정해 Dock 과대 표시를 보정. CFBundle 0.9.2, ad-hoc 서명·앱/DMG smoke test, 개인 파일 제외 검증 완료
 - GitHub 릴리즈 완료: `v0.9.1`(commit `cd117f2`)과 `v0.9.2`(commit `1e7667c`)에 macOS DMG·macOS ZIP·Windows ZIP을 업로드. 공개 Releases API에서 v0.9.2가 최신 정식 릴리즈임을 확인하고, v0.9.1→v0.9.2 업데이트 감지 회귀시험 통과
+- v0.9.3 경로·저장소명 후보 점검 완료: macOS·Windows 기본 워크스페이스를 `~/Desktop/URY`로 동기화하고 실제 Desktop 폴더를 이름 변경. GitHub 저장소를 `Ryuhwanjin/URY`로 변경하고 Updates URL·인수인계 문서 갱신. 34개 테스트, AST·동기화·diff, v0.9.3 앱/DMG smoke, ZIP 개인 파일 제외 검증 완료
 - API 키 연결 실사용 점검 완료: Desktop 워크스페이스에서 Primary·Backup 설정을 모두 읽고 `/v1beta/models` 인증 및 `generateContent` 모델 목록 응답을 확인. 셸에 남은 폐기 환경변수가 정상 설정을 가리지 않도록 macOS·Windows 공용 로더 수정, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - Gemini 모델 자동 우선순위 반영: `/v1beta/models`의 `generateContent` 지원 Stable Flash/Flash-Lite를 용도별로 필터링하고 버전 점수 내림차순으로 정렬. 새 Stable 모델이 추가되면 코드 수정 없이 최신 후보가 먼저 사용되며, `gemini-3-flash-preview`는 Preview 안전망으로만 기록. 양 플랫폼 동기화, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·ad-hoc 서명·GUI smoke test 완료
 - 모델 라우팅 수정 최종 반영: Gemini API 모델 목록에서 종료된 1.5/2.0과 Live·TTS·이미지·Embedding 전용 모델을 일반 생성 후보에서 제외하고, 3.8/3.7/3.6/3.5 Stable Flash → 2.5 Flash 순으로 정렬
@@ -47,13 +49,13 @@
 - macOS Dock 아이콘 보정: `.icns` 생성 시 8% 투명 여백을 적용하고, Dock이 가리키던 `/Applications/URY Engine.app`도 최신 빌드로 교체·캐시 갱신. 설치본·소스 아이콘 alpha bbox 일치 확인
 - 최신 라우팅 포함 macOS 앱 재빌드 완료: ad-hoc 서명 검증 및 `--smoke-test` 통과
 - Tutor 수식·서식 표시 보정 완료: macOS·Windows 공용 GUI가 행렬·분수·제곱근 LaTeX를 읽기 쉬운 평문/유니코드로 바꾸고 긴 `---`·`────` 장식선을 제거함. Tutor 프롬프트도 원시 LaTeX·반복 구분선을 금지하도록 동기화했으며 포맷 렌더 테스트·전체 테스트 27개 통과(1개 환경 의존 제외), macOS 앱 재빌드·서명·smoke test 통과
-- 앱 표시 이름 변경 완료: macOS 번들은 `URY.app`(CFBundleName/DisplayName/Executable 모두 `URY`), Windows PyInstaller 산출물은 `URY.exe`로 변경. 사용자 워크스페이스 `URY_Engine`, 기존 릴리스 파일명·bundle identifier는 호환성을 위해 유지. 새 macOS 앱 빌드·서명·smoke test 및 전체 테스트 27개 통과(1개 환경 의존 제외)
-- `URY.app` 구동 테스트 완료: 이전 `URY Engine.app` 프로세스를 종료한 뒤 새 번들을 직접 실행했고 CUA 앱 목록과 `lsof`에서 `URY` 프로세스·`~/Desktop/URY_Engine` 작업 디렉터리를 확인함. 접근성 트리 캡처는 macOS 서비스 오류(-10822)로 확인하지 못했으며, 사용자가 화면에서 창·탭을 최종 확인해야 함
+- 앱 표시 이름 변경 완료: macOS 번들은 `URY.app`(CFBundleName/DisplayName/Executable 모두 `URY`), Windows PyInstaller 산출물은 `URY.exe`로 변경. 사용자 워크스페이스는 `URY`로 정리하고 기존 릴리스 파일명·bundle identifier는 유지. 새 macOS 앱 빌드·서명·smoke test 및 전체 테스트 27개 통과(1개 환경 의존 제외)
+- `URY.app` 구동 테스트 완료: 이전 `URY Engine.app` 프로세스를 종료한 뒤 새 번들을 직접 실행했고 CUA 앱 목록과 `lsof`에서 `URY` 프로세스·`~/Desktop/URY` 작업 디렉터리를 확인함. 접근성 트리 캡처는 macOS 서비스 오류(-10822)로 확인하지 못했으며, 사용자가 화면에서 창·탭을 최종 확인해야 함
 - 모델 라우팅 수정 포함 macOS 앱 재빌드 완료: ad-hoc 서명 검증 및 `--smoke-test` 통과
 - Gemini 모델 라우팅 수정: 기본 fallback을 3.8/3.7/3.6 Flash 중심으로 교체하고 종료된 1.5/2.0은 최하위로 격리. macOS·Windows 공용 코드와 회귀 테스트 반영
 - 자동 테스트 27개 통과(1개 환경 의존 제외)
 - 동일 테스트 음성 정상 재생성 확인: `Desktop/test`(약 75분) → `회사법 · 2026-09-08 · 1주차 · 한국어`, 약 55초 생성·저장, Markdown 9,447자 / PDF 8페이지
-- 정상 생성 산출물: `Desktop/URY_Engine/2026년 2학기/회사법/강의노트/1주차/회사법_2026-09-08_선택자료_강의노트.pdf`; 기존 206자 1페이지 결과와 달리 전체 섹션이 포함됨
+- 정상 생성 산출물: `Desktop/URY/2026년 2학기/회사법/강의노트/1주차/회사법_2026-09-08_선택자료_강의노트.pdf`; 기존 206자 1페이지 결과와 달리 전체 섹션이 포함됨
 - Windows 결과물 이상 징후 분석: Desktop `회사법_1주차_강의노트.pdf`는 메타데이터를 제외해도 1페이지·추출 본문 206자에서 문장이 중단된 부분 응답임. 카카오톡 전달로 파일 시각은 신뢰하지 않음
 - 위 PDF에는 대응하는 Markdown 로그/원본이 Desktop에 없으며, 구버전 Windows 비스트리밍 응답 파싱(첫 번째 text part만 저장) 또는 부분 응답 저장 가능성을 우선 의심. 현재 소스는 SSE 조각을 모두 결합함
 - macOS 앱 재빌드 완료: `URY_macOS/URY Engine.app`, ad-hoc 서명 및 `--smoke-test` 통과
@@ -83,7 +85,7 @@
 2. 동일 강의자료 재사용 시 Gemini File API 업로드 캐시 적용
 3. Windows UI를 macOS와 동일한 흐름으로 최종 정리
 4. Windows 빌드 환경과 설치 패키지 생성·검증
-5. macOS 후속 안정화 릴리스 및 테스트 릴리스 정리 — v0.9.1·v0.9.2 완료
+5. macOS 후속 안정화 릴리스 및 테스트 릴리스 정리 — v0.9.1·v0.9.2·v0.9.3 완료
 
 ## 현재 검증 기준
 

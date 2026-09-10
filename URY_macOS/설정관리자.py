@@ -13,8 +13,8 @@ if getattr(sys, "frozen", False):
     app_dir = os.path.dirname(os.path.abspath(sys.executable))
     ROOT_DIR = os.path.abspath(os.path.join(app_dir, "../../.."))
 
-    # Determine writable workspace directory (무조건 바탕화면 ~/Desktop/URY_Engine으로 확정)
-    user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+    # Determine writable workspace directory (무조건 바탕화면 ~/Desktop/URY로 확정)
+    user_ws = os.path.expanduser("~/Desktop/URY")
     os.makedirs(user_ws, exist_ok=True)
     os.makedirs(os.path.join(user_ws, "00_녹음_수신함"), exist_ok=True)
     sys_p = os.path.join(user_ws, "system")

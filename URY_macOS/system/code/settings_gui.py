@@ -618,9 +618,9 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY — Academic Studio v0.9.2")
+        self.root.title("URY — Academic Studio v0.9.3")
 
-        # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
+        # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
             ws = config_manager.WORKSPACE_DIR
             os.makedirs(ws, exist_ok=True)
@@ -1584,7 +1584,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
             except Exception:
                 pass
         tk.Label(title_row, text="URY", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.9.2", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.9.3", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -4322,7 +4322,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
     def build_update_tab(self):
         card = ttk.LabelFrame(self.tab_update, text=" URY 업데이트 ", padding="20")
         card.pack(fill=tk.X)
-        ttk.Label(card, text="현재 버전  v0.9.2", font=("Pretendard", 15, "bold"),
+        ttk.Label(card, text="현재 버전  v0.9.3", font=("Pretendard", 15, "bold"),
                   foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
         ttk.Label(card, text="GitHub Release에서 새 설치 파일을 확인합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(4, 16))
         SquareRoundButton(card, text="↻  지금 업데이트 확인", bg=self.accent_color("#1c4732"),
@@ -4343,7 +4343,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
 3. 저장하면 현재 학기와 과목에 맞는 폴더가 자동으로 만들어집니다. 그 다음 Studio에서만 강의노트 생성을 시작하세요.
 
 [데이터 위치와 분리]
-기본 워크스페이스는 ~/Desktop/URY_Engine입니다. settings.json과 .env(API Key)는 workspace/system에,
+기본 워크스페이스는 ~/Desktop/URY입니다. settings.json과 .env(API Key)는 workspace/system에,
 과목 자료와 결과는 workspace/<학기>/<과목>/ 아래에 저장됩니다. 새 앱과 이전 버전이 같은 workspace를 읽는 것은
 기존 과목·API 설정을 보존하기 위한 의도된 동작이며, 앱 버전별로 자동 분리되지 않습니다. 학기별 자료는 학기
 폴더로 분리되므로 Studio·Quiz·Tutor에서 현재 선택한 학기/과목만 사용하세요.

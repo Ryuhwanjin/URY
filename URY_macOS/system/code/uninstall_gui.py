@@ -52,7 +52,7 @@ class UninstallerGUI:
         self.del_cache_var = tk.BooleanVar(value=True)
         self.del_notes_var = tk.BooleanVar(value=False)
 
-        tk.Checkbutton(opt_frame, text="설치된 .EXE 프로그램 및 빌드 자원 (dist/URY_Engine) 삭제", variable=self.del_exe_var, font=("Segoe UI", 9), fg="#ffffff", bg="#1e1e2e", selectcolor="#313244", activebackground="#1e1e2e", activeforeground="#ffffff").pack(anchor="w", padx=15, pady=5)
+        tk.Checkbutton(opt_frame, text="설치된 .EXE 프로그램 및 빌드 자원 (dist/URY) 삭제", variable=self.del_exe_var, font=("Segoe UI", 9), fg="#ffffff", bg="#1e1e2e", selectcolor="#313244", activebackground="#1e1e2e", activeforeground="#ffffff").pack(anchor="w", padx=15, pady=5)
         tk.Checkbutton(opt_frame, text="캐시 및 임시 파일 (.markdown_cache, .tempmedia) 삭제", variable=self.del_cache_var, font=("Segoe UI", 9), fg="#ffffff", bg="#1e1e2e", selectcolor="#313244", activebackground="#1e1e2e", activeforeground="#ffffff").pack(anchor="w", padx=15, pady=5)
         tk.Checkbutton(opt_frame, text="생성된 PDF 학습노트 저장 폴더도 함께 완전 삭제 (⚠️주의)", variable=self.del_notes_var, font=("Segoe UI", 9), fg="#f38ba8", bg="#1e1e2e", selectcolor="#313244", activebackground="#1e1e2e", activeforeground="#ffffff").pack(anchor="w", padx=15, pady=5)
 
@@ -89,7 +89,7 @@ class UninstallerGUI:
 
             # 2. 캐시 디렉터리 청소
             if self.del_cache_var.get():
-                user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+                user_ws = os.path.expanduser("~/Desktop/URY")
                 cache_p = os.path.join(user_ws, ".markdown_cache") if os.path.exists(user_ws) else None
                 if cache_p and os.path.exists(cache_p):
                     shutil.rmtree(cache_p, ignore_errors=True)
@@ -97,10 +97,10 @@ class UninstallerGUI:
 
             # 3. 생성된 학습노트 폴더 삭제 (옵션)
             if self.del_notes_var.get():
-                user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+                user_ws = os.path.expanduser("~/Desktop/URY")
                 if os.path.exists(user_ws):
                     shutil.rmtree(user_ws, ignore_errors=True)
-                    deleted_items.append("Desktop/URY_Engine 폴더 전체")
+                    deleted_items.append("Desktop/URY 폴더 전체")
 
             messagebox.showinfo("삭제 완료", "🎉 선택하신 URY 자원이 깔끔하게 완전 삭제되었습니다.")
             self.root.destroy()

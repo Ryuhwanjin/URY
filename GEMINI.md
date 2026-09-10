@@ -29,7 +29,7 @@
 
 ## Git 연결 및 동기화
 
-- 저장소: `https://github.com/Ryuhwanjin/URY_engine.git`
+- 저장소: `https://github.com/Ryuhwanjin/URY.git`
 - 원격 이름: `origin`
 - 기준 브랜치: `main`
 - 기능 브랜치가 필요하면 `codex/` 또는 `antigravity/` 접두사를 사용한다.
@@ -38,8 +38,8 @@
 새 작업 폴더라면:
 
 ```bash
-git clone https://github.com/Ryuhwanjin/URY_engine.git
-cd URY_engine
+git clone https://github.com/Ryuhwanjin/URY.git
+cd URY
 git switch main
 git pull --ff-only origin main
 ```

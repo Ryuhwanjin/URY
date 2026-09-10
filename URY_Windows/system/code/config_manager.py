@@ -30,14 +30,14 @@ def get_root_workspace():
         if env_ws.rstrip("/") not in ("/Applications", "/System/Applications", "/Library") and not env_ws.startswith("/Volumes/") and os.access(env_ws, os.W_OK):
             return env_ws
 
-    # 2. 기본 워크스페이스: 무조건 바탕화면 ~/Desktop/URY_Engine 확정!
-    user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+    # 2. 기본 워크스페이스: 무조건 바탕화면 ~/Desktop/URY 확정!
+    user_ws = os.path.expanduser("~/Desktop/URY")
     try:
         os.makedirs(user_ws, exist_ok=True)
     except Exception:
         pass
 
-    # 개발 소스코드 폴더에 생성되어 있는 기존 PDF 결과물이 있다면 바탕화면 URY_Engine으로 자동 통합 동기화
+    # 개발 소스코드 폴더에 생성되어 있는 기존 PDF 결과물이 있다면 바탕화면 URY로 자동 통합 동기화
     try:
         dev_src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         dev_sem = os.path.join(dev_src, "2026년 2학기")
@@ -356,8 +356,8 @@ def save_settings(data):
         with open(target_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except (PermissionError, OSError):
-        # Read-only location (e.g. /Applications or mounted DMG): fallback to ~/Desktop/URY_Engine
-        user_ws = os.path.expanduser("~/Desktop/URY_Engine")
+        # Read-only location (e.g. /Applications or mounted DMG): fallback to ~/Desktop/URY
+        user_ws = os.path.expanduser("~/Desktop/URY")
         os.makedirs(user_ws, exist_ok=True)
         WORKSPACE_DIR = user_ws
         target_path = os.path.join(user_ws, "settings.json")

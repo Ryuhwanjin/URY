@@ -22,6 +22,8 @@ class RemovedFeaturesTest(unittest.TestCase):
             source = (Path(__file__).parent.parent / platform / "system/code" / "config_manager.py").read_text(encoding="utf-8")
             root_fn = source[source.index("def get_root_workspace"):source.index("\nSCRIPT_DIR =")]
             self.assertNotIn('"Documents" not in env_ws', root_fn)
+            self.assertIn('os.path.expanduser("~/Desktop/URY")', root_fn)
+            self.assertNotIn('os.path.expanduser("~/Desktop/URY_Engine")', root_fn)
 
     def test_windows_builder_bundles_runtime_loaded_modules(self):
         source = (Path(__file__).parent.parent / "URY_Windows/system/code/build_exe_gui.py").read_text(encoding="utf-8")

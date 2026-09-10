@@ -23,7 +23,7 @@
 ## 저장소 구조
 
 ```text
-URY_engine/
+URY/
 ├── URY_macOS/       macOS 실행 파일과 시스템 리소스
 ├── URY_Windows/     Windows 실행 파일과 시스템 리소스
 ├── tests/           회귀 테스트
