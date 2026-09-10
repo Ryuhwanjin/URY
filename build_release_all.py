@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY Engine v0.7.9 — macOS & Windows 듀얼 동시 배포 자동화 통합 빌더 (build_release_all.py)
+🎓 URY v0.7.9 — macOS & Windows 듀얼 동시 배포 자동화 통합 빌더 (build_release_all.py)
 - macOS 패키지 (URY_macOS -> URY_Engine_v0.7.9_macOS.zip & .dmg)
 - Windows 패키지 (URY_Windows -> URY_Engine_v0.7.9_Windows.zip)
 - 소스코드 및 문서 100% 최신 동기화 후 '배포/' 디렉터리에 배포본 일괄 출판
@@ -17,9 +17,13 @@ MACOS_DIR = os.path.join(ROOT_DIR, "URY_macOS")
 WIN_DIR = os.path.join(ROOT_DIR, "URY_Windows")
 DIST_DIR = os.path.join(ROOT_DIR, "배포")
 
-VERSION = "v0.9.0"
-PRIVATE_FILES = {".env", "settings.json", "processed_history.json"}
-PRIVATE_DIRS = {"__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images"}
+VERSION = "v0.9.1"
+PRIVATE_FILES = {".env", "settings.json", "processed_history.json", "시간표.json"}
+PRIVATE_DIRS = {
+    "__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images",
+    # PyInstaller 중간 산출물은 새 앱 번들에 포함하지 않는다.
+    "URY", "URY Engine", "URY Engine.app",
+}
 
 
 
@@ -40,7 +44,7 @@ def make_zip_archive(source_dir, output_zip_path):
 def build_all_releases():
     os.makedirs(DIST_DIR, exist_ok=True)
     print("=========================================================")
-    print(f"🚀 URY Engine {VERSION} macOS & Windows 듀얼 동시 배포 파이프라인 가동")
+    print(f"🚀 URY {VERSION} macOS & Windows 듀얼 동시 배포 파이프라인 가동")
     print("=========================================================\n")
 
     # 원본 소스와 로컬 설정은 절대 수정하지 않는다.
@@ -53,11 +57,13 @@ def build_all_releases():
     # macOS 권한 부여 및 서명
     try:
         subprocess.call(["chmod", "+x"] + [os.path.join(MACOS_DIR, f) for f in os.listdir(MACOS_DIR) if f.endswith(".command")])
-        app_path = os.path.join(MACOS_DIR, "URY Engine.app")
+        app_path = os.path.join(MACOS_DIR, "URY.app")
+        if not os.path.exists(app_path):
+            app_path = os.path.join(MACOS_DIR, "URY Engine.app")
         if os.path.exists(app_path):
             subprocess.call(["xattr", "-cr", app_path])
             subprocess.call(["codesign", "--force", "--deep", "--sign", "-", app_path])
-            print("  🛡️ macOS URY Engine.app ad-hoc 서명 적용 완료!")
+            print("  🛡️ macOS URY.app ad-hoc 서명 적용 완료!")
     except Exception as e:
         print(f"  ⚠️ 서명 처리 알림: {e}")
 

@@ -99,6 +99,18 @@ def stream_gemini_response(request, timeout=240, progress_fn=None):
     return text, usage
 
 
+def _append_studio_log(message: str) -> None:
+    """Studio 실행 로그를 디스크에 남긴다(API Key와 무관한 상태 메시지만 기록)."""
+    try:
+        log_path = config_manager.get_studio_log_file_path()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(f"[{timestamp}] {message}\n")
+    except Exception:
+        # 로그 저장 실패가 강의노트 생성을 막지 않도록 한다.
+        pass
+
+
 def load_course_material_context(course_dir: str, week_num: int = None) -> str:
     """
     강의자료 폴더 내의 멀티포맷 문서(.pdf, .pptx, .hwpx, .ipynb 등)를 doc_parser로 파싱하여
@@ -265,8 +277,8 @@ def get_audio_mime_type(file_path):
         return "audio/aac"
     return "audio/mp4"
 
-def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
-    api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+def upload_file_to_gemini(file_path, mime_type=None, log_fn=None, api_key=None):
+    api_key = api_key or config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
     if not api_key or len(api_key) < 10:
         raise Exception("Gemini API Key가 설정되지 않았습니다. '설정관리자'에서 [Google Gemini API Key]를 등록해 주세요.")
 
@@ -376,10 +388,10 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None):
         log_fn(f"  ✅ [{file_name}] 클라우드 인덱싱 완료! AI 분석 준비 완료")
     return file_uri, mime_type
 
-def upload_audio_to_gemini(file_path):
-    return upload_file_to_gemini(file_path)
+def upload_audio_to_gemini(file_path, api_key=None):
+    return upload_file_to_gemini(file_path, api_key=api_key)
 
-def generate_lecture_note(course_info, file_uri, target_date, week_num, is_english=False, mime_type="audio/mp4"):
+def generate_lecture_note(course_info, file_uri, target_date, week_num, is_english=False, mime_type="audio/mp4", api_key=None):
     date_str = target_date.strftime("%Y-%m-%d")
     weekday_kr = WEEKDAY_KR[target_date.weekday()]
     weekday_en = WEEKDAY_EN[target_date.weekday()]
@@ -545,8 +557,8 @@ The following content was ALREADY synthesized in the earlier session of Week {we
 4. Synthesize Week {week_num} takeaways and action items cohesively.
 """
 
-    api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
-    models_to_try = config_manager.get_supported_gemini_models(api_key)
+    api_key = api_key or config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+    models_to_try = config_manager.get_gemini_models_for("lecture_note", api_key, max_models=3)
     backoff_delays = [5, 10, 20]
     for model in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -853,17 +865,33 @@ def scan_and_process_all_lectures(target_courses=None, target_audio_files=None):
             print(f"   - 일자: {date_str} (개강 {week_num}주차)")
             print(f"   - 경로: {audio_path}")
 
-            # 1. 구글 Gemini File API 업로드 (MIME 타입 자동 감지)
-            file_uri, mime_type = upload_audio_to_gemini(audio_path)
-
-            # 2. 한국어 강의노트 생성 및 주차별/통합본 저장
-            if need_ko:
-                note_ko = generate_lecture_note(config, file_uri, target_date, week_num, is_english=False, mime_type=mime_type)
+            # 1~3. 기본 키로 파일 업로드·생성을 시도하고, 실패하면 백업 프로젝트에서 파일을 다시 업로드한다.
+            key_picker = getattr(config_manager, "get_api_keys", None)
+            api_keys = key_picker() if callable(key_picker) else []
+            if not api_keys:
+                primary = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+                if primary:
+                    api_keys = [primary]
+            generated_notes = None
+            last_error = None
+            for key_index, api_key in enumerate(api_keys):
+                try:
+                    if key_index:
+                        print("  🔁 기본 API 키의 쿼터/서버 제한으로 백업 API 키로 전환...")
+                    file_uri, mime_type = upload_audio_to_gemini(audio_path, api_key=api_key)
+                    note_ko = generate_lecture_note(config, file_uri, target_date, week_num, is_english=False, mime_type=mime_type, api_key=api_key) if need_ko else None
+                    note_en = generate_lecture_note(config, file_uri, target_date, week_num, is_english=True, mime_type=mime_type, api_key=api_key) if need_en else None
+                    generated_notes = (note_ko, note_en)
+                    break
+                except Exception as exc:
+                    last_error = exc
+                    print(f"  ⚠️ API 키 {key_index + 1} 처리 실패 ({type(exc).__name__}) -> 다음 키로 전환")
+            if generated_notes is None:
+                raise RuntimeError(f"모든 Gemini API 키로 강의노트를 생성하지 못했습니다: {last_error}") from last_error
+            note_ko, note_en = generated_notes
+            if note_ko:
                 save_to_markdown_cache(config, note_ko, date_str, week_num, is_english=False)
-
-            # 3. 영문 강의노트 생성 및 주차별/통합본 저장
-            if need_en:
-                note_en = generate_lecture_note(config, file_uri, target_date, week_num, is_english=True, mime_type=mime_type)
+            if note_en:
                 save_to_markdown_cache(config, note_en, date_str, week_num, is_english=True)
 
             processed_any = True
@@ -901,12 +929,19 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
     def log(msg, step=None, eta=None):
         check_cancel()
         print(msg, flush=True)
+        _append_studio_log(msg)
         if log_callback:
             try:
                 log_callback(msg, step, eta)
             except Exception:
                 pass
 
+    try:
+        studio_log_path = config_manager.get_studio_log_file_path()
+        with open(studio_log_path, "w", encoding="utf-8") as log_file:
+            log_file.write(f"URY Studio run started: {datetime.now().isoformat(timespec='seconds')}\n")
+    except Exception:
+        pass
     check_cancel()
     log("=" * 65)
     log(f"🎙️ [맞춤형 학습노트 생성 스튜디오] 과목: {cname}", step=1, eta=40)
@@ -967,30 +1002,38 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
     log(f"• 음성 녹음: {audio_disp}")
     log(f"• 슬라이드: {slide_disp}")
 
-    api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
-    if not api_key or len(api_key) < 10:
+    key_picker = getattr(config_manager, "get_api_keys", None)
+    api_keys = key_picker() if callable(key_picker) else []
+    if not api_keys:
+        primary = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+        if primary:
+            api_keys = [primary]
+    if not api_keys:
         raise RuntimeError("Gemini API Key가 설정되지 않았습니다. [설정] 탭에서 API Key를 등록해 주세요.")
 
     check_cancel()
-    # 1. 파일 업로드 (음성 및 슬라이드)
-    uploaded_parts = []
-    if has_audio:
-        check_cancel()
-        log(f"\n[Step 1/4] 📤 음성 녹음 파일 클라우드 전송 중 ({os.path.basename(audio_path)})...", step=1, eta=35)
-        audio_uri, audio_mime = upload_file_to_gemini(audio_path, log_fn=log)
-        uploaded_parts.append({"file_data": {"mime_type": audio_mime, "file_uri": audio_uri}})
+    # 1. 파일 업로드 (백업 프로젝트로 전환하면 File URI도 해당 키로 다시 만든다.)
+    uploaded_parts_cache = {}
+    upload_errors = {}
 
-    if valid_slides:
-        check_cancel()
-        log(f"\n[Step 1/4] 📤 선택된 강의자료 분석 및 전송 중 ({len(valid_slides)}건)...", step=1, eta=30)
-        for sp in valid_slides:
+    def build_uploaded_parts(api_key):
+        parts = []
+        if has_audio:
             check_cancel()
-            ext = os.path.splitext(sp)[1].lower()
-            if ext == ".pdf":
-                s_uri, s_mime = upload_file_to_gemini(sp, "application/pdf", log_fn=log)
-                uploaded_parts.append({"file_data": {"mime_type": s_mime, "file_uri": s_uri}})
-            else:
-                if doc_parser:
+            log(f"\n[Step 1/4] 📤 음성 녹음 파일 클라우드 전송 중 ({os.path.basename(audio_path)})...", step=1, eta=35)
+            audio_uri, audio_mime = upload_file_to_gemini(audio_path, log_fn=log, api_key=api_key)
+            parts.append({"file_data": {"mime_type": audio_mime, "file_uri": audio_uri}})
+
+        if valid_slides:
+            check_cancel()
+            log(f"\n[Step 1/4] 📤 선택된 강의자료 분석 및 전송 중 ({len(valid_slides)}건)...", step=1, eta=30)
+            for sp in valid_slides:
+                check_cancel()
+                ext = os.path.splitext(sp)[1].lower()
+                if ext == ".pdf":
+                    s_uri, s_mime = upload_file_to_gemini(sp, "application/pdf", log_fn=log, api_key=api_key)
+                    parts.append({"file_data": {"mime_type": s_mime, "file_uri": s_uri}})
+                elif doc_parser:
                     try:
                         parsed = doc_parser.parse_document(sp)
                         full_text = parsed.get("full_text", "")
@@ -1000,10 +1043,33 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                         if notes_text:
                             combined_txt += f"[교수님 발표자 노트(Notes)]:\n{notes_text}\n\n"
                         combined_txt += f"[본문/코드 내용]:\n{full_text}\n"
-                        uploaded_parts.append({"text": combined_txt})
+                        parts.append({"text": combined_txt})
                         log(f"  📄 [{fname}] ({ext.upper()}) 텍스트/코드 파싱 완료 ({len(full_text)}자)")
                     except Exception as ex:
                         log(f"  ⚠️ [{os.path.basename(sp)}] 파싱 경고: {ex}")
+        return parts
+
+    def get_uploaded_parts(api_key):
+        if api_key in uploaded_parts_cache:
+            return uploaded_parts_cache[api_key]
+        if api_key in upload_errors:
+            raise upload_errors[api_key]
+        try:
+            parts = build_uploaded_parts(api_key)
+            uploaded_parts_cache[api_key] = parts
+            return parts
+        except Exception as exc:
+            upload_errors[api_key] = exc
+            raise
+
+    # 기본 키로 먼저 업로드해 정상 흐름을 유지한다. 실패하면 생성 단계에서 백업 키가 재업로드한다.
+    if has_audio or valid_slides:
+        try:
+            get_uploaded_parts(api_keys[0])
+        except Exception as exc:
+            if len(api_keys) == 1:
+                raise
+            log(f"  ⚠️ 기본 API 키 파일 업로드 실패 ({type(exc).__name__}) -> 백업 키 업로드로 전환", step=1)
 
     audio_fname = os.path.basename(audio_path) if has_audio else ""
     slide_fnames = [os.path.basename(p) for p in valid_slides]
@@ -1015,91 +1081,101 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
     }
 
     # 2. Gemini API 호출 함수 (커스텀 프롬프트)
-    def call_gemini_with_parts(parts, prompt_text):
+    def call_gemini_with_parts(parts, prompt_text, use_uploaded_materials=False):
         check_cancel()
-        full_parts = list(parts) + [{"text": prompt_text}]
         payload = {
-            "contents": [{"parts": full_parts}],
             "generationConfig": {
                 "temperature": 0.2,
                 "maxOutputTokens": 8192
             }
         }
-        models_to_try = config_manager.get_supported_gemini_models(api_key)[:3]
-        top_display = ", ".join(models_to_try[:3])
-        log(f"  ℹ️ [구글 최신 모델 순서 자동 감지]: {top_display} 등 {len(models_to_try)}개 모델 준비 완료", step=2)
-        for model in models_to_try:
+        for key_index, api_key in enumerate(api_keys):
             check_cancel()
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            check_cancel()
+            if key_index:
+                log("  🔁 기본 API 키의 쿼터/서버 제한으로 백업 API 키로 전환합니다.", step=2)
             try:
-                log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
-                last_progress = [0.0]
-                wait_stop = threading.Event()
+                input_parts = get_uploaded_parts(api_key) if use_uploaded_materials else list(parts)
+            except Exception as exc:
+                log(f"  ⚠️ API 키 {key_index + 1} 파일 업로드 실패 ({type(exc).__name__}) -> 다음 키로 전환", step=2)
+                continue
+            full_parts = input_parts + [{"text": prompt_text}]
+            payload["contents"] = [{"parts": full_parts}]
+            models_to_try = config_manager.get_gemini_models_for("lecture_note", api_key, max_models=3)
+            top_display = ", ".join(models_to_try[:3])
+            log(f"  ℹ️ [강의노트 모델 풀 · 키 {key_index + 1}/{len(api_keys)}]: {top_display} 등 {len(models_to_try)}개 모델 준비 완료", step=2)
+            for model in models_to_try:
+                check_cancel()
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+                check_cancel()
+                try:
+                    log(f"  🚀 [{model}] 연결 및 강의노트 생성 시작...", step=2)
+                    last_progress = [0.0]
+                    wait_stop = threading.Event()
 
-                def wait_ticker():
-                    elapsed = 0
-                    while not wait_stop.wait(5):
-                        elapsed += 5
-                        log(f"  ⏳ [{model}] Gemini 서버 응답 대기 중 ({elapsed}초)...", step=2)
+                    def wait_ticker():
+                        elapsed = 0
+                        while not wait_stop.wait(5):
+                            elapsed += 5
+                            log(f"  ⏳ [{model}] Gemini 서버 응답 대기 중 ({elapsed}초)...", step=2)
 
-                ticker = threading.Thread(target=wait_ticker, daemon=True)
-                ticker.start()
+                    ticker = threading.Thread(target=wait_ticker, daemon=True)
+                    ticker.start()
 
-                def on_stream_progress(char_count):
+                    def on_stream_progress(char_count):
+                        check_cancel()
+                        now = time.monotonic()
+                        if now - last_progress[0] >= 5:
+                            log(f"  ✍️ [{model}] AI 응답 수신 중 ({char_count:,}자)...", step=2)
+                            last_progress[0] = now
+
+                    try:
+                        note_text, usage = stream_gemini_response(req, timeout=240, progress_fn=on_stream_progress)
+                    finally:
+                        wait_stop.set()
+                        ticker.join(timeout=1)
+                    if usage:
+                        log(
+                            "  📊 토큰 사용량: "
+                            f"입력 {usage.get('promptTokenCount', 0):,} / "
+                            f"출력 {usage.get('candidatesTokenCount', 0):,} / "
+                            f"합계 {usage.get('totalTokenCount', 0):,}",
+                            step=2,
+                        )
+                    return note_text
+                except urllib.error.HTTPError as e:
                     check_cancel()
-                    now = time.monotonic()
-                    if now - last_progress[0] >= 5:
-                        log(f"  ✍️ [{model}] AI 응답 수신 중 ({char_count:,}자)...", step=2)
-                        last_progress[0] = now
-
-                try:
-                    note_text, usage = stream_gemini_response(req, timeout=240, progress_fn=on_stream_progress)
-                finally:
-                    wait_stop.set()
-                    ticker.join(timeout=1)
-                if usage:
-                    log(
-                        "  📊 토큰 사용량: "
-                        f"입력 {usage.get('promptTokenCount', 0):,} / "
-                        f"출력 {usage.get('candidatesTokenCount', 0):,} / "
-                        f"합계 {usage.get('totalTokenCount', 0):,}",
-                        step=2,
-                    )
-                return note_text
-            except urllib.error.HTTPError as e:
-                check_cancel()
-                try:
-                    raw_bytes = e.read().decode("utf-8", errors="ignore")
-                    err_json = json.loads(raw_bytes)
-                    err_body = err_json.get("error", {}).get("message", raw_bytes[:120])
-                except Exception:
-                    err_body = str(e)
-                if e.code == 429 and any(marker in err_body.lower() for marker in ("perday", "per_day", "per day", "daily", "rpd")):
-                    raise RuntimeError("Gemini 일일 요청 한도(RPD)가 소진되었습니다. 자동 재시도하지 않습니다.") from None
-                if e.code in (429, 503):
-                    log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
+                    try:
+                        raw_bytes = e.read().decode("utf-8", errors="ignore")
+                        err_json = json.loads(raw_bytes)
+                        err_body = err_json.get("error", {}).get("message", raw_bytes[:120])
+                    except Exception:
+                        err_body = str(e)
+                    if e.code == 429 and any(marker in err_body.lower() for marker in ("perday", "per_day", "per day", "daily", "rpd")):
+                        log(f"  ⚠️ [{model}] 일일 요청 한도(RPD) 소진 -> 다음 모델로 즉시 전환합니다.", step=2)
+                        break
+                    if e.code in (429, 503):
+                        log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
+                        break
+                    log(f"  ⚠️ [{model}] HTTP {e.code} 요청 실패 -> 다음 모델로 전환합니다. ({err_body})", step=2)
                     break
-                log(f"  ⚠️ [{model}] HTTP {e.code} 요청 실패 -> 다음 모델로 전환합니다. ({err_body})", step=2)
-                break
-            except (urllib.error.URLError, TimeoutError) as e:
-                check_cancel()
-                reason = getattr(e, "reason", e)
-                if isinstance(reason, TimeoutError):
-                    raise RuntimeError("Gemini AI 생성이 240초를 초과했습니다. 중복 사용량 방지를 위해 자동 재시도하지 않습니다.") from None
-                raise RuntimeError(f"Gemini API 연결에 실패했습니다: {reason}") from None
-            except RuntimeError:
-                raise
-            except Exception as e:
-                check_cancel()
-                log(f"  ⚠️ [{model}] 호출 예외 ({type(e).__name__}): {e} -> 다음 모델 전환...", step=2)
-                break
+                except (urllib.error.URLError, TimeoutError) as e:
+                    check_cancel()
+                    reason = getattr(e, "reason", e)
+                    if isinstance(reason, TimeoutError):
+                        raise RuntimeError("Gemini AI 생성이 240초를 초과했습니다. 중복 사용량 방지를 위해 자동 재시도하지 않습니다.") from None
+                    raise RuntimeError(f"Gemini API 연결에 실패했습니다: {reason}") from None
+                except RuntimeError:
+                    raise
+                except Exception as e:
+                    check_cancel()
+                    log(f"  ⚠️ [{model}] 호출 예외 ({type(e).__name__}): {e} -> 다음 모델 전환...", step=2)
+                    break
         raise RuntimeError("모든 Gemini 모델 요청에 실패했습니다.")
 
     # 프롬프트 구성 (100% 완전성 & 한/영 1:1 대칭 보장 & 출처 파일명 명시 & 토큰 절약 테이블화)
@@ -1267,7 +1343,7 @@ Tone: Professional academic publication tone."""
         ko_eta = 50 if has_audio else 25
         log("\n[Step 2/4] 🧠 Gemini AI 한국어 맞춤 강의노트 심층 작성 중 (마스터 청사진 수립)...", step=2, eta=ko_eta)
         prompt_ko = build_custom_prompt(is_english=False)
-        note_ko = call_gemini_with_parts(uploaded_parts, prompt_ko)
+        note_ko = call_gemini_with_parts([], prompt_ko, use_uploaded_materials=True)
         check_cancel()
         saved = save_to_markdown_cache(course_cfg, note_ko, actual_date_str, week_num, is_english=False, source_files=source_files_dict, session_only=True)
         if saved:
@@ -1299,7 +1375,7 @@ Translate the following Korean lecture note into publication-grade academic Engl
             note_en = call_gemini_with_parts([], prompt_en)
         else:
             prompt_en = build_custom_prompt(is_english=True)
-            note_en = call_gemini_with_parts(uploaded_parts, prompt_en)
+            note_en = call_gemini_with_parts([], prompt_en, use_uploaded_materials=True)
 
         check_cancel()
         saved = save_to_markdown_cache(course_cfg, note_en, actual_date_str, week_num, is_english=True, source_files=source_files_dict, session_only=True)

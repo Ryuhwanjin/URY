@@ -1,9 +1,9 @@
 @echo off
-title URY Engine v0.6.5 - Windows Academic Studio
+title URY v0.6.5 - Windows Academic Studio
 cd /d "%~dp0"
 
 echo =========================================================
-echo  URY Engine v0.6.5 (Windows Academic Studio)
+echo  URY v0.6.5 (Windows Academic Studio)
 echo =========================================================
 echo.
 
@@ -64,7 +64,7 @@ exit /b 1
 
 :FOUND_PY
 echo [ȳ]  ̽ : "%PY_CMD%"
-echo [ȳ] URY Engine GUI Ʃ մϴ...
+echo [ȳ] URY GUI Ʃ մϴ...
 echo.
 
 "%PY_CMD%" "%~dp0system\code\settings_gui.py"

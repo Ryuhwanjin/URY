@@ -1,4 +1,4 @@
-# URY Engine
+# URY
 
 대학 강의자료와 녹음을 Gemini로 분석해 강의노트, PDF, 모의시험, 학습 로드맵을 만드는 macOS/Windows 데스크톱 앱입니다.
 
@@ -49,7 +49,7 @@ Tk가 포함된 Python 3.13으로 실행합니다. 현재 개발 Mac에서는 �
 
 스크립트는 프로젝트의 `.venv-macos-build`에 독립된 환경을 만들고,
 `requirements-macos-build.txt`의 고정 버전을 설치합니다. Anaconda의 다른 패키지는
-포함하지 않습니다. 결과는 `URY_macOS/URY Engine.app`이며 빌드 중간 파일은
+포함하지 않습니다. 결과는 `URY_macOS/URY.app`이며 빌드 중간 파일은
 `build/macos`에 저장합니다. 환경과 빌드 결과는 Git에서 제외합니다.
 현재 빌드는 Apple Silicon용 로컬 테스트 번들(ad-hoc 서명)입니다.
 외부 배포용 Developer ID 서명·Apple 공증은 별도 단계입니다.

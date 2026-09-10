@@ -11,6 +11,7 @@ class ReleaseSafetyTest(unittest.TestCase):
         self.assertNotIn("sync_system_files", functions)
         self.assertNotIn("sanitize_personal_configs", functions)
         self.assertIn('"settings.json"', source)
+        self.assertIn('"시간표.json"', source)
         self.assertIn('"강의노트"', source)
         build = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "build_all_releases")
         calls = {ast.unparse(n.func) for n in ast.walk(build) if isinstance(n, ast.Call)}

@@ -67,6 +67,7 @@ venv/
 .venv/
 .venv-macos-build/
 URY_macOS/URY Engine/
+URY_macOS/URY/
 
 # ==========================================
 # 🍏 macOS / OS 시스템 메타데이터

@@ -13,6 +13,7 @@ import glob
 import re
 import json
 import urllib.request
+import urllib.error
 import unicodedata
 from datetime import datetime
 
@@ -32,7 +33,12 @@ def generate_master_bible(course_folder_name: str, target_weeks: list = None, ex
     지정된 과목의 선택된 주차 노트들을 통합하여 마스터 바이블 마크다운 및 PDF 생성
     """
     settings = config_manager.load_settings()
-    api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+    key_picker = getattr(config_manager, "get_api_keys", None)
+    api_keys = key_picker() if callable(key_picker) else []
+    if not api_keys:
+        primary = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+        if primary:
+            api_keys = [primary]
     
     course_dir = config_manager.get_course_dir(course_folder_name)
     cache_c = config_manager.get_markdown_cache_dir(course_folder_name)
@@ -95,23 +101,43 @@ def generate_master_bible(course_folder_name: str, target_weeks: list = None, ex
 """
 
     refined_markdown = raw_combined_text
-    if api_key and len(api_key) > 10:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-            req_data = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192}
-            }
-            req = urllib.request.Request(url, data=json.dumps(req_data).encode("utf-8"), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                res_json = json.loads(resp.read().decode("utf-8"))
-                candidates = res_json.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts:
-                        refined_markdown = parts[0].get("text", raw_combined_text)
-        except Exception as e:
-            print(f"⚠️ Gemini 마스터 바이블 정제 중 알림 (원본 병합본 유지): {e}")
+    if api_keys:
+        req_data = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192}
+        }
+        refined = False
+        for key_index, api_key in enumerate(api_keys):
+            if not api_key or len(api_key) <= 10:
+                continue
+            if key_index:
+                print("🔁 기본 API 키의 쿼터/서버 제한으로 백업 API 키로 전환...")
+            models = config_manager.get_gemini_models_for("assessment", api_key, max_models=3)
+            for model in models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                    req = urllib.request.Request(url, data=json.dumps(req_data).encode("utf-8"), headers={"Content-Type": "application/json"})
+                    with urllib.request.urlopen(req, timeout=120) as resp:
+                        res_json = json.loads(resp.read().decode("utf-8"))
+                        candidates = res_json.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts:
+                                refined_markdown = parts[0].get("text", raw_combined_text)
+                                if refined_markdown.strip():
+                                    refined = True
+                                    break
+                except urllib.error.HTTPError as e:
+                    if e.code in (429, 503):
+                        print(f"⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 시험자료 모델로 즉시 전환...")
+                        continue
+                    print(f"⚠️ Gemini 마스터 바이블 정제 중 알림 (원본 병합본 유지): HTTP {e.code}")
+                    continue
+                except Exception as e:
+                    print(f"⚠️ Gemini 마스터 바이블 정제 중 알림 (원본 병합본 유지): {e}")
+                    continue
+            if refined:
+                break
 
     # 마스터 바이블 마크다운 저장
     title_str = f"📘 [{course_folder_name}] {exam_type} 전범위 마스터 바이블"

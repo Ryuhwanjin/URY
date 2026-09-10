@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY Engine v0.7.7 - Windows 독립 실행 .EXE 커스텀 경로 자동 설치/빌드 GUI 도구 (build_exe_gui.py)
+🎓 URY v0.7.7 - Windows 독립 실행 .EXE 커스텀 경로 자동 설치/빌드 GUI 도구 (build_exe_gui.py)
 """
 import os
 import sys
@@ -39,7 +39,7 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(0.5)
 
-        update_status_cb(30, "[2/5] URY Engine 최신 소스코드 및 번들 에셋 정제 중...")
+        update_status_cb(30, "[2/5] URY 최신 소스코드 및 번들 에셋 정제 중...")
         time.sleep(0.5)
 
         update_status_cb(55, "[3/5] PyInstaller 기반 윈도우 바이너리(.exe) 컴파일 중...")
@@ -56,7 +56,7 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         cmd = [
             sys.executable, "-m", "PyInstaller",
             "--noconfirm", "--onedir", "--windowed",
-            "--name", "URY_Engine",
+            "--name", "URY",
             "--add-data", f"{os.path.join(root_dir, 'system')}{os.pathsep}system"
         ]
         for module in HIDDEN_MODULES:
@@ -70,13 +70,13 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         res = subprocess.run(cmd, cwd=root_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         update_status_cb(80, f"[4/5] 지정하신 설치 위치로 프로그램 캡슐화 및 이식 중...")
-        built_dist_dir = os.path.join(root_dir, "dist", "URY_Engine")
+        built_dist_dir = os.path.join(root_dir, "dist", "URY")
 
         if not os.path.exists(built_dist_dir):
             raise RuntimeError(f"PyInstaller 컴파일 실패:\n{res.stderr}")
 
         os.makedirs(target_install_dir, exist_ok=True)
-        target_exe = os.path.join(target_install_dir, "URY_Engine.exe")
+        target_exe = os.path.join(target_install_dir, "URY.exe")
 
         # 만약 기본 dist 경로가 아닌 사용자 커스텀 설치 위치인 경우 복사/설치 수행
         if os.path.abspath(target_install_dir) != os.path.abspath(built_dist_dir):
@@ -106,7 +106,7 @@ class ExeBuilderGUI:
                 pass
 
         self.root = tk.Tk()
-        self.root.title("URY Engine v0.7.7 — Windows Standalone .EXE Installer/Builder")
+        self.root.title("URY v0.7.7 — Windows Standalone .EXE Installer/Builder")
         self.root.geometry("600x350")
         self.root.minsize(580, 340)
         self.root.configure(bg="#181825")
@@ -138,7 +138,7 @@ class ExeBuilderGUI:
         header_card = tk.Frame(self.root, bg="#1e1e2e", bd=0, highlightthickness=1, highlightbackground="#313244")
         header_card.pack(fill=tk.X, padx=20, pady=(18, 10))
 
-        title_lbl = tk.Label(header_card, text="🚀 URY Engine v0.7.7 - .EXE 커스텀 자동 설치/빌더", font=("Malgun Gothic", 12, "bold"), fg="#ffffff", bg="#1e1e2e")
+        title_lbl = tk.Label(header_card, text="🚀 URY v0.7.7 - .EXE 커스텀 자동 설치/빌더", font=("Malgun Gothic", 12, "bold"), fg="#ffffff", bg="#1e1e2e")
         title_lbl.pack(pady=(12, 4))
 
         sub_lbl = tk.Label(header_card, text="바탕화면 선택 시에도 _internal 폴더가 난잡하게 노출되지 않도록 전용 폴더로 자동 캡슐화됩니다.", font=("Malgun Gothic", 8), fg="#a6adc8", bg="#1e1e2e")
@@ -170,7 +170,7 @@ class ExeBuilderGUI:
         self.start_btn.pack(pady=6)
 
     def browse_target_dir(self):
-        chosen = filedialog.askdirectory(title="URY_Engine.exe 설치/빌드 출력 폴더 선택", initialdir=self.path_var.get())
+        chosen = filedialog.askdirectory(title="URY.exe 설치/빌드 출력 폴더 선택", initialdir=self.path_var.get())
         if chosen:
             self.path_var.set(os.path.abspath(chosen))
 
@@ -194,7 +194,7 @@ class ExeBuilderGUI:
         def _finish():
             if success:
                 target_dir = os.path.dirname(result_path)
-                messagebox.showinfo("설치 완료", f"🎉 URY Engine .EXE 설치가 성공적으로 완료되었습니다!\n\n📂 설치 경로: {target_dir}\n💡 URY_Engine.exe 를 실행하여 바로 사용하세요.")
+                messagebox.showinfo("설치 완료", f"🎉 URY .EXE 설치가 성공적으로 완료되었습니다!\n\n📂 설치 경로: {target_dir}\n💡 URY.exe 를 실행하여 바로 사용하세요.")
                 if sys.platform == "win32" and os.path.exists(result_path):
                     try:
                         subprocess.run(["explorer.exe", "/select,", result_path], check=False)

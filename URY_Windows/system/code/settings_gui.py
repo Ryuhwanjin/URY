@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 대학 전공 학업 관리 시스템 — URY Engine v0.7.7 (AI Academic Studio)
+🎓 대학 전공 학업 관리 시스템 — URY v0.7.7 (AI Academic Studio)
 - 미니멀 & 직관적인 모던 UI/UX
 - 3단계 사용자 주도형 맞춤 학습노트 생성 스튜디오 (음성 부재 대비 슬라이드 전용 모드 지원)
 - 선택적 실전 모의시험 & D-Day 맞춤 학습 로드맵 (주차별 자료 다중 선택 지원)
@@ -265,14 +265,49 @@ LANG_CODE_TO_LABEL = {
     "en": "영문 (English) 전용"
 }
 
-UNIVERSITY_THEMES = {
-    "서울대학교": "#003478", "연세대학교": "#003C71", "고려대학교": "#8B1E3F",
-    "성균관대학교": "#0B4DA2", "한양대학교": "#0E4A84", "서강대학교": "#A50034",
-    "중앙대학교": "#005BAC", "경희대학교": "#8B2332", "한국외국어대학교": "#002D72",
-    "이화여자대학교": "#00664F", "부산대학교": "#005BAA", "경북대학교": "#B5121B",
-    "전남대학교": "#006B54", "전북대학교": "#0054A6", "충남대학교": "#003B70",
-    "충북대학교": "#8A1538", "강원대학교": "#004B8D", "제주대학교": "#005A9C",
-}
+UNIVERSITY_THEMES = dict(sorted({
+    "강원대학교": "#004B8D",
+    "경북대학교": "#B5121B",
+    "경상국립대학교": "#00704A",
+    "경희대학교": "#8B2332",
+    "고려대학교": "#8B1E3F",
+    "광운대학교": "#B5121B",
+    "국민대학교": "#0066B3",
+    "건국대학교": "#512772",
+    "계명대학교": "#7A003C",
+    "동국대학교": "#7A1F3D",
+    "디지스트(DGIST)": "#0055A4",
+    "부경대학교": "#0066A1",
+    "부산대학교": "#005BAA",
+    "서강대학교": "#A50034",
+    "서울과학기술대학교": "#005BAA",
+    "서울대학교": "#003478",
+    "서울시립대학교": "#005A9C",
+    "성균관대학교": "#0B4DA2",
+    "세종대학교": "#C8102E",
+    "숭실대학교": "#004B85",
+    "아주대학교": "#003DA5",
+    "연세대학교": "#003C71",
+    "영남대학교": "#005BAC",
+    "울산대학교": "#003B70",
+    "원광대학교": "#00843D",
+    "이화여자대학교": "#00664F",
+    "인하대학교": "#0054A6",
+    "전남대학교": "#006B54",
+    "전북대학교": "#0054A6",
+    "제주대학교": "#005A9C",
+    "조선대학교": "#0072BC",
+    "중앙대학교": "#005BAC",
+    "지스트(GIST)": "#E30613",
+    "충남대학교": "#003B70",
+    "충북대학교": "#8A1538",
+    "카이스트(KAIST)": "#004191",
+    "포스텍(POSTECH)": "#A61955",
+    "한국외국어대학교": "#002D72",
+    "한양대학교": "#0E4A84",
+    "홍익대학교": "#E31937",
+    "유니스트(UNIST)": "#001C54",
+}.items()))
 
 PERIOD_OPTIONS = [
     "D-1 (벼락치기 총정리)",
@@ -480,7 +515,7 @@ class SquareRoundButton(tk.Canvas):
 
 class CinematicSplashScreen:
     """
-    🌿 URY Engine — 미니멀 시네마틱 스플래시 오프닝
+    🌿 URY — 미니멀 시네마틱 스플래시 오프닝
     - 100% 가로 중앙 정렬된 "Ultimate Result for You" 타이핑
     - U(0), R(9), Y(20) 세 글자 볼드 강조
     - 3글자 압축 머지 ➔ [ U   R   Y ] 엠블럼 완성 후 대시보드 오픈
@@ -583,7 +618,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY Engine — Academic Studio v0.9.0")
+        self.root.title("URY — Academic Studio v0.9.1")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -675,6 +710,7 @@ class UnifiedDashboardApp:
         self.create_tabs()
         self.populate_course_table()
         self.refresh_theme_widgets()
+        self.root.after(100, self.update_api_status_badge)
 
 
     def on_splash_done(self):
@@ -708,7 +744,7 @@ class UnifiedDashboardApp:
         threading.Thread(target=check, daemon=True).start()
 
     def prompt_update(self, version, url):
-        if not messagebox.askyesno("URY Engine 업데이트", f"새 버전 {version}이 있습니다.\n설치 파일을 다운로드할까요?", parent=self.root):
+        if not messagebox.askyesno("URY 업데이트", f"새 버전 {version}이 있습니다.\n설치 파일을 다운로드할까요?", parent=self.root):
             return
 
         def download():
@@ -743,7 +779,7 @@ class UnifiedDashboardApp:
 
         dialog = tk.Toplevel(self.root)
         self._compliance_dialog = dialog
-        dialog.title("URY Engine — 저작권법 준수 및 학업 윤리 서약")
+        dialog.title("URY — 저작권법 준수 및 학업 윤리 서약")
         dialog.transient(self.root)
         dialog.configure(bg="#f8fafc")
 
@@ -766,7 +802,7 @@ class UnifiedDashboardApp:
         hdr_frame = tk.Frame(dialog, bg="#ffffff", padx=20, pady=14, highlightthickness=1, highlightbackground="#e2e8f0")
         hdr_frame.pack(side=tk.TOP, fill=tk.X)
 
-        tk.Label(hdr_frame, text="🎓 URY Engine 저작권 준수 및 학업 윤리 서약서", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
+        tk.Label(hdr_frame, text="🎓 URY 저작권 준수 및 학업 윤리 서약서", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
         tk.Label(hdr_frame, text="대한민국 저작권법 제30조(사적이용을 위한 복제) 및 대학 학업 윤리 가이드라인", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(anchor=tk.W, pady=(3, 0))
 
         # 2. 하단 서약 확인 및 버튼 프레임 (하단 최우선 고정 -> 창 크기에 상관없이 항상 100% 노출!)
@@ -798,7 +834,7 @@ class UnifiedDashboardApp:
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
         terms_text = """[제1조: 사적 이용을 위한 복제 목적 한정 (저작권법 제30조)]
-본 소프트웨어(URY Engine)로 처리되는 강의 음성 녹음, 강의 슬라이드, 필기 사진 및 AI가 생성한 모든 산출물(학습노트, 모의고사, 벼락치기 정리노트)은 수강생 본인의 '개인 학업 복습 및 시험 대비'를 위한 사적 이용 목적으로만 사용되어야 합니다.
+본 소프트웨어(URY)로 처리되는 강의 음성 녹음, 강의 슬라이드, 필기 사진 및 AI가 생성한 모든 산출물(학습노트, 모의고사, 벼락치기 정리노트)은 수강생 본인의 '개인 학업 복습 및 시험 대비'를 위한 사적 이용 목적으로만 사용되어야 합니다.
 
 [제2조: 무단 배포, 공유 및 상업적 판매 엄금 (저작권법 제136조)]
 교수자의 강의 및 강의자료는 저작권법의 보호를 받는 지적재산입니다. 수강생은 생성된 강의노트나 모의고사, 원본 자료를 에브리타임, 카카오톡 단톡방, 인터넷 카페, SNS, 해피캠퍼스 등에 배포·공유·전재·판매할 수 없으며, 이를 위반하여 발생하는 모든 민·형사상 법적 책임은 이용자 본인에게 귀속됩니다.
@@ -807,7 +843,7 @@ class UnifiedDashboardApp:
 강의 음성 녹음은 교수자의 사전 수업 안내 및 동의 범위 내에서 본인의 복습을 위해 진행해야 하며, 교수자 및 동료 수강생의 인격권(음성권·초상권)을 침해하지 않도록 각별히 유의해야 합니다.
 
 [제4조: 로컬 독립 실행 및 개발자 면책 (Legal Disclaimer)]
-URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 어떠한 강의 음성이나 자료도 중앙 서버에 수집·보관하지 않습니다. AI 결과물은 학업 보조용 조교일 뿐 최종 시험 평가 기준을 대체하지 않습니다."""
+URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 어떠한 강의 음성이나 자료도 중앙 서버에 수집·보관하지 않습니다. AI 결과물은 학업 보조용 조교일 뿐 최종 시험 평가 기준을 대체하지 않습니다."""
 
         txt.insert(tk.END, terms_text)
         txt.config(state=tk.DISABLED)
@@ -932,7 +968,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
 
         SquareRoundButton(
             btn_row,
-            text="✍️  서약 및 전체 동의하고 URY Engine 시작",
+            text="✍️  서약 및 전체 동의하고 URY 시작",
             bg=self.accent_color("#1c4732"),
             hover_bg=self.accent_color("#265e43"),
             radius=8,
@@ -1173,19 +1209,92 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         except Exception:
             pass
 
+    def install_macos_edit_menu(self):
+        """Use Cocoa's first-responder edit actions for reliable Command shortcuts."""
+        if sys.platform != "darwin":
+            return
+        try:
+            from AppKit import NSApp, NSMenu, NSMenuItem, NSEventModifierFlagCommand
+            main_menu = NSApp.mainMenu()
+            if main_menu is None:
+                main_menu = NSMenu.alloc().initWithTitle_("")
+                NSApp.setMainMenu_(main_menu)
+            edit_item = main_menu.itemWithTitle_("Edit")
+            if edit_item is None:
+                edit_menu = NSMenu.alloc().initWithTitle_("Edit")
+                edit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Edit", None, "")
+                edit_item.setSubmenu_(edit_menu)
+                main_menu.addItem_(edit_item)
+            else:
+                edit_menu = edit_item.submenu()
+            existing = {(item.action(), item.keyEquivalent()) for item in edit_menu.itemArray()}
+            for title, action, key in (("Copy", "copy:", "c"), ("Paste", "paste:", "v"), ("Cut", "cut:", "x"), ("Select All", "selectAll:", "a")):
+                if (action, key) in existing:
+                    continue
+                item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, action, key)
+                item.setKeyEquivalentModifierMask_(NSEventModifierFlagCommand)
+                edit_menu.addItem_(item)
+        except Exception:
+            pass
+
     def bind_mac_shortcuts(self):
         try:
-            self.root.event_add("<<Paste>>", "<Command-v>")
-            self.root.event_add("<<Copy>>", "<Command-c>")
-            self.root.event_add("<<Cut>>", "<Command-x>")
-            self.root.event_add("<<SelectAll>>", "<Command-a>")
+            self.install_macos_edit_menu()
+            # Native Tk handles standard edit shortcuts for its own widgets.
+            # Add one app-wide fallback for input widgets; failed
+            # operations return None so the native binding is never blocked.
+            modifiers = ("Command", "Meta") if sys.platform == "darwin" else ("Control",)
+            input_classes = {"Entry", "TEntry", "Text", "TCombobox", "Spinbox", "TSpinbox"}
 
-            for widget_name in ("Entry", "TEntry", "Text"):
-                self.root.bind_class(widget_name, "<Command-v>", lambda e: e.widget.event_generate("<<Paste>>"))
-                self.root.bind_class(widget_name, "<Command-c>", lambda e: e.widget.event_generate("<<Copy>>"))
-                self.root.bind_class(widget_name, "<Command-x>", lambda e: e.widget.event_generate("<<Cut>>"))
-            self.root.bind_class("Entry", "<Command-a>", lambda e: (e.widget.select_range(0, tk.END), "break")[1])
-            self.root.bind_class("Text", "<Command-a>", lambda e: (e.widget.tag_add("sel", "1.0", "end"), "break")[1])
+            def _clipboard(event, action):
+                widget = event.widget
+                try:
+                    if str(widget.winfo_class()) not in input_classes:
+                        return
+                    if action in ("copy", "cut"):
+                        selected = (widget.get("sel.first", "sel.last")
+                                    if isinstance(widget, tk.Text)
+                                    else widget.selection_get())
+                        self.root.clipboard_clear()
+                        self.root.clipboard_append(selected)
+                        self.root.update_idletasks()
+                        if action == "cut":
+                            widget.delete("sel.first", "sel.last")
+                    else:
+                        widget.insert(tk.INSERT, self.root.clipboard_get())
+                except (tk.TclError, AttributeError, TypeError):
+                    return
+                return "break"
+
+            def _select_all(event):
+                try:
+                    if isinstance(event.widget, tk.Text):
+                        event.widget.tag_add("sel", "1.0", "end")
+                    else:
+                        try:
+                            event.widget.select_range(0, tk.END)
+                        except (tk.TclError, AttributeError, TypeError):
+                            event.widget.selection_range(0, tk.END)
+                    return "break"
+                except (tk.TclError, AttributeError, TypeError):
+                    return
+
+            for modifier in modifiers:
+                for key, action in (("v", "paste"), ("c", "copy"), ("x", "cut")):
+                    # Class bindings run before the toplevel/all tags. Replacing
+                    # the platform edit binding prevents Tk's default handler
+                    # from swallowing modifier events before our handler.
+                    for widget_name in input_classes:
+                        self.root.bind_class(
+                            widget_name,
+                            f"<{modifier}-{key}>",
+                            lambda event, act=action: _clipboard(event, act),
+                        )
+                for widget_name in input_classes:
+                    self.root.bind_class(widget_name, f"<{modifier}-a>", _select_all)
+                self.root.bind_all(f"<{modifier}-a>", _select_all, add="+")
+                self.root.bind_all(f"<{modifier}-f>", self.toggle_fullscreen, add="+")
+            self.root.bind_all("<F11>", self.toggle_fullscreen, add="+")
 
             # ── 한글 IME 오타 수정 (macOS tkinter Hangul 자모 분리 버그) ──────────
             # 증상: '마' 입력 시 'ㅁㅏ'로 분리되어 삽입되는 현상 (맨 처음 입력 시)
@@ -1277,8 +1386,7 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 self.root.bind_class("Text", "<FocusOut>", _nfc_text, add=True)
             # ────────────────────────────────────────────────────────────────────────
 
-            self.root.bind("<Command-f>", self.toggle_fullscreen)
-            self.root.bind("<F11>", self.toggle_fullscreen)
+            self.root.bind_all("<F11>", self.toggle_fullscreen, add="+")
         except Exception:
             pass
 
@@ -1475,8 +1583,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 self.header_icon_label.pack(side=tk.LEFT, padx=(0, 6))
             except Exception:
                 pass
-        tk.Label(title_row, text="URY Engine", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.9.0", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text="URY", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.9.1", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -1501,11 +1609,10 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         self.sem_badge_label = tk.Label(right, text=f" 📅 {sem_text} ", font=("Pretendard", 8, "bold"), bg="#f1f5f9", fg="#1e293b", relief=tk.FLAT, padx=6, pady=4)
         self.sem_badge_label.pack(side=tk.LEFT, pady=16, padx=(0, 6))
 
-        api_key = self.settings.get("gemini_api_key", "").strip()
-        has_key = len(api_key) >= 10
-        api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = self.accent_color("#15803d") if has_key else "#b91c1c"
-        api_bg = self.accent_color("#f0fdf4") if has_key else "#fef2f2"
+        has_key = bool(config_manager.get_api_keys())
+        api_text = " 🟡 API 확인 중 " if has_key else " 🔴 API 등록 필요 "
+        api_fg = "#a16207" if has_key else "#b91c1c"
+        api_bg = "#fef9c3" if has_key else "#fef2f2"
         self.api_badge_label = tk.Label(right, text=api_text, font=("Pretendard", 8, "bold"), bg=api_bg, fg=api_fg, relief=tk.FLAT, padx=8, pady=4, cursor="hand2")
         self.api_badge_label.pack(side=tk.LEFT, pady=16)
         self.api_badge_label.bind("<Button-1>", lambda e: self.switch_to_tab(3))
@@ -1521,15 +1628,58 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         ]
 
     def update_api_status_badge(self):
-        """헤더의 API 상태 배지를 현재 설정값에 맞춰 갱신"""
+        """헤더의 API 상태를 실제 Gemini 모델 목록 인증 결과로 갱신"""
         if not hasattr(self, "api_badge_label"):
             return
-        api_key = self.settings.get("gemini_api_key", "").strip()
-        has_key = len(api_key) >= 10
-        api_text = " 🟢 API 연결됨 " if has_key else " 🔴 API 등록 필요 "
-        api_fg = self.accent_color("#15803d") if has_key else "#b91c1c"
-        api_bg = self.accent_color("#f0fdf4") if has_key else "#fef2f2"
-        self.api_badge_label.config(text=api_text, bg=api_bg, fg=api_fg)
+        api_keys = config_manager.get_api_keys()
+        check_id = getattr(self, "_api_status_check_id", 0) + 1
+        self._api_status_check_id = check_id
+        if not api_keys:
+            self._set_api_status_badge(" 🔴 API 등록 필요 ", "invalid")
+            return
+
+        self._set_api_status_badge(" 🟡 API 확인 중 ", "pending")
+
+        def verify():
+            results = [config_manager.check_api_key(key) for key in api_keys]
+
+            def apply_result():
+                if check_id != getattr(self, "_api_status_check_id", 0):
+                    return
+                valid_count = sum(result == "valid" for result in results)
+                unavailable = any(result == "unavailable" for result in results)
+                if valid_count == len(results) and len(results) > 1:
+                    self._set_api_status_badge(" 🟢 API 연결됨 · 백업 준비 ", "valid")
+                elif valid_count:
+                    if len(results) > 1 and results[0] == "valid":
+                        text = " 🟢 API 연결됨 · Backup 키 확인 필요 "
+                    elif len(results) > 1:
+                        text = " 🟡 기본 키 확인 필요 · Backup 연결됨 "
+                    else:
+                        text = " 🟢 API 연결됨 "
+                    self._set_api_status_badge(text, "valid" if results[0] == "valid" else "pending")
+                elif unavailable:
+                    self._set_api_status_badge(" 🟡 API 확인 불가 (네트워크) ", "pending")
+                else:
+                    self._set_api_status_badge(" 🔴 API 키 인증 실패 ", "invalid")
+
+            try:
+                self.root.after(0, apply_result)
+            except Exception:
+                pass
+
+        threading.Thread(target=verify, daemon=True).start()
+
+    def _set_api_status_badge(self, text, state):
+        if not hasattr(self, "api_badge_label"):
+            return
+        if state == "valid":
+            fg, bg = self.accent_color("#15803d"), self.accent_color("#f0fdf4")
+        elif state == "invalid":
+            fg, bg = "#b91c1c", "#fef2f2"
+        else:
+            fg, bg = "#a16207", "#fef9c3"
+        self.api_badge_label.config(text=text, bg=bg, fg=fg)
 
 
     def switch_to_tab(self, idx):
@@ -1963,6 +2113,20 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             parent_bg="#ffffff"
         )
         self.studio_clear_log_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.studio_open_log_btn = SquareRoundButton(
+            act_row_bot,
+            text="🧾 로그 파일 열기",
+            bg="#f1f5f9",
+            hover_bg="#e2e8f0",
+            fg="#334155",
+            radius=8,
+            height=28,
+            font=("Pretendard", 8, "bold"),
+            command=self.open_studio_log_file,
+            parent_bg="#ffffff"
+        )
+        self.studio_open_log_btn.pack(side=tk.LEFT, padx=(0, 5))
 
         self.studio_stop_btn = SquareRoundButton(
             act_row_bot,
@@ -2602,6 +2766,22 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                     self.open_studio_notes_folder()
         else:
             self.open_studio_notes_folder()
+
+    def open_studio_log_file(self):
+        """최근 Studio 실행 로그를 기본 텍스트 편집기로 연다."""
+        log_path = config_manager.get_studio_log_file_path()
+        if not os.path.exists(log_path):
+            with open(log_path, "w", encoding="utf-8") as log_file:
+                log_file.write("URY Studio 로그가 아직 없습니다.\n")
+        try:
+            if sys.platform == "darwin":
+                subprocess.call(["open", log_path])
+            elif sys.platform == "win32":
+                os.startfile(log_path)
+            else:
+                subprocess.call(["xdg-open", log_path])
+        except Exception as exc:
+            messagebox.showerror("로그 파일", f"로그 파일을 열 수 없습니다.\n\n{exc}")
 
     def open_studio_notes_folder(self):
         cname = self.studio_course_combo.get().strip()
@@ -3561,7 +3741,15 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         input_wrap = ttk.Frame(bottom_frame)
         input_wrap.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
 
-        self.tutor_input_text = tk.Text(input_wrap, height=3, wrap=tk.WORD, font=("Pretendard", 12), bg="#ffffff", fg="#0f172a", relief=tk.FLAT, highlightthickness=1, highlightbackground="#cbd5e1", padx=12, pady=10)
+        self.tutor_input_text = tk.Text(
+            input_wrap, height=3, wrap=tk.WORD, font=("Pretendard", 12),
+            bg="#ffffff", fg="#0f172a", relief=tk.FLAT,
+            highlightthickness=1, highlightbackground="#cbd5e1",
+            highlightcolor=self.accent_color("#1c4732"),
+            insertbackground=self.accent_color("#1c4732"),
+            insertwidth=2, insertontime=700, insertofftime=350,
+            padx=12, pady=10,
+        )
         self.tutor_input_text.pack(fill=tk.BOTH, expand=True)
         self.add_context_menu(self.tutor_input_text)
         self.tutor_input_text.bind("<Return>", self.on_tutor_input_return)
@@ -3592,6 +3780,16 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         sup_map = {"0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "n": "ⁿ", "T": "ᵀ", "t": "ᵗ", "+": "⁺", "-": "⁻"}
         sub_map = {"0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉", "i": "ᵢ", "j": "ⱼ", "k": "ₖ", "n": "ₙ", "m": "ₘ"}
 
+        # 행렬·정렬 환경을 데스크톱용 평문 수식으로 변환한다.
+        text = re.sub(r"\\{1,2}begin\{(?:[bBpPvV]?matrix|cases|aligned)\}", "[", text)
+        text = re.sub(r"\\{1,2}end\{(?:[bBpPvV]?matrix|cases|aligned)\}", "]", text)
+        text = re.sub(r"\\{2,}", " ; ", text)
+        text = text.replace("&", " , ")
+        text = re.sub(r"\\{1,2}(?:left|right)\s*", "", text)
+        text = re.sub(r"\\{1,2}(?:,|;|!)", " ", text)
+        text = re.sub(r"\\{1,2}frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1)/(\2)", text)
+        text = re.sub(r"\\{1,2}sqrt\{([^{}]+)\}", r"√(\1)", text)
+
         replacements = [
             (r"\\mathbb\{R\}", "ℝ"),
             (r"\\mathbb\{C\}", "ℂ"),
@@ -3620,8 +3818,8 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
             (r"\\forall", "∀"),
             (r"\\exists", "∃"),
             (r"\\mid", "|"),
-            (r"\\cdot", "·"),
             (r"\\cdots", "···"),
+            (r"\\cdot", "·"),
             (r"\\dots", "…"),
             (r"\\{", "{"),
             (r"\\}", "}"),
@@ -3687,9 +3885,12 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                 text_widget.insert(tk.END, f"  {line}\n", ("tutor_code_block",))
                 continue
 
-            # 2. 구분선 (---, ***, ___)
+            # 2. 구분선과 반복 장식선은 빈 줄로 정리
+            if re.fullmatch(r"[\s\-_=─—━]{8,}", stripped):
+                text_widget.insert(tk.END, "\n", ("tutor_hr",))
+                continue
             if re.match(r"^(\-{3,}|\*{3,}|_{3,})$", stripped):
-                text_widget.insert(tk.END, "  " + "─" * 46 + "\n", ("tutor_hr",))
+                text_widget.insert(tk.END, "\n", ("tutor_hr",))
                 continue
 
             # 3. 제목 태그 (#, ##, ###, ####, #####)
@@ -4119,9 +4320,9 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def build_update_tab(self):
-        card = ttk.LabelFrame(self.tab_update, text=" URY Engine 업데이트 ", padding="20")
+        card = ttk.LabelFrame(self.tab_update, text=" URY 업데이트 ", padding="20")
         card.pack(fill=tk.X)
-        ttk.Label(card, text="현재 버전  v0.9.0", font=("Pretendard", 15, "bold"),
+        ttk.Label(card, text="현재 버전  v0.9.1", font=("Pretendard", 15, "bold"),
                   foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
         ttk.Label(card, text="GitHub Release에서 새 설치 파일을 확인합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(4, 16))
         SquareRoundButton(card, text="↻  지금 업데이트 확인", bg=self.accent_color("#1c4732"),
@@ -4130,12 +4331,71 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
                           command=lambda: self.check_for_updates(manual=True)).pack(anchor=tk.W)
 
     def build_features_tab(self):
+        # 첫 화면은 반드시 읽어야 하는 초기 설정 안내로 고정한다.
+        # 나머지 페이지는 실제 화면 캡처와 해당 탭의 모든 사용자 기능을 함께 설명한다.
         pages = {
-            "Studio": ("user_guide_studio.png", "① 과목·날짜·주차를 선택합니다.\n② 음성 녹음 또는 기존 오디오를 연결합니다.\n③ 강의자료 폴더에서 이번 노트에 사용할 파일만 복수 선택합니다.\n④ 강의노트 생성을 누르고 진행 로그를 확인합니다."),
-            "Quiz & Exam": ("user_guide_exam.png", "① 대상 과목과 시험 종류를 선택합니다.\n② 강의노트 폴더에서 출제 자료를 준비합니다.\n③ 자료와 범위를 선택합니다.\n④ 모의시험 PDF, 학습 로드맵 또는 벼락치기 정리노트를 생성합니다."),
-            "Tutor": ("user_guide_tutor.png", "① 과목을 선택합니다.\n② 강의 내용에 관해 질문합니다.\n③ 답변 아래 실제 참조 파일명과 페이지 근거를 확인합니다.\n④ 자료에 없는 내용은 전공 기초 설명으로 구분됩니다."),
-            "Settings": ("user_guide_settings.png", "① Gemini API 키를 저장합니다.\n② 학기와 과목을 등록합니다.\n③ 과목별 출력 언어를 선택합니다.\n④ 대학 테마 또는 HEX 색상을 적용합니다."),
-            "Updates": ("user_guide_updates.png", "① Updates 탭에서 확인 버튼을 누릅니다.\n② 새 버전이 있으면 설치 파일 다운로드를 승인합니다.\n③ 다운로드가 끝나면 설치 파일을 열어 기존 앱을 교체합니다."),
+            "MUST READ": (None, """처음 실행한 뒤 아래 순서대로 한 번만 설정하세요.
+
+1. Settings에서 Google Gemini API Key를 등록합니다.
+   Google AI Studio(https://aistudio.google.com/app/apikey) → Get API key → Create API key → 복사
+   URY의 Settings → Gemini Key에 붙여넣고 ‘설정 저장’을 누릅니다. 별도 프로젝트의 키는 Backup Key에 넣을 수 있으며 기본 키에서 429/503이 발생할 때만 자동 전환됩니다. 키는 화면·로그·스크린샷에 남기지 마세요.
+2. 같은 Settings 화면에서 수강 학기를 선택하거나 추가하고, 과목·전담 튜터 이름·강의계획서를 등록합니다.
+3. 저장하면 현재 학기와 과목에 맞는 폴더가 자동으로 만들어집니다. 그 다음 Studio에서만 강의노트 생성을 시작하세요.
+
+[데이터 위치와 분리]
+기본 워크스페이스는 ~/Desktop/URY_Engine입니다. settings.json과 .env(API Key)는 workspace/system에,
+과목 자료와 결과는 workspace/<학기>/<과목>/ 아래에 저장됩니다. 새 앱과 이전 버전이 같은 workspace를 읽는 것은
+기존 과목·API 설정을 보존하기 위한 의도된 동작이며, 앱 버전별로 자동 분리되지 않습니다. 학기별 자료는 학기
+폴더로 분리되므로 Studio·Quiz·Tutor에서 현재 선택한 학기/과목만 사용하세요.
+
+[안전한 입력]
+이번 생성에 필요한 음성·문서만 선택하고, 개인정보·비공개 자료·타인의 목소리를 외부 API로 보내기 전에 권리를 확인하세요.
+생성 결과는 AI 초안이므로 원문과 대조하고, 시험·법률·의료 판단에 그대로 사용하지 마세요."""),
+            "Studio": ("user_guide_studio.png", """강의노트 생성 스튜디오 — 자료 → 노트 흐름
+
+① Step 1에서 현재 학기와 과목을 고르고 수업 일자, 주차·차시, Part(1부/2부/3부)를 지정합니다.
+   출력 언어는 Settings의 과목별 언어 설정과 연동되며, 한국어·영어·한/영 동시 생성을 지원합니다.
+② Step 2의 ‘실시간 마이크 녹음’으로 바로 녹음하거나 ‘오디오 파일 찾기…’로 기존 m4a/mp3/wav를 연결합니다.
+   녹음을 시작·일시정지·종료하면 날짜와 과목이 들어간 파일명으로 과목의 음성녹음 폴더에 저장됩니다.
+③ ‘강의자료 선택’을 누르면 현재 과목의 강의자료 폴더가 열립니다. 이번 수업에 필요한 PDF/PPTX/이미지만
+   복수 선택하세요. 목록의 체크박스로 포함 파일을 다시 고를 수 있고 ‘전체 해제/전체 선택/새로고침’도 가능합니다.
+④ 칠판 사진을 추가하거나 음성 없이 슬라이드 집중 분석 모드를 선택할 수 있습니다.
+⑤ Step 3의 ‘완벽 학습노트 및 출판용 PDF 생성’을 누르면 선택한 입력만 분석해 Markdown과 PDF를 생성합니다.
+   생성 중에는 단계·모델·수신 글자 수가 화면과 ‘로그 파일 열기’의 studio_latest.log에 표시됩니다.
+   필요하면 ‘작업 중단’을 누르고, 완료 후 ‘PDF 열기’ 또는 ‘폴더 열기’로 결과를 확인하세요."""),
+            "Quiz & Exam": ("user_guide_exam.png", """Quiz & Exam — 강의노트 기반 시험 자료
+
+① 대상 과목과 공부 기간(D-Day), 시험 종류를 선택합니다. 문항 수·문제 유형·일일 공부 시간도 조절할 수 있습니다.
+② ‘강의노트 폴더’로 현재 과목의 노트 폴더를 열거나 목록에서 주차별 강의노트·슬라이드를 복수 선택합니다.
+   ‘전범위 선택/전체 해제’로 범위를 빠르게 바꿀 수 있으며 선택하지 않은 과목 자료는 전송되지 않습니다.
+③ ‘모의시험 PDF’를 누르면 문제지와 마지막 정답·해설 PDF를 만듭니다.
+④ ‘학습 로드맵 생성’은 시험일까지의 주차별 공부 계획을, ‘벼락치기 정리노트’는 핵심 개념 중심 요약본을 생성합니다.
+⑤ ‘마스터 바이블’은 현재 과목에 저장된 강의노트를 하나의 출제 자료로 묶고, ‘문제 폴더/시험지 열기’로 결과를 엽니다.
+답안 채점 기능은 제공하지 않습니다. 생성된 문제와 해설도 원문·교수자 공지와 대조하세요."""),
+            "Tutor": ("user_guide_tutor.png", """Tutor — 과목 전담 1:1 질문
+
+① 과목을 선택하면 현재 학기·과목의 강의노트, 강의자료, 등록된 강의계획서를 기준으로 대화가 분리됩니다.
+② 질문을 입력하고 ‘질문 전송’을 누르세요. Enter 전송과 자료 첨부(📎)를 사용할 수 있습니다.
+③ 답변 아래에는 실제로 참조한 파일명과 가능할 때 페이지가 표시됩니다. 자료 밖 일반지식은 별도로 구분됩니다.
+④ ‘강의계획서’에서 PDF/HTML/DOCX/MD를 복수 등록·삭제할 수 있고, ‘자료 폴더’로 과목 폴더를 엽니다.
+⑤ ‘닉네임’으로 전담 튜터 이름을 바꾸고, ‘대화 초기화’로 현재 과목의 대화만 지울 수 있습니다.
+답변은 학습 보조용 AI 초안입니다. 출처 파일 원문과 학교 공지를 최종 기준으로 삼으세요."""),
+            "Settings": ("user_guide_settings.png", """Settings — 필수 설정과 개인화
+
+① 학기 드롭다운에서 학기를 선택하면 그 학기의 과목·기간·튜터 대화·캐시가 함께 전환됩니다. 새 학기는 과목 추가 후 저장하세요.
+② Gemini Key를 입력하고 ‘설정 저장’을 누르면 workspace/system/settings.json과 .env에 저장됩니다. 입력란은 마스킹됩니다.
+③ 과목을 추가·수정·삭제하고, 전담 조교 닉네임·강의계획서 복수 파일·폴더명·차시 수·언어 모드를 관리합니다.
+④ 대학 테마를 고르면 포인트 색상과 주요 버튼·창·Dock 아이콘에 즉시 적용됩니다. HEX 직접 입력도 가능하며 선택값은 저장됩니다.
+⑤ 화면 해상도 프리셋/사용자 크기와 ‘창 크기 기억’을 설정할 수 있습니다. 변경 후 앱을 다시 열면 저장값을 복원합니다.
+저장된 과목마다 <학기>/<과목>/{음성녹음, 강의자료, 강의노트, 예상문제, 과제, 강의계획서} 폴더가 생성됩니다."""),
+            "Updates": ("user_guide_updates.png", """Updates — 버전 확인과 수동 업데이트
+
+① Updates 탭 또는 시작 시 백그라운드 확인으로 GitHub Release의 최신 버전을 조회합니다.
+② 새 버전이 있으면 릴리스 정보와 설치 파일 링크를 확인한 뒤 다운로드를 승인합니다.
+③ 다운로드가 끝나면 DMG(맥) 또는 설치/압축 파일(윈도우)을 열어 기존 앱을 교체합니다.
+API Key·학기·과목·개인 자료는 배포 파일에 포함되지 않으며 workspace에 유지됩니다. 업데이트 전 중요한 결과물을 백업하세요."""),
+            "Terms & Ethics": (None, """이 페이지는 URY 사용에 적용되는 저작권·개인정보·녹음·외부 AI 전송·학업 윤리·책임 제한 안내입니다.
+자세한 법령 고지와 Ryu.H.J 제작자 표기는 마지막 ‘Terms & Ethics’ 탭에서 확인하세요."""),
         }
         container = ttk.Frame(self.tab_features)
         container.pack(fill=tk.BOTH, expand=True)
@@ -4144,58 +4404,91 @@ URY Engine은 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작�
         menu.pack_propagate(False)
         content = ttk.LabelFrame(container, text=" User Guide ", padding="16")
         content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.guide_image_label = ttk.Label(content, anchor=tk.CENTER)
-        self.guide_image_label.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
-        self.guide_text_var = tk.StringVar()
-        ttk.Label(content, textvariable=self.guide_text_var, justify=tk.LEFT, font=("Pretendard", 10)).pack(fill=tk.X)
+        image_frame = ttk.Frame(content)
+        image_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+        self.guide_image_label = ttk.Label(image_frame, anchor=tk.CENTER)
+        self.guide_image_label.pack(fill=tk.BOTH, expand=True)
+        text_frame = ttk.Frame(content)
+        text_frame.pack(fill=tk.X, expand=False)
+        self.guide_text = tk.Text(text_frame, height=8, wrap=tk.WORD, font=("Pretendard", 12),
+                                  bg="#ffffff", fg="#334155", relief=tk.FLAT, padx=10, pady=8,
+                                  spacing2=4, cursor="arrow")
+        guide_scroll = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.guide_text.yview)
+        self.guide_text.configure(yscrollcommand=guide_scroll.set, state=tk.DISABLED)
+        self.guide_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        guide_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         def show_page(name):
             filename, instructions = pages[name]
-            self.guide_text_var.set(instructions)
-            candidates = [os.path.join(os.path.dirname(self.app_icon_source), "user_guide", filename),
-                          os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "user_guide", filename)]
+            self.guide_text.configure(state=tk.NORMAL)
+            self.guide_text.delete("1.0", tk.END)
+            self.guide_text.insert("1.0", instructions)
+            self.guide_text.configure(state=tk.DISABLED)
+            candidates = []
+            if filename:
+                candidates = [os.path.join(os.path.dirname(self.app_icon_source), "user_guide", filename),
+                              os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "user_guide", filename)]
             image_path = next((path for path in candidates if os.path.isfile(path)), "")
             if image_path:
                 from PIL import Image, ImageTk
                 image = Image.open(image_path).convert("RGB")
-                image.thumbnail((760, 430), Image.Resampling.LANCZOS)
+                # 원본(1600×996)은 유지하고, 화면에서는 최대 1200×500으로만 축소한다.
+                image.thumbnail((1200, 500), Image.Resampling.LANCZOS)
                 self.guide_page_image = ImageTk.PhotoImage(image)
+                if not image_frame.winfo_manager():
+                    image_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8), before=text_frame)
                 self.guide_image_label.configure(image=self.guide_page_image, text="")
             else:
-                self.guide_image_label.configure(image="", text=f"{name} 화면 안내 이미지")
+                image_frame.pack_forget()
+                self.guide_image_label.configure(image="", text="")
 
         for name in pages:
             SquareRoundButton(menu, text=name, bg="#f1f5f9", fg="#334155", hover_bg="#e2e8f0",
                               radius=8, width=130, height=34, font=("Pretendard", 9, "bold"),
                               command=lambda page=name: show_page(page)).pack(pady=3)
-        show_page("Studio")
+        show_page("MUST READ")
 
     def build_terms_tab(self):
-        self.build_info_page(self.tab_terms, "Terms & Ethics", "본 소프트웨어를 사용하면 아래 사항을 확인하고 동의한 것으로 봅니다.", """1. 허용 목적
-URY Engine은 개인적인 학업 복습과 시험 대비를 위한 보조 도구입니다. 사용자는 관계 법령, 대학 학칙 및 강의별 지침을 준수해야 합니다.
+        self.build_info_page(self.tab_terms, "Terms & Ethics", "본 안내는 법률 자문이 아니며, 사용자는 아래 내용을 읽고 자신의 상황에 맞게 확인해야 합니다.", """1. 서비스 목적과 범위
+URY는 개인 학습·복습을 돕는 보조 소프트웨어입니다. 성적, 합격, 학습성과 또는 특정 결과를 보장하지 않으며, 사용자의 과제·시험·연구 수행을 대신하지 않습니다.
 
-2. 자료와 녹음에 대한 사용자 책임
-사용자는 입력·녹음·처리하는 자료에 필요한 권리와 동의를 확보해야 합니다. 교수자와 수강생의 음성·개인정보·저작물을 무단 수집, 복제, 공개, 판매하거나 제3자에게 배포해서는 안 됩니다.
+2. 저작권법 준수
+사용자는 강의 슬라이드, 교재, 녹음, 문제지 및 생성 결과를 이용할 권리를 직접 확보해야 합니다. 「저작권법」 제30조의 사적 이용 범위는 제한적이며, 학교 교육 목적 규정이 모든 복제·전송·공유를 허용하는 것은 아닙니다. 수업자료를 공개 게시, 판매, 대량 배포, 공유 드라이브 업로드 또는 제3자에게 재전송하지 마십시오. 출처·저작자 표시와 대학·교수자의 별도 허락이 필요한 경우 이를 먼저 받으십시오.
+참고: https://www.law.go.kr/법령/저작권법
 
-3. 제3자 AI 처리
-선택한 텍스트, 녹음 및 문서는 답변 생성을 위해 사용자가 등록한 Google Gemini API로 전송될 수 있습니다. 제3자 서비스의 약관, 보안, 장애, 사용량 제한 및 데이터 처리에는 해당 제공자의 정책이 적용됩니다.
+3. 녹음과 대화의 비밀
+「통신비밀보호법」은 공개되지 않은 타인 간의 대화를 녹음·청취하는 행위를 제한합니다. 본인이 대화 당사자가 아닌 경우 녹음하지 말고, 강의 녹음은 학교 규정·교수자 안내·참여자 고지와 동의 여부를 확인하십시오. 녹음 파일을 다른 사람의 음성까지 포함한 채 외부에 제공하거나 게시하지 마십시오.
+참고: https://www.law.go.kr/법령/통신비밀보호법
 
-4. AI 결과와 학업 제출
-AI 결과에는 오류, 누락 또는 부정확한 인용이 포함될 수 있습니다. 사용자는 내용을 직접 검증하고, 과제·시험·연구윤리 및 생성형 AI 사용 규정을 확인해야 합니다. 성적, 합격, 학습성과 또는 특정 결과를 보장하지 않습니다.
+4. 개인정보·음성·초상권
+음성, 이름, 학번, 얼굴, 질문 내용, 파일명 등으로 개인을 식별할 수 있으면 개인정보 또는 인격적 이익이 문제될 수 있습니다. 「개인정보 보호법」상 필요한 범위만 수집·이용하고, 목적을 벗어난 이용·제공을 피하며, 불필요한 사람의 음성·개인정보는 사전에 제거하십시오. 초상·성명·사생활을 공개하거나 홍보에 사용하려면 별도 동의를 받으십시오.
+참고: https://www.law.go.kr/법령/개인정보보호법
 
-5. 데이터와 API 키
-자료, API 키, 생성 파일의 접근 통제와 백업은 사용자 책임입니다. 중요한 원본은 별도로 보관하십시오.
+5. 제3자 AI 및 네트워크 전송
+사용자가 선택한 음성·문서·질문은 답변 생성을 위해 Google Gemini API로 전송될 수 있습니다. 민감정보, 비공개 연구자료, 타인의 개인정보, 계약상 비밀을 업로드하지 마십시오. Google의 API 약관·개인정보 처리방침·보관 정책·지역별 규정을 확인하고, 외부 전송에 필요한 동의와 법적 근거를 사용자가 판단해야 합니다.
 
-6. 보증 및 책임 제한
-소프트웨어는 현 상태로 제공됩니다. 관련 법률이 허용하는 범위에서 개발자는 사용자의 위법·부적절한 이용, 제3자 API 장애, 간접적 손해 또는 사용자가 검증하지 않은 AI 결과로 인한 손해를 책임지지 않습니다. 법률상 배제할 수 없는 책임은 제외되지 않습니다.
+6. API 키와 보안
+API Key는 사용자 책임으로 관리됩니다. Git, 스크린샷, 채팅, 로그, 공용 컴퓨터에 노출하지 말고, 유출이 의심되면 Google AI Studio에서 즉시 폐기·재발급하십시오. 원본 녹음과 생성 파일은 별도 백업하고 접근 권한을 최소화하십시오.
 
-7. 중단과 변경
-외부 API, 운영체제 또는 서비스 정책의 변경으로 기능이 달라지거나 중단될 수 있습니다. 약관과 기능은 버전 업데이트 시 변경될 수 있습니다.
+7. 학업 윤리
+AI 결과를 본인의 작성물인 것처럼 제출하거나, 시험 중 부정하게 사용하거나, 표절·대필·허위 인용에 이용하지 마십시오. 과목·대학의 생성형 AI 허용 범위와 공개·인용 규칙을 우선 적용하고, 필요한 경우 AI 사용 사실과 검증 절차를 밝히십시오.
 
-8. 준거
-본 안내는 법률 자문이 아니며 대한민국 법률을 기준으로 작성되었습니다. 필요한 경우 자격 있는 전문가의 조언을 받으십시오.
+8. 정확성·출처·안전
+AI는 사실 오류, 누락, 환각, 편향 또는 잘못된 출처를 생성할 수 있습니다. 법률·의료·재무·안전 판단에 사용하지 말고, 원문과 대조하여 직접 검증하십시오. Tutor의 출처 표시는 참고용이며 원문을 대체하지 않습니다.
 
-URY Engine — Ultimate Result for You
+9. 저장·삭제와 사용자 요청
+사용자는 입력 파일과 결과물의 보존 기간을 스스로 정하고, 불필요한 파일·로그·캐시를 삭제할 책임이 있습니다. 제3자 API에 전송된 데이터의 보존·삭제는 해당 제공자의 정책과 계정 설정을 따릅니다.
+
+10. 서비스 중단 및 변경
+Google API, 운영체제, 브라우저, 폰트 및 대학 규정이 변경되면 기능·품질·호환성이 달라질 수 있습니다. 개발자는 보안 패치와 기능 개선을 위해 사전 고지 없이 일부 기능을 변경하거나 중단할 수 있습니다.
+
+11. 책임 제한
+소프트웨어는 현 상태로 제공됩니다. 관련 법률이 허용하는 범위에서 개발자는 사용자의 위법·부적절한 이용, 권리 없는 자료의 처리, 제3자 서비스 장애·요금·정책, 검증하지 않은 AI 결과, 데이터 손실 및 간접 손해에 대해 책임을 부담하지 않습니다. 다만 법률상 배제할 수 없는 책임은 제외되지 않습니다.
+
+12. 준거와 문의
+본 안내는 대한민국 법률을 기준으로 한 일반 정보이며 법률 자문이 아닙니다. 분쟁이나 권리 처리가 필요한 경우 변호사·개인정보 보호 전문가·학교 담당 부서에 상담하십시오.
+
+URY — Ultimate Result for You
 Designed & Built by Ryu.H.J
 Built for better learning, not shortcuts.""")
 
@@ -4270,7 +4563,7 @@ Built for better learning, not shortcuts.""")
         self.api_entry = tk.Entry(
             api_row,
             textvariable=self.api_key_var,
-            show="",
+            show="•",
             font=("Pretendard", 10),
             bg="#ffffff",
             fg="#0f172a",
@@ -4287,6 +4580,30 @@ Built for better learning, not shortcuts.""")
         self.add_context_menu(self.api_entry)
 
         SquareRoundButton(api_row, text="💾 설정 저장", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
+
+        backup_api_row = ttk.Frame(top_frame)
+        backup_api_row.pack(fill=tk.X, pady=(2, 0))
+        ttk.Label(backup_api_row, text="Backup Key:", width=9, font=("Pretendard", 10, "bold")).pack(side=tk.LEFT)
+        self.backup_api_key_var = tk.StringVar(value=self.settings.get("gemini_backup_api_key", "").strip())
+        self.backup_api_entry = tk.Entry(
+            backup_api_row,
+            textvariable=self.backup_api_key_var,
+            show="•",
+            font=("Pretendard", 10),
+            bg="#ffffff",
+            fg="#0f172a",
+            insertbackground=self.accent_color("#1c4732"),
+            selectbackground=self.accent_color("#d8f3dc"),
+            selectforeground=self.accent_color("#14281e"),
+            relief=tk.FLAT,
+            highlightthickness=1,
+            highlightbackground="#cbd5e1",
+            takefocus=True
+        )
+        self.backup_api_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.backup_api_entry.bind("<Button-1>", lambda e: self.backup_api_entry.focus_set())
+        self.add_context_menu(self.backup_api_entry)
+        ttk.Label(backup_api_row, text="429/503 발생 시 자동 전환", font=("Pretendard", 8), foreground="#64748b").pack(side=tk.RIGHT, padx=(0, 4))
         theme_frame = ttk.LabelFrame(self.tab_settings, text=" 🎨 대학별 테마 ", padding="10")
         theme_frame.pack(fill=tk.X, pady=(0, 8))
         theme_row = ttk.Frame(theme_frame)
@@ -4308,7 +4625,7 @@ Built for better learning, not shortcuts.""")
         current_school = next((name for name, color in UNIVERSITY_THEMES.items() if color.lower() == self.theme_accent.lower()), "직접 선택")
         self.university_theme_var = tk.StringVar(value=current_school)
         university_combo = ttk.Combobox(theme_row, textvariable=self.university_theme_var,
-                                        values=["직접 선택", *UNIVERSITY_THEMES], state="readonly", width=20)
+                                        values=["직접 선택", *sorted(UNIVERSITY_THEMES)], state="readonly", width=20)
         university_combo.pack(side=tk.LEFT, padx=(2, 0))
         university_combo.bind("<<ComboboxSelected>>", lambda e: self.set_theme_accent(
             UNIVERSITY_THEMES.get(self.university_theme_var.get(), self.theme_hex_var.get())))
@@ -4548,6 +4865,7 @@ Built for better learning, not shortcuts.""")
         self.settings["semester_start_date"] = self.start_date_var.get().strip()
         self.settings["semester_end_date"] = self.end_date_var.get().strip()
         self.settings["gemini_api_key"] = self.api_key_var.get().strip()
+        self.settings["gemini_backup_api_key"] = self.backup_api_key_var.get().strip()
         self.settings["courses"] = self.courses
         self.semester_courses[self.settings["semester"]] = list(self.courses)
         self.semester_periods[self.settings["semester"]] = {"start": self.settings["semester_start_date"], "end": self.settings["semester_end_date"]}

@@ -30,7 +30,7 @@ class SelectedMaterialsOnlyTest(unittest.TestCase):
             custom_source = source[source.index("def generate_custom_lecture_note("):]
             self.assertIn("stream_gemini_response(req, timeout=240", custom_source)
             self.assertIn("중복 사용량 방지를 위해 자동 재시도하지 않습니다", custom_source)
-            self.assertIn("get_supported_gemini_models(api_key)[:3]", custom_source)
+            self.assertIn('get_gemini_models_for("lecture_note", api_key, max_models=3)', custom_source)
             self.assertIn("토큰 사용량", custom_source)
             self.assertNotIn("backoff_delays", custom_source)
 

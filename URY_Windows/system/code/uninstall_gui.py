@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY Engine v0.7.7 - 프로그램 및 관련 설치 자원 클린 완전 삭제(Uninstaller) GUI
+🎓 URY v0.7.7 - 프로그램 및 관련 설치 자원 클린 완전 삭제(Uninstaller) GUI
 """
 import os
 import sys
@@ -25,7 +25,7 @@ class UninstallerGUI:
                 pass
 
         self.root = tk.Tk()
-        self.root.title("URY Engine v0.7.7 — 프로그램 클린 완전 삭제 (Uninstaller)")
+        self.root.title("URY v0.7.7 — 프로그램 클린 완전 삭제 (Uninstaller)")
         self.root.geometry("540x360")
         self.root.resizable(False, False)
         self.root.configure(bg="#1e1e2e")
@@ -38,7 +38,7 @@ class UninstallerGUI:
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'+{x}+{y}')
 
-        title_lbl = tk.Label(self.root, text="🗑️ URY Engine 프로그램 완전 삭제", font=("Segoe UI", 14, "bold"), fg="#f38ba8", bg="#1e1e2e")
+        title_lbl = tk.Label(self.root, text="🗑️ URY 프로그램 완전 삭제", font=("Segoe UI", 14, "bold"), fg="#f38ba8", bg="#1e1e2e")
         title_lbl.pack(pady=(20, 10))
 
         sub_lbl = tk.Label(self.root, text="설치된 프로그램 및 연동 자원을 말끔하게 삭제합니다.", font=("Segoe UI", 10), fg="#a6adc8", bg="#1e1e2e")
@@ -66,7 +66,7 @@ class UninstallerGUI:
         confirm_btn.pack(side=tk.LEFT, padx=10)
 
     def confirm_uninstall(self):
-        msg = "선택하신 URY Engine 관련 자원을 정말로 완전히 삭제하시겠습니까?\n이 작업은 취소할 수 없습니다."
+        msg = "선택하신 URY 관련 자원을 정말로 완전히 삭제하시겠습니까?\n이 작업은 취소할 수 없습니다."
         if not messagebox.askyesno("삭제 확인", msg, icon="warning"):
             return
 
@@ -102,7 +102,7 @@ class UninstallerGUI:
                     shutil.rmtree(user_ws, ignore_errors=True)
                     deleted_items.append("Desktop/URY_Engine 폴더 전체")
 
-            messagebox.showinfo("삭제 완료", "🎉 선택하신 URY Engine 자원이 깔끔하게 완전 삭제되었습니다.")
+            messagebox.showinfo("삭제 완료", "🎉 선택하신 URY 자원이 깔끔하게 완전 삭제되었습니다.")
             self.root.destroy()
         except Exception as e:
             messagebox.showerror("삭제 오류", f"❌ 삭제 중 일부 오류가 발생했습니다:\n{e}")

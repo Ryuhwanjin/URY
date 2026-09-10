@@ -45,10 +45,10 @@ TUTOR_SYSTEM_PROMPT = """당신의 이름은 '{tutor_name}'이며, [{cname}] 과
 
 4. 📖 [실제 참조 원문 스니펫 (Reference Source Quotation) 필수]:
    - 모든 답변의 마지막에는 반드시 아래 서식에 맞춰 실제로 참조한 원문 문장을 1~2줄 직접 인용하십시오:
-     ---
      📌 **[참조 원문 근거]**:
      • 출처: `실제 파일명`, Page N (자료에 Page 표기가 없으면 페이지 번호 생략)
      • 원문 발췌: "실제 강의노트 또는 교재에서 발췌한 핵심 문장..."
+   - 답변에는 긴 구분선(---, ─── 등)을 사용하지 말고, 위 근거 제목으로 바로 시작하십시오.
    - 지식 베이스의 `=== [...] ===` 머리글에 적힌 실제 파일명만 사용하십시오. 파일명이나 페이지를 추측하지 마십시오.
 
 5. 💡 [친절하고 명쾌한 눈높이 설명]:
@@ -58,7 +58,10 @@ TUTOR_SYSTEM_PROMPT = """당신의 이름은 '{tutor_name}'이며, [{cname}] 과
    - 제공된 수업 자료에 전혀 언급되지 않은 교수님의 개인 공지나 시험 일정은 자의적으로 꾸며내지 말고, "현재 강의노트에는 언급되어 있지 않습니다. e-캠퍼스 공식 공지사항을 확인하세요"라고 솔직하게 안내하십시오.
 
 7. 📐 [수식 및 기호 표기 가이드]:
-   - 데스크톱 대화창 가독성을 위해 웹 브라우저용 복잡한 LaTeX 원시 문법 대신, 직관적인 유니코드 수식 기호(예: ℝ, ℝ², ℝ³, u, c, ≠, ∈, ≤, ≥, ±, ∞, → 등)와 읽기 쉬운 텍스트 수식(예: [ c·u | c ∈ ℝ ])을 우선 사용하십시오.
+   - 데스크톱 대화창 가독성을 위해 웹 브라우저용 복잡한 LaTeX 원시 문법(특히 행렬 환경, 분수 명령, \\left/\\right)을 사용하지 마십시오.
+   - 직관적인 유니코드 수식 기호(예: ℝ, ℝ², ℝ³, u, c, ≠, ∈, ≤, ≥, ±, ∞, → 등)와 읽기 쉬운 텍스트 수식(예: [ c·u | c ∈ ℝ ], [x₁; x₂; x₃])을 우선 사용하십시오.
+8. 🧾 [답변 서식]:
+   - 짧은 제목과 글머리표를 사용하고, 긴 반복 장식선이나 이모지 구분선을 넣지 마십시오.
 """
 
 def extract_text_from_file(file_path):
@@ -184,16 +187,21 @@ def verify_and_guard_answer(answer, kb):
         source_match = re.search(r"=== \[[^\]]*?(?:자료|강의노트|Syllabus)[^:\]]*: ([^\]\)]+)", kb or "")
         source_name = source_match.group(1).strip() if source_match else "전공 표준 기초 이론"
         if kb and any(k in annotated for k in ["강의", "교수님", "수업"]):
-            annotated += f"\n\n---\n📌 **참조 원문 근거**\n• 출처: `{source_name}`"
+            annotated += f"\n\n📌 **참조 원문 근거**\n• 출처: `{source_name}`"
         else:
-            annotated += "\n\n---\n📌 **참조 원문 근거**\n• 출처: 전공 표준 기초 이론 (강의자료 내 직접 언급 없음)"
+            annotated += "\n\n📌 **참조 원문 근거**\n• 출처: 전공 표준 기초 이론 (강의자료 내 직접 언급 없음)"
 
     return annotated
 
 def ask_lecture_tutor(cname, user_query, conversation_history=None, tutor_name=None, log_func=print):
-    """AI 강의 튜터 질의응답 (Gemini API 호출 및 지수 백오프 적용)"""
-    api_key = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
-    if not api_key or len(api_key) < 10:
+    """AI 강의 튜터 질의응답 (기본 키 실패 시 백업 키 fallback)"""
+    key_picker = getattr(config_manager, "get_api_keys", None)
+    api_keys = key_picker() if callable(key_picker) else []
+    if not api_keys:
+        primary = config_manager.get_api_key() or os.environ.get("GEMINI_API_KEY", "")
+        if primary:
+            api_keys = [primary]
+    if not api_keys:
         return "⚠️ Google Gemini API 키가 설정되지 않았습니다. [⚙️ 과목 및 시스템 설정] 탭에서 API 키를 등록해주세요."
 
     kb, has_syllabus = get_course_knowledge_base(cname)
@@ -239,55 +247,50 @@ def ask_lecture_tutor(cname, user_query, conversation_history=None, tutor_name=N
         "generationConfig": {"temperature": 0.3}
     }
 
-    # 초고속 실시간 대화형 공식 정식 모델 우선순위 (1~2초 이내 안정적 응답)
-    fast_priority_models = [
-        "gemini-flash-latest",
-        "gemini-flash-lite-latest",
-        "gemini-3.8-flash",
-        "gemini-3.6-flash",
-    ]
-    supported = config_manager.get_supported_gemini_models(api_key)
-    ordered_models = []
-    for m in fast_priority_models:
-        if m not in ordered_models:
-            ordered_models.append(m)
-    for m in supported:
-        if m not in ordered_models:
-            ordered_models.append(m)
-
+    # Tutor는 짧은 반복 질문용 Flash-Lite 모델 풀을 사용한다.
+    # 장문 강의노트(일반 Flash)와 모델을 분리해 한쪽의 모델별 쿼터를 보호한다.
     last_error_msg = ""
-    for model in ordered_models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                res = json.loads(resp.read().decode("utf-8"))
-                candidates = res.get("candidates", [])
-                if candidates and "content" in candidates[0]:
-                    parts = candidates[0]["content"].get("parts", [])
-                    if parts and "text" in parts[0]:
-                        raw_answer = parts[0]["text"].strip()
-                        return verify_and_guard_answer(raw_answer, kb)
-        except urllib.error.HTTPError as e:
-            err_body = ""
+    for key_index, api_key in enumerate(api_keys):
+        if not api_key or len(api_key) < 10:
+            continue
+        if key_index:
+            log_func("[Tutor] 기본 API 키 제한 감지 -> 백업 API 키로 전환")
+        # Tutor는 짧은 반복 질문용 Flash-Lite 모델 풀을 사용한다.
+        ordered_models = config_manager.get_gemini_models_for("tutor", api_key, max_models=3)
+        log_func(f"[Tutor 모델 풀] {', '.join(ordered_models)}")
+        for model in ordered_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
             try:
-                err_body = e.read().decode("utf-8")
-            except Exception:
-                pass
-            if e.code in (400, 403):
-                if "API_KEY_INVALID" in err_body or "API key not valid" in err_body:
-                    return "⚠️ 등록된 Gemini API 키가 유효하지 않습니다. [설정] 탭에서 올바른 API 키를 등록해주세요."
-                if "QUOTA_EXCEEDED" in err_body or "RESOURCE_EXHAUSTED" in err_body:
-                    last_error_msg = "Google Gemini API 무료 할당량이 일시적으로 소진되었습니다."
-                    continue
-            last_error_msg = f"HTTP {e.code} ({model})"
-            continue
-        except (urllib.error.URLError, TimeoutError) as e:
-            last_error_msg = f"네트워크 타임아웃 ({model})"
-            continue
-        except Exception as e:
-            last_error_msg = str(e)
-            continue
+                with urllib.request.urlopen(req, timeout=25) as resp:
+                    res = json.loads(resp.read().decode("utf-8"))
+                    candidates = res.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            raw_answer = parts[0]["text"].strip()
+                            return verify_and_guard_answer(raw_answer, kb)
+            except urllib.error.HTTPError as e:
+                err_body = ""
+                try:
+                    err_body = e.read().decode("utf-8")
+                except Exception:
+                    pass
+                if e.code in (400, 403):
+                    if "QUOTA_EXCEEDED" in err_body or "RESOURCE_EXHAUSTED" in err_body:
+                        last_error_msg = "Google Gemini API 무료 할당량이 일시적으로 소진되었습니다."
+                        continue
+                    if "API_KEY_INVALID" in err_body or "API key not valid" in err_body:
+                        last_error_msg = "등록된 Gemini API 키가 유효하지 않습니다."
+                        break
+                last_error_msg = f"HTTP {e.code} ({model})"
+                continue
+            except (urllib.error.URLError, TimeoutError) as e:
+                last_error_msg = f"네트워크 타임아웃 ({model})"
+                continue
+            except Exception as e:
+                last_error_msg = str(e)
+                continue
 
     if last_error_msg:
         return f"❌ 답변 생성에 실패했습니다 ({last_error_msg}). 잠시 후 다시 질문하시거나 [설정] 탭의 API 키를 확인해주세요."

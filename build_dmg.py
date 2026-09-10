@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-URY Engine macOS .dmg Installer Builder
+URY macOS .dmg Installer Builder
 macOS 공식 디스크 이미지(.dmg) 빌드 자동화 스크립트
 """
 
@@ -17,13 +17,17 @@ def main():
         import build_release_all
         version = build_release_all.VERSION
     except Exception:
-        version = "v0.9.0"
+        version = "v0.9.1"
     dmg_out = os.path.join(root_dir, '배포', f'URY_Engine_{version}.dmg')
     os.makedirs(os.path.dirname(dmg_out), exist_ok=True)
-    app_src = os.path.join(root_dir, 'URY_macOS', 'URY Engine.app')
+    app_src = os.path.join(root_dir, 'URY_macOS', 'URY.app')
 
     if not os.path.exists(app_src):
-        app_src = os.path.join(root_dir, '배포', f'URY_Engine_{version}_macOS', 'URY Engine.app')
+        app_src = os.path.join(root_dir, '배포', f'URY_Engine_{version}_macOS', 'URY.app')
+
+    # 이전 빌드 이름도 읽어 기존 배포 폴더를 다시 패키징할 수 있게 한다.
+    if not os.path.exists(app_src):
+        app_src = os.path.join(root_dir, 'URY_macOS', 'URY Engine.app')
 
     if not os.path.exists(app_src):
         print(f"❌ 오류: '{app_src}'를 찾을 수 없습니다.")
@@ -34,8 +38,8 @@ def main():
         shutil.rmtree(staging_dir)
     os.makedirs(staging_dir, exist_ok=True)
 
-    print(f'📂 [2/4] URY Engine.app 복사 중: {app_src}')
-    app_dst = os.path.join(staging_dir, 'URY Engine.app')
+    print(f'📂 [2/4] URY.app 복사 중: {app_src}')
+    app_dst = os.path.join(staging_dir, 'URY.app')
     subprocess.run(['ditto', app_src, app_dst], check=True)
 
     # DMG 생성 전에 native recorder 포함 여부 검증
@@ -100,7 +104,7 @@ def main():
 
     cmd = [
         'hdiutil', 'create',
-        '-volname', f'URY Engine {version}',
+        '-volname', f'URY {version}',
         '-srcfolder', staging_dir,
         '-ov',
         '-format', 'UDZO',

@@ -59,8 +59,6 @@ def get_chrome_path():
             return c
     return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
-API_KEY = config_manager.get_api_key()
-MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-pro-latest"]
 PANDOC = shutil.which("pandoc") or "/opt/anaconda3/bin/pandoc" or "/usr/local/bin/pandoc"
 CHROME = get_chrome_path()
 
@@ -167,14 +165,26 @@ Produce a rigorous, authentic, publication-grade practice examination for univer
 (각 문항별: [정답], [출제 근거 및 핵심 개념], [상세 해설 및 오답 피하기 팁]을 체계적으로 서술)"""
 
 def call_gemini(prompt, max_retries=3):
-    api_key = config_manager.load_settings().get("gemini_api_key") or os.environ.get("GEMINI_API_KEY", "")
-    if api_key and len(api_key) >= 10:
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2}
-        }
-        models = config_manager.get_supported_gemini_models(api_key)
-        backoffs = [5, 10, 20]
+    key_picker = getattr(config_manager, "get_api_keys", None)
+    api_keys = key_picker() if callable(key_picker) else []
+    if not api_keys:
+        primary = config_manager.load_settings().get("gemini_api_key") or os.environ.get("GEMINI_API_KEY", "")
+        if primary:
+            api_keys = [primary]
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.2}
+    }
+    model_picker = getattr(config_manager, "get_gemini_models_for", None)
+    backoffs = [5, 10, 20]
+    for key_index, api_key in enumerate(api_keys):
+        if not api_key or len(api_key) < 10:
+            continue
+        if key_index:
+            print("  🔁 기본 API 키의 쿼터/서버 제한으로 백업 API 키로 전환...")
+        models = (model_picker("assessment", api_key, max_models=3)
+                  if callable(model_picker)
+                  else config_manager.get_supported_gemini_models(api_key)[:3])
         for model in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             for attempt in range(max_retries):

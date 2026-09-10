@@ -198,6 +198,7 @@ def load_settings():
     if not data:
         data = {
             "gemini_api_key": "",
+            "gemini_backup_api_key": "",
             "global_language_mode": "both",
             "courses": []
         }
@@ -366,19 +367,25 @@ def save_settings(data):
         with open(target_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    # API Key가 있으면 .env 파일에도 반영
-    api_key = data.get("gemini_api_key", "").strip()
-    if api_key:
+    # API 키가 있으면 .env에도 반영한다. 키 값 자체는 로그에 남기지 않는다.
+    env_fields = (
+        ("GEMINI_API_KEY", "gemini_api_key"),
+        ("GEMINI_BACKUP_API_KEY", "gemini_backup_api_key"),
+    )
+    if os.path.exists(ENV_PATH) or any(str(data.get(field, "") or "").strip() for _, field in env_fields):
         lines = []
         if os.path.exists(ENV_PATH):
             try:
                 with open(ENV_PATH, "r", encoding="utf-8") as f:
                     for line in f:
-                        if not line.strip().startswith("GEMINI_API_KEY="):
+                        if not any(line.strip().startswith(f"{env_name}=") for env_name, _ in env_fields):
                             lines.append(line)
             except Exception:
                 pass
-        lines.append(f"GEMINI_API_KEY={api_key}\n")
+        for env_name, field in env_fields:
+            api_key = str(data.get(field, "") or "").strip()
+            if api_key:
+                lines.append(f"{env_name}={api_key}\n")
         try:
             with open(ENV_PATH, "w", encoding="utf-8") as f:
                 f.writelines(lines)
@@ -398,15 +405,21 @@ import subprocess
 import re
 from datetime import datetime, date, timedelta
 
-APP_NAME = "URY Engine"
+APP_NAME = "URY"
 FULL_NAME = "Ultimate Result for You"
-CREATOR = "URY Engine (Ultimate Result for You)"
+CREATOR = "URY (Ultimate Result for You)"
 
 def get_log_file_path():
     """로그 전용 디렉터리 (system/logs/latest_run_log.txt) 경로 반환 및 자동 생성"""
     log_dir = os.path.join(WORKSPACE_DIR, "system", "logs")
     os.makedirs(log_dir, exist_ok=True)
     return os.path.join(log_dir, "latest_run_log.txt")
+
+def get_studio_log_file_path():
+    """Studio 최근 실행 로그 경로를 반환하고 로그 디렉터리를 준비한다."""
+    log_dir = os.path.join(WORKSPACE_DIR, "system", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, "studio_latest.log")
 
 def cleanup_duplicate_mac_folders():
     """macOS Finder/Archive Utility가 중복 압축해제하여 생기는 모든 ' 2', ' 3' 붙은 폴더 및 파일 자동 삭제"""
@@ -530,48 +543,137 @@ def sync_timetable_from_settings(settings):
     with open(TIMETABLE_PATH, "w", encoding="utf-8") as f:
         json.dump(base_timetable, f, ensure_ascii=False, indent=2)
 
-def get_api_key():
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        settings = load_settings()
-        key = settings.get("gemini_api_key", "").strip()
-    if not key and os.path.exists(ENV_PATH):
+def _read_env_file_key(env_name):
+    if not os.path.exists(ENV_PATH):
+        return ""
+    try:
         with open(ENV_PATH, "r", encoding="utf-8") as f:
             for line in f:
-                if line.strip().startswith("GEMINI_API_KEY="):
-                    key = line.strip().split("=", 1)[1].strip().strip("'\"")
-                    break
+                if line.strip().startswith(f"{env_name}="):
+                    return line.strip().split("=", 1)[1].strip().strip("'\"")
+    except OSError:
+        pass
+    return ""
 
-    if key.startswith("AIzaSyDt9Jr-0GbOqLKTMbLFJ"):
-        return ""
-    if key.startswith("AIzaSyDt9Jr-0GbOqLKTMbLFJ"):
-        return ""
-    return key
+
+def _configured_api_key(env_name, setting_name, settings=None):
+    settings = settings if settings is not None else load_settings()
+    # 앱에서 Settings로 저장한 키를 셸에 남은 오래된 키보다 우선한다.
+    # 설정값이 없을 때만 환경변수와 .env를 개발용 fallback으로 사용한다.
+    configured = str(settings.get(setting_name, "") or "").strip()
+    candidates = (
+        (configured, os.environ.get(env_name, ""), _read_env_file_key(env_name))
+        if configured else
+        (os.environ.get(env_name, ""), _read_env_file_key(env_name))
+    )
+    for candidate in candidates:
+        key = str(candidate or "").strip()
+        if key:
+            return key
+    return ""
+
+
+def get_api_key():
+    """Return the primary Gemini API key for backward-compatible callers."""
+    return _configured_api_key("GEMINI_API_KEY", "gemini_api_key")
+
+
+def get_api_keys():
+    """Return primary then optional backup keys, without duplicates or secrets in logs."""
+    settings = load_settings()
+    keys = []
+    for env_name, setting_name in (
+        ("GEMINI_API_KEY", "gemini_api_key"),
+        ("GEMINI_BACKUP_API_KEY", "gemini_backup_api_key"),
+    ):
+        key = _configured_api_key(env_name, setting_name, settings)
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
+def check_api_key(api_key=None):
+    """Gemini 모델 목록 권한으로 키 상태를 확인한다(생성 쿼터를 사용하지 않음)."""
+    key = str(api_key or "").strip() or get_api_key()
+    if not key or len(key) < 10:
+        return "invalid"
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
+        req = urllib.request.Request(url, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if any("generateContent" in m.get("supportedGenerationMethods", []) for m in data.get("models", [])):
+            return "valid"
+        return "invalid"
+    except urllib.error.HTTPError as exc:
+        return "invalid" if exc.code in (400, 401, 403) else "unavailable"
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return "unavailable"
 
 _CACHED_SUPPORTED_MODELS = None
 _LAST_MODEL_QUERY_TIME = 0
 
 DEFAULT_LATEST_MODELS = [
-    "gemini-1.5-flash",
-    "gemini-2.0-flash",
-    "gemini-flash-latest",
-    "gemini-1.5-pro"
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    # Gemini 3 Flash is currently preview-only; keep it out of the stable
+    # automatic pool but retain the endpoint in the documented fallback set.
+    "gemini-3-flash-preview",
+    "gemini-2.5-flash",
 ]
+
+# 기능별로 성격이 다른 모델 풀을 사용한다.
+# Tutor는 짧은 반복 질문용 Lite, 강의노트는 최신 일반 Flash, 시험자료는
+# 추론 품질이 필요한 안정형 Flash를 사용한다. Live/TTS/이미지 전용 모델은
+# 일반 텍스트 생성 풀에서 제외한다.
+DEFAULT_TUTOR_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_LECTURE_NOTE_MODEL = "gemini-3.8-flash"
+DEFAULT_ASSESSMENT_MODEL = "gemini-3.8-flash"
+
+_SPECIALIZED_MODEL_MARKERS = (
+    "live", "tts", "image", "transcribe", "omni", "robotics",
+    "computer-use", "computer_use", "embedding", "imagen", "aqa",
+)
+
+def _is_usable_flash_model(name, require_lite=None):
+    """URY의 일반 텍스트 생성에 사용할 수 있는 안정형 Flash인지 확인한다."""
+    lower = str(name or "").lower()
+    if "flash" not in lower or any(marker in lower for marker in _SPECIALIZED_MODEL_MARKERS):
+        return False
+    if require_lite is True and "lite" not in lower:
+        return False
+    if require_lite is False and "lite" in lower:
+        return False
+    return "preview" not in lower and "exp" not in lower
+
+_MODEL_PROFILES = {
+    "tutor": {
+        "setting": "tutor_model",
+        "env": "URY_TUTOR_MODEL",
+        "preferred": (DEFAULT_TUTOR_MODEL, "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"),
+        "is_dedicated": lambda name: _is_usable_flash_model(name, True),
+    },
+    "lecture_note": {
+        "setting": "lecture_note_model",
+        "env": "URY_LECTURE_NOTE_MODEL",
+        "preferred": (DEFAULT_LECTURE_NOTE_MODEL, "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-2.5-flash"),
+        "is_dedicated": lambda name: _is_usable_flash_model(name, False),
+    },
+    "assessment": {
+        "setting": "assessment_model",
+        "env": "URY_ASSESSMENT_MODEL",
+        "preferred": (DEFAULT_ASSESSMENT_MODEL, "gemini-3.7-flash", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-2.5-flash"),
+        "is_dedicated": lambda name: _is_usable_flash_model(name, False),
+    },
+}
 
 def parse_model_version_score(name):
     """
     구글 공식 활성 모델 우선 순위 정렬
     """
     lower = name.lower()
-
-    if "gemini-1.5-flash" in lower and "latest" not in lower:
-        return 10000
-    elif "gemini-2.0-flash" in lower:
-        return 9500
-    elif "gemini-flash-latest" in lower:
-        return 9000
-    elif "gemini-1.5-pro" in lower:
-        return 8500
 
     ver_match = re.search(r"gemini-(\d+)(?:\.(\d+))?", lower)
     if ver_match:
@@ -581,6 +683,13 @@ def parse_model_version_score(name):
     else:
         ver_score = 0
 
+    # Stable Gemini 3.x first; aliases/preview builds and legacy 1.5/2.0 last.
+    if "gemini-flash-latest" in lower:
+        ver_score = 3000
+    if "preview" in lower or "exp" in lower:
+        ver_score -= 2
+    if re.search(r"gemini-(?:1\.5|2\.0)-", lower):
+        ver_score = -10000
     tier_score = 5 if "flash" in lower else 1
     special_penalty = -5000 if any(x in lower for x in ("tts", "image", "customtools", "robotics", "computer-use", "clip")) else 0
 
@@ -617,7 +726,9 @@ def get_supported_gemini_models(api_key=None, force_refresh=False):
                 raw_name = m.get("name", "").replace("models/", "").strip()
                 if not raw_name.startswith("gemini-"):
                     continue
-                if any(x in raw_name.lower() for x in ("embedding", "aqa", "imagen", "search", "tts", "stt")):
+                if re.search(r"gemini-(?:1\.5|2\.0)(?:-|$)", raw_name.lower()):
+                    continue
+                if any(x in raw_name.lower() for x in (*_SPECIALIZED_MODEL_MARKERS, "search", "stt")):
                     continue
                 valid_models.append(raw_name)
 
@@ -636,6 +747,60 @@ def get_supported_gemini_models(api_key=None, force_refresh=False):
         pass
 
     return list(DEFAULT_LATEST_MODELS)
+
+
+def get_gemini_models_for(purpose, api_key=None, max_models=3):
+    """용도별 Gemini 모델 후보를 반환해 Tutor/강의노트 쿼터를 분리한다.
+
+    API가 노출한 안정형 전용 모델을 버전 점수로 정렬하므로 새 모델이 추가되면
+    코드 수정 없이 가장 최신 모델이 먼저 사용된다. 사용자가 모델을 직접 지정한
+    경우에는 그 선택을 우선하고, 모델 목록 조회 실패 시 안전한 기본 목록으로
+    후퇴한다.
+    """
+    profile = _MODEL_PROFILES.get(purpose, _MODEL_PROFILES["lecture_note"])
+    settings = load_settings()
+    selected = os.environ.get(profile["env"], "").strip() or str(settings.get(profile["setting"], "") or "").strip()
+    supported = get_supported_gemini_models(api_key)
+    # /models 응답이 자동 우선순위의 기준이다. 하드코딩된 preferred 목록은
+    # 구형 SDK·네트워크 장애 때만 안전망으로 사용하며, 새 3.x/4.x 모델이
+    # 응답에 나타나면 버전 점수 순으로 기존 모델보다 먼저 배치한다.
+    supported_dedicated = sorted(
+        {
+            model for model in supported
+            if model and profile["is_dedicated"](model)
+        },
+        key=lambda model: (parse_model_version_score(model), str(model).lower()),
+        reverse=True,
+    )
+    if supported_dedicated:
+        dedicated = []
+        if selected and profile["is_dedicated"](selected) and (
+            not supported or selected in supported
+        ):
+            dedicated.append(selected)
+        for model in supported_dedicated:
+            if model not in dedicated:
+                dedicated.append(model)
+        return dedicated[:max_models]
+
+    # API 모델 목록에 전용 풀이 없을 때만 기존 일반 후보를 사용한다.
+    fallback_supported = supported
+    if purpose == "tutor":
+        lite_fallback = [
+            model for model in profile["preferred"]
+            if _is_usable_flash_model(model, True)
+        ]
+        if lite_fallback:
+            fallback_supported = lite_fallback
+    elif purpose in ("lecture_note", "assessment"):
+        non_lite = [model for model in supported if _is_usable_flash_model(model, False)]
+        if non_lite:
+            fallback_supported = non_lite
+    fallback = []
+    for model in ([selected] if selected else []) + fallback_supported + list(profile["preferred"]):
+        if model and model not in fallback:
+            fallback.append(model)
+    return fallback[:max_models]
 
 def get_course_lang_mode(course_name):
     """

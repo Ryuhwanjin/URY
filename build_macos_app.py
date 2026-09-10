@@ -6,6 +6,7 @@ import venv
 
 ROOT = Path(__file__).resolve().parent
 ENV = ROOT / ".venv-macos-build"
+APP_VERSION = "0.9.1"
 
 
 def main():
@@ -19,11 +20,18 @@ def main():
     from PIL import Image
     icon = ROOT / "build/macos/ury_engine_icon.icns"
     icon.parent.mkdir(parents=True, exist_ok=True)
-    Image.open(ROOT / "assets/ury_engine_icon.png").convert("RGBA").save(
+    source_icon = Image.open(ROOT / "assets/ury_engine_icon.png").convert("RGBA")
+    # macOS Dock에서 과대하게 보이지 않도록 아이콘 가장자리에 8% 투명 여백을 둔다.
+    pad = round(source_icon.width * 0.08)
+    padded_icon = Image.new("RGBA", source_icon.size, (0, 0, 0, 0))
+    scaled_icon = source_icon.resize(
+        (source_icon.width - pad * 2, source_icon.height - pad * 2), Image.Resampling.LANCZOS)
+    padded_icon.alpha_composite(scaled_icon, (pad, pad))
+    padded_icon.save(
         icon, format="ICNS", sizes=[(16, 16), (32, 32), (64, 64), (128, 128), (256, 256), (512, 512), (1024, 1024)])
     code = ROOT / "URY_macOS/system/code"
     command = [str(python), "-m", "PyInstaller", "--noconfirm", "--windowed",
-               "--name", "URY Engine", "--osx-bundle-identifier", "com.ury.engine",
+               "--name", "URY", "--osx-bundle-identifier", "com.ury.engine",
                "--icon", str(icon),
                "--paths", str(code), "--distpath", str(ROOT / "URY_macOS"),
                "--workpath", str(ROOT / "build/macos"), "--specpath", str(ROOT / "build/macos")]
@@ -35,13 +43,13 @@ def main():
             command += ["--hidden-import", module.stem]
     command.append(str(ROOT / "설정관리자.py"))
     subprocess.run(command, cwd=ROOT, check=True)
-    app = ROOT / "URY_macOS/URY Engine.app"
+    app = ROOT / "URY_macOS/URY.app"
     plist = app / "Contents/Info.plist"
-    subprocess.run(["plutil", "-replace", "CFBundleShortVersionString", "-string", "0.9.0", str(plist)], check=True)
-    subprocess.run(["plutil", "-replace", "CFBundleVersion", "-string", "0.9.0", str(plist)], check=True)
+    subprocess.run(["plutil", "-replace", "CFBundleShortVersionString", "-string", APP_VERSION, str(plist)], check=True)
+    subprocess.run(["plutil", "-replace", "CFBundleVersion", "-string", APP_VERSION, str(plist)], check=True)
     subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)], check=True)
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
-    check = subprocess.run([str(app / "Contents/MacOS/URY Engine"), "--smoke-test"],
+    check = subprocess.run([str(app / "Contents/MacOS/URY"), "--smoke-test"],
                            capture_output=True, text=True, timeout=30, check=True)
     if "GUI_SMOKE_OK" not in check.stdout:
         raise SystemExit(f"App window check failed: {check.stdout}\n{check.stderr}")
