@@ -4,7 +4,7 @@
 
 ## 진행 중
 
-- Studio 강의 범위·중복 저장 보정 완료: 음성 발화 범위 우선 프롬프트와 동일 날짜 선택자료 교체 저장을 macOS·Windows에 동기화. 기존 2주차 파일은 두 번의 생성 결과가 합쳐진 사용자 산출물이라 자동 삭제하지 않았으며, v0.9.5 새 빌드에서 재생성하면 한 결과만 남음. 소스 커밋 `cc476b3`, 상태 문서 갱신 후 v0.9.5 릴리즈 업로드 진행
+- Studio 강의 범위·중복 저장 보정 완료: 음성 발화 범위 우선 프롬프트와 동일 날짜 선택자료 교체 저장을 macOS·Windows에 동기화. 기존 2주차 파일은 두 번의 생성 결과가 합쳐진 사용자 산출물이라 자동 삭제하지 않았으며, v0.9.5 새 빌드에서 재생성하면 한 결과만 남음. 소스 커밋 `cc476b3`, v0.9.5 릴리즈 업로드 완료
 - Studio 503 fallback 보정 완료: 503/429 뒤 같은 키의 다음 모델을 먼저 시도하고, 모델 풀이 모두 실패할 때만 백업 키로 전환하도록 macOS·Windows 공용 코드를 수정. 소스 커밋 `46ccc72`, 문서 커밋 `12d6466`, v0.9.4 릴리즈 업로드 완료
 - v0.9.3 경로·저장소명 정리 완료: 사용자 워크스페이스 기본 폴더를 `~/Desktop/URY`로 변경하고 기존 Desktop 폴더는 내용 보존한 채 이름만 변경. 릴리즈 커밋 `d094392`, 문서 커밋 `462293e`, 새 `Ryuhwanjin/URY` 정식 릴리즈 업로드 완료
 - v0.9.2 릴리즈 완료: Settings 수동 API 재확인 1개 기능과 Dock 아이콘 12% 안전 여백 보정 포함. 다음 개발은 사용자 승인 후 Windows 실기기 QA 또는 Phase 1 업로드 캐시 중 하나만 선택
@@ -24,6 +24,7 @@
 - v0.9.4 Studio fallback 패치 후보 검증 완료: HTTP 429/503에서 같은 키의 다음 모델로 전환하는 회귀 테스트 추가. 35개 테스트 통과(1개 환경 의존 제외), macOS 앱 0.9.4 빌드·ad-hoc 서명·`GUI_SMOKE_OK`, DMG·macOS/Windows ZIP 생성 완료
 - v0.9.4 정식 릴리즈 완료: `v0.9.4` 태그와 GitHub Release에 DMG·macOS ZIP·Windows ZIP을 업로드. 공개 최신 릴리즈, 업데이트 검사기, DMG 마운트 smoke test, 코드 서명, 개인 파일 제외 검증 완료
 - v0.9.5 릴리즈 후보 검증 완료: 음성 발화 범위 제한·동일 날짜 재생성 교체 저장을 포함한 macOS 앱 0.9.5 빌드·ad-hoc 서명·`GUI_SMOKE_OK`, DMG 마운트 smoke test, macOS/Windows ZIP 개인 파일 제외 검사 완료. 36개 테스트 통과(1개 환경 의존 제외)
+- v0.9.5 정식 릴리즈 완료: `v0.9.5` 태그와 GitHub Release에 DMG·macOS ZIP·Windows ZIP을 업로드하고 공개 최신 릴리즈 및 업데이트 경로를 확인
 - API 키 연결 실사용 점검 완료: Desktop 워크스페이스에서 Primary·Backup 설정을 모두 읽고 `/v1beta/models` 인증 및 `generateContent` 모델 목록 응답을 확인. 셸에 남은 폐기 환경변수가 정상 설정을 가리지 않도록 macOS·Windows 공용 로더 수정, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - Gemini 모델 자동 우선순위 반영: `/v1beta/models`의 `generateContent` 지원 Stable Flash/Flash-Lite를 용도별로 필터링하고 버전 점수 내림차순으로 정렬. 새 Stable 모델이 추가되면 코드 수정 없이 최신 후보가 먼저 사용되며, `gemini-3-flash-preview`는 Preview 안전망으로만 기록. 양 플랫폼 동기화, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·ad-hoc 서명·GUI smoke test 완료
 - 모델 라우팅 수정 최종 반영: Gemini API 모델 목록에서 종료된 1.5/2.0과 Live·TTS·이미지·Embedding 전용 모델을 일반 생성 후보에서 제외하고, 3.8/3.7/3.6/3.5 Stable Flash → 2.5 Flash 순으로 정렬
