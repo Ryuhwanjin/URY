@@ -1158,12 +1158,12 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                         err_body = str(e)
                     if e.code == 429 and any(marker in err_body.lower() for marker in ("perday", "per_day", "per day", "daily", "rpd")):
                         log(f"  ⚠️ [{model}] 일일 요청 한도(RPD) 소진 -> 다음 모델로 즉시 전환합니다.", step=2)
-                        break
+                        continue
                     if e.code in (429, 503):
                         log(f"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})", step=2)
-                        break
+                        continue
                     log(f"  ⚠️ [{model}] HTTP {e.code} 요청 실패 -> 다음 모델로 전환합니다. ({err_body})", step=2)
-                    break
+                    continue
                 except (urllib.error.URLError, TimeoutError) as e:
                     check_cancel()
                     reason = getattr(e, "reason", e)
@@ -1175,7 +1175,7 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                 except Exception as e:
                     check_cancel()
                     log(f"  ⚠️ [{model}] 호출 예외 ({type(e).__name__}): {e} -> 다음 모델 전환...", step=2)
-                    break
+                    continue
         raise RuntimeError("모든 Gemini 모델 요청에 실패했습니다.")
 
     # 프롬프트 구성 (100% 완전성 & 한/영 1:1 대칭 보장 & 출처 파일명 명시 & 토큰 절약 테이블화)

@@ -19,6 +19,21 @@ def function(platform, filename, name, namespace):
 
 
 class GenerationFailureTest(unittest.TestCase):
+    def test_studio_quota_or_server_error_advances_model_before_backup_key(self):
+        root = Path(__file__).parent.parent
+        for platform in ("URY_macOS", "URY_Windows"):
+            source = (root / platform / "system/code/process_all_lectures.py").read_text(encoding="utf-8")
+            start = source.index("    def call_gemini_with_parts(")
+            end = source.index("\n    # 프롬프트 구성", start)
+            call_source = source[start:end]
+            with self.subTest(platform=platform):
+                self.assertIn("if e.code in (429, 503):", call_source)
+                self.assertIn("다음 모델로 즉시 전환합니다", call_source)
+                self.assertNotIn(
+                    "if e.code in (429, 503):\n                        log(f\"  ⚠️ [{model}] HTTP {e.code} 할당량/서버 제한 감지 -> 다음 모델로 즉시 전환합니다. ({err_body})\", step=2)\n                        break",
+                    call_source,
+                )
+
     def test_failure_never_returns_sample_and_fallback_does_not_sleep(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform):
