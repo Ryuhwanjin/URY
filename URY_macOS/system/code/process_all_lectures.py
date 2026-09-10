@@ -750,6 +750,13 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
         else:
             w_name = f"{config['en_prefix']}_{date_str}_Selected_Materials_Lecture_Notes.md"
         user_w_path = os.path.join(user_week_dir, f".{w_name}")
+        # Studio의 동일 날짜 재생성은 누적본이 아니라 교체본이다.
+        # 재시도 결과를 기존 파일에 append하면 같은 강의가 PDF에도 중복된다.
+        if os.path.exists(user_w_path):
+            try:
+                os.remove(user_w_path)
+            except OSError:
+                pass
         append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
         hide_file_os_agnostic(user_w_path)
         return [user_w_path]
@@ -1192,8 +1199,9 @@ Context: {source_desc}
 
 Produce a rigorous, publication-grade academic lecture note in English for exam preparation.
 
-[Guidelines - Complete Core Coverage & Fluff-Free Academic Rigor]
-* Cover every core topic, definition, formula, meaningful example, and instructor emphasis while removing repetition and low-value detail.
+[Guidelines - Audio-Bounded Core Coverage & Fluff-Free Academic Rigor]
+* When an audio recording is provided, treat the professor's spoken lecture as the hard scope boundary. Include only concepts, formulas, examples, procedures, and announcements that are explicitly spoken or clearly explained in the recording.
+* Use slides only to clarify a point that was actually covered in the audio. Do not summarize later/uncovered slides, infer the professor's intended next topic, or add textbook background beyond the spoken lecture. If a slide item was not taught in the recording, omit it.
 * Filter out all casual jokes, personal anecdotes, and off-topic digressions ("잡소리") to keep the content purely academic and maximally thorough.
 * DO NOT generate any bracket tags (e.g., `[Slide 1]`, `[Slide 2~3]`, `[🎙️ Spoken]`, `[📖 Textbook]`, `[Tagged]`). Write in clean, publication-ready academic prose.
 * DO NOT output raw ASCII art boxes (e.g. `┌─┐`, `│`, `└─┘`, `+---+`) or repetitive ASCII divider lines (`==========`). Instead, use clean Markdown tables, headings, or blockquotes.
@@ -1208,9 +1216,9 @@ Format:
 - Include only attendance codes, quizzes, deadlines, or course policies that appear in the provided source.
 
 ## 💡 2. In-Depth Theoretical & Conceptual Analysis
-- Zero filler or off-topic chitchat: concise, publication-grade analysis focused on concepts, theories, models, and exam-relevant slide points.
-- Provide fully articulated theoretical explanations, derivations, mathematical formulations (LaTeX/KaTeX), architecture diagrams, and comparison tables.
-- Specific business scenarios, numerical examples, and professor's academic emphasis explained in maximum depth.
+- Zero filler or off-topic chitchat: concise, publication-grade analysis limited to concepts, theories, models, and slide points that were actually covered in the audio.
+- Provide fully articulated explanations, derivations, mathematical formulations (LaTeX/KaTeX), diagrams, and comparison tables only for the spoken lecture scope.
+- Explain the professor's spoken business scenarios, numerical examples, and academic emphasis in depth; do not add unspoken future material.
 
 ## 🎯 3. Core Keywords & Comprehensive Lecture Summary
 ### 3.1 🔑 Essential Keywords & Terminology
@@ -1241,6 +1249,7 @@ Tone: Professional academic publication tone."""
 학생이 한/영 버전을 완벽하게 상호 대조하며 공부할 수 있도록, 영문 마스터 노트의 모든 섹션, 표, 세부 개념, 다이어그램, 키워드 사전, 체크리스트를 빠짐없이 1:1 완벽 대응하여 한국어로 번역 및 학술 조판하십시오.
 
 [핵심 작성 원칙]
+0. [음성 범위 우선]: 음성 녹음이 제공된 경우 교수님이 실제로 말한 내용만 강의 범위로 간주할 것. 슬라이드에만 있고 아직 설명하지 않은 다음 차시 내용, 교재 배경지식, 추론·예측은 한국어 노트에 추가하지 말 것.
 1. [섹션 번호 및 구조 100% 일치]:
    - 1. 수업 개요 및 공지사항, 2. 핵심 이론 및 상세 개념 분석(2.1, 2.2, 2.3 등), 3. 핵심 키워드 정리 & 단원 종합 요약(3.1 표, 3.2 요약), 4. 금주 핵심 복습 체크리스트까지 4개 섹션 전체를 영문 마스터 노트와 정확히 1:1로 일치시킬 것.
    - 영문 노트에 있는 2번 이론 분석(마케팅 가치 패러다임, 도표, 소비자 인식 및 브랜드 자산, 4Ps 테이블 등)이 한글 강의노트에서 절대로 누락되지 않도록 100% 대칭 수록할 것.
@@ -1295,8 +1304,9 @@ Tone: Professional academic publication tone."""
 
 학생이 복습 및 중간/기말고사에 완벽하게 대비할 수 있도록 매우 체계적이고 깊이 있는 강의노트를 작성해 주세요.
 
-[🚨 내용 완전성 및 4개 섹션 완결 원칙]
-- 슬라이드와 강의의 핵심 정의, 공식, 사례, 교수자 강조사항을 빠뜨리지 않되 반복 설명과 중복 사례는 압축할 것.
+[🚨 음성 범위 준수 및 4개 섹션 완결 원칙]
+- 음성 녹음이 있으면 교수님이 실제로 설명한 핵심 정의, 공식, 사례, 공지만 포함할 것. 슬라이드에만 있고 아직 수업하지 않은 내용이나 교재의 추가 배경지식은 절대 확장하지 말 것.
+- 슬라이드는 음성에서 다룬 부분을 확인·보완하는 용도로만 사용하고, 음성에서 확인되지 않는 내용은 생략할 것. 반복 설명과 중복 사례는 압축할 것.
 - 핵심 전문 용어는 반드시 `한글 번역 (English Official Term)` 형태로 병기할 것.
 - 아스키 박스 그림(`┌─┐`, `│`, `└─┘`, `+---+`)이나 반복선(`==========`)을 절대 출력하지 마십시오. 표(Markdown Table)나 표준 인용구(`>`)를 사용하십시오.
 - 본문 문장 사이에 `[Slide 1]`, `[Slide 2~3]`, `[🎙️ 음성]`, `[📖 교재]`, `[Tagged]` 같은 대괄호 태그나 슬라이드 번호 태그를 절대로 생성하지 마십시오. 100% 깔끔한 학술 서술체로 작성하십시오.
@@ -1312,7 +1322,7 @@ Tone: Professional academic publication tone."""
 - 이번 주차 핵심 학습 목표와, 원본 자료에 실제로 있는 출석·과제·시험 공지 사항만 정리
 
 ## 💡 2. 핵심 이론 및 상세 개념 분석
-- 잡소리(사담, 농담, 딴소리)는 일절 배제하고, 슬라이드와 강의의 모든 챕터, 불렛포인트, 세부 개념, 공식을 빠짐없이 체계적인 번호와 소제목으로 '최대한 상세하게' 해설
+- 잡소리(사담, 농담, 딴소리)는 일절 배제하고, 음성에서 실제로 진행된 범위 안의 챕터·불렛포인트·세부 개념·공식만 체계적인 번호와 소제목으로 상세히 해설. 슬라이드의 미진행 차시는 넣지 않음
 - 비교 표(Markdown Table), 수식(LaTeX/KaTeX) 적극 활용
 
 ## 🎯 3. 핵심 키워드 정리 & 단원 종합 요약

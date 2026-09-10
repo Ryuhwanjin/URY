@@ -19,6 +19,19 @@ def function(platform, filename, name, namespace):
 
 
 class GenerationFailureTest(unittest.TestCase):
+    def test_studio_note_scope_is_audio_bounded_and_same_day_output_replaced(self):
+        root = Path(__file__).parent.parent
+        for platform in ("URY_macOS", "URY_Windows"):
+            source = (root / platform / "system/code/process_all_lectures.py").read_text(encoding="utf-8")
+            with self.subTest(platform=platform):
+                self.assertIn("hard scope boundary", source)
+                self.assertIn("If a slide item was not taught in the recording, omit it.", source)
+                self.assertIn("슬라이드의 미진행 차시는 넣지 않음", source)
+                session_start = source.index("    if session_only:")
+                session_end = source.index("\n    if not is_english:", session_start)
+                session_source = source[session_start:session_end]
+                self.assertIn("os.remove(user_w_path)", session_source)
+
     def test_studio_quota_or_server_error_advances_model_before_backup_key(self):
         root = Path(__file__).parent.parent
         for platform in ("URY_macOS", "URY_Windows"):
