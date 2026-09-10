@@ -11,6 +11,7 @@
 
 ## 최근 완료
 
+- 프로젝트 문서 동기화 완료: macOS v0.9.5 마감, Windows Phase 3(실기기 QA·EXE·설치마법사) 우선순위, 후속 Gemini 캐시·쿼터 시험을 `DEVELOPMENT_STATUS.md`·`FEATURE_MATRIX.md`·`IMPLEMENTATION_PLAN.md`·`GEMINI.md`·`README.md`에 반영. 문서 커밋 `49a8d75`, 전체 테스트 36개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - API 연결 배지 검증 보강: 임의의 10자 문자열을 `연결됨`으로 표시하지 않고 `/v1beta/models`에서 `generateContent` 권한을 실제 확인. 정상·백업 준비·인증 실패·네트워크 확인 불가를 구분하고, 셸에 남은 폐기 키가 설정값을 가리지 않도록 공용 로더도 수정. 양 플랫폼 동기화, 테스트 34개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - v0.9.1 배포 후보 점검 완료: 34개 테스트 통과(1개 환경 의존 제외), AST·공용 코드 동기화·diff·비밀값 검사 통과. `URY.app` CFBundle 0.9.1, ad-hoc 서명·`GUI_SMOKE_OK` 통과. `배포/URY_Engine_v0.9.1.dmg`(약 62.8MB) 마운트·앱 smoke test 및 SHA-256 확인. macOS/Windows ZIP에서 `.env`·설정·시간표·생성 이력 제외를 재검증
 - v0.9.2 후속 후보 점검 완료: API `연결 확인` 단일 기능을 macOS·Windows에 동기화하고 34개 테스트 통과. 아이콘 ICNS 알파 영역을 84%→약 76%로 조정해 Dock 과대 표시를 보정. CFBundle 0.9.2, ad-hoc 서명·앱/DMG smoke test, 개인 파일 제외 검증 완료
