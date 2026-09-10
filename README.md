@@ -2,6 +2,8 @@
 
 대학 강의자료와 녹음을 Gemini로 분석해 강의노트, PDF, 모의시험, 학습 로드맵을 만드는 macOS/Windows 데스크톱 앱입니다.
 
+현재 최신 정식 릴리즈는 macOS v0.9.5입니다. macOS 기능은 마감되었고 Windows 실기기 QA·단독 EXE·설치마법사 배포를 이어서 진행합니다.
+
 ## 시작하기
 
 - macOS: [URY_macOS/설정관리자.command](URY_macOS/설정관리자.command)
@@ -19,6 +21,7 @@
 - 대학별 HEX 포인트컬러와 실행 창·Dock 아이콘 색상 적용
 - AI Notebook 계열 앱을 참고한 고정 사이드바와 자료 중심 Studio 흐름
 - GitHub Release 새 버전 확인, 설치 파일 다운로드 및 실행
+- Windows 설치마법사 기반 설치·업데이트·삭제 (개발 예정)
 
 ## 저장소 구조
 

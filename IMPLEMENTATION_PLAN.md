@@ -1,6 +1,6 @@
 # URY Engine Implementation Plan
 
-문서 상태: Phase 1~2 진행 중 (macOS 우선)
+문서 상태: macOS Phase 2 완료 · Windows Phase 3 진행 준비
 기준일: 2026-09-10
 
 ## 1. 목표
@@ -123,7 +123,7 @@
 
 ## 5. 작업 순서
 
-현재 `Phase 1 + Phase 2`를 우선 진행한다. macOS 생성 안정성과 정식 릴리스를 확정한 뒤 Phase 3 Windows 작업을 시작해 플랫폼 문제와 Gemini 문제를 분리한다.
+macOS Phase 1 안정화와 Phase 2 정식 릴리즈는 v0.9.5에서 완료했다. 다음은 Phase 3 Windows 작업으로, Windows 실기기 UI·EXE·설치마법사 검증을 먼저 진행해 플랫폼 문제와 Gemini 후속 과제를 분리한다. File API 캐시와 실제 쿼터 장애 회귀시험은 Windows 안정화 후 별도 진행한다.
 
 ## 6. 변경 관리
 
