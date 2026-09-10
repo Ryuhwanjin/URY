@@ -4,7 +4,7 @@
 
 ## 진행 중
 
-- v0.9.3 경로·저장소명 정리 완료: 사용자 워크스페이스 기본 폴더를 `~/Desktop/URY`로 변경하고 기존 Desktop 폴더는 내용 보존한 채 이름만 변경. 새 `Ryuhwanjin/URY` 릴리즈 업로드 완료
+- v0.9.3 경로·저장소명 정리 완료: 사용자 워크스페이스 기본 폴더를 `~/Desktop/URY`로 변경하고 기존 Desktop 폴더는 내용 보존한 채 이름만 변경. 릴리즈 커밋 `d094392` 완료, 새 `Ryuhwanjin/URY` 릴리즈 업로드 진행
 - v0.9.2 릴리즈 완료: Settings 수동 API 재확인 1개 기능과 Dock 아이콘 12% 안전 여백 보정 포함. 다음 개발은 사용자 승인 후 Windows 실기기 QA 또는 Phase 1 업로드 캐시 중 하나만 선택
 - Phase 1 진행: 모델 라우팅·영구 Studio 로그 반영 완료, 다음은 실제 429/503 API 회귀시험과 동일 파일 업로드 캐시
 - 사용자 승인 대기: `IMPLEMENTATION_PLAN.md`의 Phase 1~5 범위와 우선순위
@@ -17,6 +17,7 @@
 - v0.9.2 후속 후보 점검 완료: API `연결 확인` 단일 기능을 macOS·Windows에 동기화하고 34개 테스트 통과. 아이콘 ICNS 알파 영역을 84%→약 76%로 조정해 Dock 과대 표시를 보정. CFBundle 0.9.2, ad-hoc 서명·앱/DMG smoke test, 개인 파일 제외 검증 완료
 - GitHub 릴리즈 완료: `v0.9.1`(commit `cd117f2`)과 `v0.9.2`(commit `1e7667c`)에 macOS DMG·macOS ZIP·Windows ZIP을 업로드. 공개 Releases API에서 v0.9.2가 최신 정식 릴리즈임을 확인하고, v0.9.1→v0.9.2 업데이트 감지 회귀시험 통과
 - v0.9.3 경로·저장소명 후보 점검 완료: macOS·Windows 기본 워크스페이스를 `~/Desktop/URY`로 동기화하고 실제 Desktop 폴더를 이름 변경. GitHub 저장소를 `Ryuhwanjin/URY`로 변경하고 Updates URL·인수인계 문서 갱신. 34개 테스트, AST·동기화·diff, v0.9.3 앱/DMG smoke, ZIP 개인 파일 제외 검증 완료
+- v0.9.3 릴리즈 커밋 완료: `d094392`에 경로·저장소명 변경, 문서·업데이트 URL·DMG 빌드 버전을 포함하고 사용자 데이터/임시 파일은 제외
 - API 키 연결 실사용 점검 완료: Desktop 워크스페이스에서 Primary·Backup 설정을 모두 읽고 `/v1beta/models` 인증 및 `generateContent` 모델 목록 응답을 확인. 셸에 남은 폐기 환경변수가 정상 설정을 가리지 않도록 macOS·Windows 공용 로더 수정, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - Gemini 모델 자동 우선순위 반영: `/v1beta/models`의 `generateContent` 지원 Stable Flash/Flash-Lite를 용도별로 필터링하고 버전 점수 내림차순으로 정렬. 새 Stable 모델이 추가되면 코드 수정 없이 최신 후보가 먼저 사용되며, `gemini-3-flash-preview`는 Preview 안전망으로만 기록. 양 플랫폼 동기화, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·ad-hoc 서명·GUI smoke test 완료
 - 모델 라우팅 수정 최종 반영: Gemini API 모델 목록에서 종료된 1.5/2.0과 Live·TTS·이미지·Embedding 전용 모델을 일반 생성 후보에서 제외하고, 3.8/3.7/3.6/3.5 Stable Flash → 2.5 Flash 순으로 정렬
