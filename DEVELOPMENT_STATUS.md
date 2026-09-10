@@ -1,16 +1,18 @@
 # URY Engine 개발 현황
 
-마지막 갱신: 2026-09-10
+마지막 갱신: 2026-09-11
 
 ## 진행 중
 
-- macOS v0.9.5 마감 완료: 음성 발화 범위 제한·동일 날짜 재생성 교체 저장·503/429 모델 fallback을 포함한 정식 릴리즈와 업데이트 경로 검증까지 끝남. 최신 공개 릴리즈는 `v0.9.5`이며 다음 주력 작업은 Windows 기능 동등성이다.
-- Windows Phase 3 준비: macOS·Windows 공용 Python 코드는 동기화되어 있으나 Windows 실기기 UI 회귀시험, 깨끗한 환경의 `URY.exe` 빌드, 설치마법사·업데이트·완전삭제 검증이 남아 있다.
-- Phase 1 후속 항목은 차단 이슈가 아님: 실제 429/503 쿼터 장애 회귀시험과 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 별도 진행한다.
-- macOS Command 단축키는 네이티브 Edit 메뉴와 입력 위젯 바인딩을 반영했으며, `⌘C/V/X/A` 실사용 확인은 수동 회귀시험에서 함께 확인한다.
+- Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
+  - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
+  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Git 상태 점검 완료(사용자 시간표 및 로컬 임시 파일 보존). Windows 빌드/설치/완전삭제 스크립트 및 실기기 배포 파이프라인 정합성 점검 시작.
+  - 바로 다음 명령: Windows 빌드 및 설치마법사/제거 스크립트 버전·경로·인코딩 점검 및 공용 코드 무결성 검증
+- Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
 
+- 배포 철학·법적 검토·코드 감사 보고서(`antigravity_gpt.md`) 작성 및 정책 문서화 완료: 인앱 결제/구독/광고를 일체 배제하는 100% 비영리 무료(Ad-free Freeware) 원칙, BYOK(사용자 개인 API Key) 기반 중앙 서버 0 byte 저장으로 저작권/통비법 법적 리스크 원천 차단, Windows 배포본 바이너리 부재 및 `04_완전삭제.bat` 데이터 삭제 위험 등 코드 감사 결과 정리, 버전 정책 안 B(Windows 실기기 검증본 `v0.9.6` 릴리즈 후 `v1.0.0` 승격) 및 모바일(iOS/Android) 빌드 제외 사유를 `antigravity_gpt.md`·`IMPLEMENTATION_PLAN.md`·`FEATURE_MATRIX.md`·`DEVELOPMENT_STATUS.md`에 반영
 - 프로젝트 문서 동기화 완료: macOS v0.9.5 마감, Windows Phase 3(실기기 QA·EXE·설치마법사) 우선순위, 후속 Gemini 캐시·쿼터 시험을 `DEVELOPMENT_STATUS.md`·`FEATURE_MATRIX.md`·`IMPLEMENTATION_PLAN.md`·`GEMINI.md`·`README.md`에 반영. 문서 커밋 `49a8d75`, 전체 테스트 36개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - API 연결 배지 검증 보강: 임의의 10자 문자열을 `연결됨`으로 표시하지 않고 `/v1beta/models`에서 `generateContent` 권한을 실제 확인. 정상·백업 준비·인증 실패·네트워크 확인 불가를 구분하고, 셸에 남은 폐기 키가 설정값을 가리지 않도록 공용 로더도 수정. 양 플랫폼 동기화, 테스트 34개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - v0.9.1 배포 후보 점검 완료: 34개 테스트 통과(1개 환경 의존 제외), AST·공용 코드 동기화·diff·비밀값 검사 통과. `URY.app` CFBundle 0.9.1, ad-hoc 서명·`GUI_SMOKE_OK` 통과. `배포/URY_Engine_v0.9.1.dmg`(약 62.8MB) 마운트·앱 smoke test 및 SHA-256 확인. macOS/Windows ZIP에서 `.env`·설정·시간표·생성 이력 제외를 재검증
