@@ -10,6 +10,8 @@ class RequestedUiTests(unittest.TestCase):
             with self.subTest(platform=platform):
                 self.assertIn('PART_OPTIONS = ["1부", "2부", "3부"]', source)
                 self.assertIn('self.save_studio_language', source)
+                self.assertIn('text="🔄 연결 확인"', source)
+                self.assertIn('def recheck_api_connection_action(self):', source)
                 self.assertIn('강의자료 선택', source)
                 self.assertIn('강의노트 폴더', source)
                 self.assertNotIn('text="✍️ 답안 채점"', source)

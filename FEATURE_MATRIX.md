@@ -48,7 +48,7 @@
 
 | 기능 | 상태 | 현재 내용 / 남은 검증 |
 |---|---|---|
-| Gemini API Key 저장·연결 확인 | 완료 | 기본 Key와 선택적 별도 프로젝트 Backup Key를 사용자 워크스페이스에 저장, Git 제외. 헤더 배지는 단순 문자열 길이가 아니라 Gemini `/models`의 `generateContent` 권한을 실제 확인해 정상·인증 실패·네트워크 확인 불가를 구분하며, 429/503 시 기능별 호출에서 순서대로 fallback |
+| Gemini API Key 저장·연결 확인 | 완료 | 기본 Key와 선택적 별도 프로젝트 Backup Key를 사용자 워크스페이스에 저장, Git 제외. 헤더 배지는 단순 문자열 길이가 아니라 Gemini `/models`의 `generateContent` 권한을 실제 확인해 정상·인증 실패·네트워크 확인 불가를 구분하며, 429/503 시 기능별 호출에서 순서대로 fallback. Settings의 `연결 확인`으로 즉시 재검증 가능 |
 | 학기 드롭다운과 과목 연동 | 완료 | 학기별 과목·기간·캐시 분리 |
 | 대학별 테마 드롭다운 | 완료 | 41개 프리셋(서울 주요·거점국립·과학기술원·포스텍) 및 HEX 직접 선택, 드롭다운 사전순 정렬 |
 | 전역 포인트컬러 | 부분 구현 | 주요 버튼·위젯·창·Dock 아이콘 연동, Finder `.app` 아이콘은 정적 리소스라 저장 시 변경되지 않음 |
@@ -64,9 +64,9 @@
 | 기능 | 상태 | 현재 내용 / 남은 검증 |
 |---|---|---|
 | macOS 앱 빌드 | 완료 | Apple Silicon ad-hoc 서명 `URY.app` 빌드 성공 |
-| macOS DMG v0.9.1 | 부분 구현 | 앱 빌드·ad-hoc 서명·DMG 검증 후 GitHub 정식 릴리즈 대기 |
+| macOS DMG v0.9.1 | 완료 | GitHub 정식 릴리즈와 DMG·macOS/Windows ZIP asset 업로드 완료 |
 | 업데이트 인식 | 완료 | GitHub 최신 릴리즈 태그 비교·다운로드 경로 검증 |
-| 최신 최적화 DMG | 진행 중 | v0.9.1 최종 후보 생성 및 체크섬·마운트 smoke test 진행 |
+| macOS 후속 DMG v0.9.2 | 진행 중 | API 수동 재확인과 Dock 아이콘 여백 보정 포함, 빌드·업데이트 감지 검증 진행 |
 | Apple Developer 서명·공증 | 제외 | 개발자 가입 없이 시스템 설정 안내 방식 사용 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | PyInstaller 산출물명을 `URY.exe`로 정리, 최신 Windows 환경 빌드 검증 필요 |

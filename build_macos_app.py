@@ -6,7 +6,8 @@ import venv
 
 ROOT = Path(__file__).resolve().parent
 ENV = ROOT / ".venv-macos-build"
-APP_VERSION = "0.9.1"
+APP_VERSION = "0.9.2"
+ICON_PADDING_RATIO = 0.12
 
 
 def main():
@@ -21,8 +22,8 @@ def main():
     icon = ROOT / "build/macos/ury_engine_icon.icns"
     icon.parent.mkdir(parents=True, exist_ok=True)
     source_icon = Image.open(ROOT / "assets/ury_engine_icon.png").convert("RGBA")
-    # macOS Dock에서 과대하게 보이지 않도록 아이콘 가장자리에 8% 투명 여백을 둔다.
-    pad = round(source_icon.width * 0.08)
+    # macOS Dock에서 다른 앱보다 크게 보이지 않도록 안전 여백을 둔다.
+    pad = round(source_icon.width * ICON_PADDING_RATIO)
     padded_icon = Image.new("RGBA", source_icon.size, (0, 0, 0, 0))
     scaled_icon = source_icon.resize(
         (source_icon.width - pad * 2, source_icon.height - pad * 2), Image.Resampling.LANCZOS)

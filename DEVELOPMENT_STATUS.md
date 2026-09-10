@@ -4,7 +4,7 @@
 
 ## 진행 중
 
-- 최종 배포 점검 중: v0.9.1 DMG·릴리즈 준비 완료(로컬). v0.9.2에는 단일 후속 기능으로 수동 API 재확인과 Dock 아이콘 안전 여백 12% 조정을 반영할 예정. 다음 명령: 의도한 파일만 스테이징하고 커밋·푸시·태그
+- v0.9.2 후속 릴리즈 점검 중: Settings 수동 API 재확인 1개 기능과 Dock 아이콘 12% 안전 여백 보정 완료. 다음 명령: 상태 문서 포함 커밋·푸시·태그 후 GitHub 릴리즈와 업데이트 감지 검증
 - Phase 1 진행: 모델 라우팅·영구 Studio 로그 반영 완료, 다음은 실제 429/503 API 회귀시험과 동일 파일 업로드 캐시
 - 사용자 승인 대기: `IMPLEMENTATION_PLAN.md`의 Phase 1~5 범위와 우선순위
 - Command 단축키 사용자 확인 대기: macOS Cocoa Edit 메뉴와 입력 위젯 클래스 바인딩을 함께 적용한 최신 `URY.app`을 실행해 둠. `⌘C/V/X/A`를 Studio·Tutor·Settings 입력창에서 직접 확인하면 됨
@@ -13,6 +13,7 @@
 
 - API 연결 배지 검증 보강: 임의의 10자 문자열을 `연결됨`으로 표시하지 않고 `/v1beta/models`에서 `generateContent` 권한을 실제 확인. 정상·백업 준비·인증 실패·네트워크 확인 불가를 구분하고, 셸에 남은 폐기 키가 설정값을 가리지 않도록 공용 로더도 수정. 양 플랫폼 동기화, 테스트 34개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - v0.9.1 배포 후보 점검 완료: 34개 테스트 통과(1개 환경 의존 제외), AST·공용 코드 동기화·diff·비밀값 검사 통과. `URY.app` CFBundle 0.9.1, ad-hoc 서명·`GUI_SMOKE_OK` 통과. `배포/URY_Engine_v0.9.1.dmg`(약 62.8MB) 마운트·앱 smoke test 및 SHA-256 확인. macOS/Windows ZIP에서 `.env`·설정·시간표·생성 이력 제외를 재검증
+- v0.9.2 후속 후보 점검 완료: API `연결 확인` 단일 기능을 macOS·Windows에 동기화하고 34개 테스트 통과. 아이콘 ICNS 알파 영역을 84%→약 76%로 조정해 Dock 과대 표시를 보정. CFBundle 0.9.2, ad-hoc 서명·앱/DMG smoke test, 개인 파일 제외 검증 완료
 - API 키 연결 실사용 점검 완료: Desktop 워크스페이스에서 Primary·Backup 설정을 모두 읽고 `/v1beta/models` 인증 및 `generateContent` 모델 목록 응답을 확인. 셸에 남은 폐기 환경변수가 정상 설정을 가리지 않도록 macOS·Windows 공용 로더 수정, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·서명·GUI smoke test 완료
 - Gemini 모델 자동 우선순위 반영: `/v1beta/models`의 `generateContent` 지원 Stable Flash/Flash-Lite를 용도별로 필터링하고 버전 점수 내림차순으로 정렬. 새 Stable 모델이 추가되면 코드 수정 없이 최신 후보가 먼저 사용되며, `gemini-3-flash-preview`는 Preview 안전망으로만 기록. 양 플랫폼 동기화, 테스트 33개 통과(1개 환경 의존 제외), 최신 `URY.app` 재빌드·ad-hoc 서명·GUI smoke test 완료
 - 모델 라우팅 수정 최종 반영: Gemini API 모델 목록에서 종료된 1.5/2.0과 Live·TTS·이미지·Embedding 전용 모델을 일반 생성 후보에서 제외하고, 3.8/3.7/3.6/3.5 Stable Flash → 2.5 Flash 순으로 정렬

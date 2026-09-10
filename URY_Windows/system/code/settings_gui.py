@@ -618,7 +618,7 @@ class CinematicSplashScreen:
 class UnifiedDashboardApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("URY — Academic Studio v0.9.1")
+        self.root.title("URY — Academic Studio v0.9.2")
 
         # [배포 기기 보장] 앱 실행 즉시 바탕화면(~/Desktop/URY_Engine) 폴더 트리 구축 및 system 폴더 숨김 처리
         try:
@@ -1584,7 +1584,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
             except Exception:
                 pass
         tk.Label(title_row, text="URY", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(side=tk.LEFT)
-        tk.Label(title_row, text=" v0.9.1", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
+        tk.Label(title_row, text=" v0.9.2", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(side=tk.LEFT)
         tk.Label(left, text="Academic Studio", font=("Pretendard", 8), bg="#ffffff", fg="#94a3b8").pack(anchor=tk.W)
 
         # 우측: 해상도 선택기 / 학기 / API 연결 상태 배지 (오른쪽에 영구 고정되도록 center보다 먼저 pack)
@@ -4322,7 +4322,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
     def build_update_tab(self):
         card = ttk.LabelFrame(self.tab_update, text=" URY 업데이트 ", padding="20")
         card.pack(fill=tk.X)
-        ttk.Label(card, text="현재 버전  v0.9.1", font=("Pretendard", 15, "bold"),
+        ttk.Label(card, text="현재 버전  v0.9.2", font=("Pretendard", 15, "bold"),
                   foreground=self.accent_color("#1c4732")).pack(anchor=tk.W)
         ttk.Label(card, text="GitHub Release에서 새 설치 파일을 확인합니다.", style="Muted.TLabel").pack(anchor=tk.W, pady=(4, 16))
         SquareRoundButton(card, text="↻  지금 업데이트 확인", bg=self.accent_color("#1c4732"),
@@ -4579,6 +4579,7 @@ Built for better learning, not shortcuts.""")
         self.api_entry.bind("<Button-1>", lambda e: self.api_entry.focus_set())
         self.add_context_menu(self.api_entry)
 
+        SquareRoundButton(api_row, text="🔄 연결 확인", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.recheck_api_connection_action).pack(side=tk.RIGHT, padx=(0, 6))
         SquareRoundButton(api_row, text="💾 설정 저장", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=32, font=("Pretendard", 9, "bold"), command=self.save_settings_action).pack(side=tk.RIGHT)
 
         backup_api_row = ttk.Frame(top_frame)
@@ -4877,6 +4878,10 @@ Built for better learning, not shortcuts.""")
         self.update_api_status_badge()
         self.sem_badge_label.config(text=f" 📅 {self.settings['semester']} ")
         messagebox.showinfo("저장 완료", "설정이 성공적으로 저장되었습니다.")
+
+    def recheck_api_connection_action(self):
+        """저장된 기본·백업 키의 Gemini 인증 상태를 즉시 다시 확인한다."""
+        self.update_api_status_badge()
 
     def add_course_dialog(self):
         self.show_course_dialog(is_edit=False)
