@@ -1,7 +1,7 @@
 # URY Engine Implementation Plan
 
-문서 상태: macOS Phase 2 완료 · Windows Phase 3 진행 준비
-기준일: 2026-09-10
+문서 상태: macOS Phase 2 완료 · Windows Phase 3 진행 중
+기준일: 2026-09-11
 
 ## 1. 목표
 
@@ -103,7 +103,7 @@
 3. 딱딱한 직사각형 위젯을 현재 macOS 카드·라운드 UI와 동일하게 조정
 4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트
 5. PyInstaller 단독 EXE 빌드 및 깨끗한 Windows 환경 실행시험
-6. GitHub Actions Windows runner 기반 `--onedir` 빌드와 Inno Setup 설치마법사 기반 설치·업데이트·완전삭제 패키지 검증
+6. GitHub Actions Windows runner 기반 `--onedir` 빌드·아이콘·번들 리소스 Verify를 완료하고, `installer/URY_v0.9.6.iss` 기반 Inno Setup 설치·업데이트·완전삭제 패키지를 생성·검증
 
 완료 조건:
 

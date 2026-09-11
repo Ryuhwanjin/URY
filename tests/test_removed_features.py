@@ -91,6 +91,18 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertIn("actions/upload-artifact@v4", source)
         self.assertNotIn("action-gh-release", source)
 
+    def test_windows_inno_setup_preserves_user_workspace(self):
+        root = Path(__file__).parent.parent
+        script = (root / "installer/URY_v0.9.6.iss").read_text(encoding="utf-8")
+        self.assertIn("PrivilegesRequired=lowest", script)
+        self.assertIn("DefaultDirName={localappdata}\\Programs\\URY", script)
+        self.assertIn("Source: \"..\\dist\\URY\\*\"", script)
+        self.assertIn("Type: filesandordirs; Name: \"{app}\"", script)
+        self.assertEqual(script.count("Type: filesandordirs;"), 1)
+        workflow = (root / ".github/workflows/windows-build.yml").read_text(encoding="utf-8")
+        self.assertIn("Inno Setup 6\\ISCC.exe", workflow)
+        self.assertIn("URY_Windows_v0.9.6_setup", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

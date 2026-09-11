@@ -70,8 +70,24 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/URY -DestinationPath URY_Windows_v0.9.6_onedir.zip
 
+      - name: Build Inno Setup installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Missing Inno Setup compiler: $iscc" }
+          & $iscc "installer\URY_v0.9.6.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+          $setup = "dist/installer/URY_Setup_v0.9.6.exe"
+          if (-not (Test-Path $setup)) { throw "Missing $setup" }
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: URY_Windows_v0.9.6_onedir
           path: URY_Windows_v0.9.6_onedir.zip
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: URY_Windows_v0.9.6_setup
+          path: dist/installer/URY_Setup_v0.9.6.exe
