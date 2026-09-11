@@ -213,3 +213,125 @@ Antigravity 개발 도구에서 모델을 선택하는 것과 URY 앱 내부 Gem
 - Windows 배치 파일의 구버전 표기·UTF-8 코드페이지와 `04_완전삭제.bat`의 즉시 삭제 로직을 Windows 릴리즈 전에 수정한다.
 
 최종 구현·검증·병합·릴리즈 판단은 GPT(Codex)가 담당하며, Antigravity는 이후에도 독립적인 더블체크와 아이디어 제안 역할로 사용한다.
+
+---
+
+## 8. Windows Phase 3 (`windows/phase3`, `0c83ec4` ~ `a289d23`) Antigravity 코드 리뷰 보고서
+
+**검토 대상**: `/Users/ryuhwanjin/Documents/ChatGPT/URY_windows_phase3` (Worktree)
+**검토 브랜치**: `windows/phase3` (`a289d23`, 기준: `0c83ec4`)
+**작성 주체**: Antigravity (독립 더블체커 / 코드 미수정 리뷰 전담)
+
+---
+
+### 8.1 즉시 수정이 필요한 문제 (P0)
+
+#### 1) `config_manager.py`: Windows 배포 바이너리 환경에서 번들 설정 파일 탐색 경로 누락
+- **대상 파일**: `URY_Windows/system/code/config_manager.py` (라인 121~127)
+- **현상 및 근거**:
+  ```python
+  if getattr(sys, "frozen", False):
+      app_dir = os.path.dirname(os.path.abspath(sys.executable))
+      for sub in ("../Resources/system", "../Frameworks/system", "../Resources", "../Frameworks"):
+          res_p = os.path.abspath(os.path.join(app_dir, sub, filename))
+          if os.path.exists(res_p):
+              return res_p
+  ```
+  현재 `find_config_file()`은 실행 파일이 패키징된(`frozen=True`) 상태일 때 macOS `.app` 번들 전용 상대경로(`../Resources/...`)만 검사하고 있습니다.
+  PyInstaller `--onedir`로 빌드된 Windows 환경(`dist/URY/URY.exe`)에서는 번들된 리소스 파일이 `_internal/system` 또는 `sys._MEIPASS/system`에 위치합니다.
+- **위험성**: Windows 독립 실행본(`URY.exe`)을 클린 환경에서 최초 구동할 때, 번들된 기본 설정(`settings.default.json` 등)을 찾지 못해 초기화 오류가 발생할 수 있습니다.
+- **조치 방안**:
+  `find_config_file()`의 `sub` 탐색 목록에 `_internal/system`, `_internal`, `system`을 추가하거나 `getattr(sys, "_MEIPASS", "")` 경로를 포함하도록 보강해야 합니다.
+
+---
+
+### 8.2 출시 전 확인할 문제 (P1)
+
+#### 1) GitHub Actions 빌드 워크플로우에 `--icon` 옵션 누락
+- **대상 파일**: `.github/workflows/windows-build.yml` (라인 33~50)
+- **현상 및 근거**:
+  `windows-build.yml`의 PyInstaller 명령어에 `--icon` 옵션이 누락되어 있습니다. 리포지토리 루트 및 `URY_Windows/`에 `app_icon.ico`가 준비되어 있음에도 이를 지정하지 않았습니다.
+- **위험성**: GitHub Actions로 빌드된 `URY.exe`가 탐색기에서 URY 전용 아이콘 대신 PyInstaller 기본 아이콘으로 표시됩니다.
+- **조치 방안**: PyInstaller 인자에 `--icon app_icon.ico` (또는 `--icon URY_Windows/app_icon.ico`)를 추가합니다.
+
+#### 2) `build_exe_gui.py`의 독립 실행 시 아이콘 경로 불일치 가능성
+- **대상 파일**: `URY_Windows/system/code/build_exe_gui.py` (라인 47~54)
+- **현상 및 근거**:
+  `assets_dir = os.path.abspath(os.path.join(root_dir, "..", "assets"))`로 상위 폴더를 참조하므로, 사용자가 배포된 `URY_Windows` 폴더만 독립적으로 압축 해제하여 실행할 경우 `../assets`가 존재하지 않아 `build/ury_engine_icon.ico` 생성이 실패하고 `--icon` 옵션이 빠진 채 빌드됩니다.
+- **조치 방안**: `URY_Windows/app_icon.ico`가 이미 존재하므로, 변환 실패 시 기존 `app_icon.ico`를 직접 참조하도록 fallback을 둡니다.
+
+#### 3) `uninstall_gui.py`의 macOS/Windows 공용 동기화 불일치
+- **대상 파일**: `URY_Windows/system/code/uninstall_gui.py` vs `URY_macOS/system/code/uninstall_gui.py`
+- **현상 및 근거**:
+  `0c83ec4` 커밋에서 `URY_Windows` 측의 `uninstall_gui.py`만 `v0.9.6`과 `URY.Uninstaller.v096`으로 변경되었고, `URY_macOS` 측은 `v0.7.7`로 남아 있어 공용 17개 파일 중 이 파일 1개가 4라인 차이를 보입니다.
+- **조치 방안**: "공용 파일 양쪽 동기화" 작업 규칙을 준수하기 위해 `URY_macOS/system/code/uninstall_gui.py`도 동일하게 갱신합니다.
+
+#### 4) Inno Setup 패키징 시 권한 및 설치 경로 권장
+- **대상 파일**: 향후 생성될 Inno Setup 스크립트 (`*.iss`)
+- **판단 근거**:
+  기본 설치 경로를 `C:\Program Files\URY`(`{autopf}\URY`)로 잡으면, 관리자 권한이 없는 대학교 도서관/실습실 PC나 공용 PC에서 설치 시 UAC 차단이 발생합니다.
+- **조치 방안**: `{localappdata}\Programs\URY`를 기본 설치 경로(`PrivilegesRequired=lowest`)로 지정하여 일반 사용자 권한으로 원클릭 설치되도록 구성을 권장합니다.
+
+---
+
+### 8.3 개선 제안 (P2)
+
+#### 1) 배치 파일 6개의 Python 3.13 경로 탐색 보강
+- **대상 파일**: `URY_Windows/*.bat` 6종
+- **현상 및 근거**:
+  배치 파일의 `for %%P` 루프가 Python 3.12, 3.11, 3.10만 하드코딩 검사하고 있습니다. Python 3.13 사용자의 경우 `where python` fallback으로 잡히기는 하나, 직접 설치 경로 탐색에 `Python313`도 포함해 주면 진입 성공률이 높아집니다.
+
+#### 2) GitHub Actions에 초간단 무결성 스모크 테스트 단계 추가
+- **대상 파일**: `.github/workflows/windows-build.yml`
+- **현상 및 근거**:
+  현재는 `Test-Path $exe`로 파일 존재 여부만 검사하고 있습니다. `settings_gui.py`에 `--smoke-test` 인자를 지원하게 하고, CI 상에서 `& dist/URY/URY.exe --smoke-test`를 1회 실행하여 DLL 누락이나 모듈 임포트 에러가 없는지 런타임 검증을 통과하도록 하면 더욱 견고해집니다.
+
+---
+
+### 8.4 현재 상태에서 승인 가능한 부분 (합격 요소)
+
+1. **배치 파일 6종 UTF-8 코드페이지 및 안정성 (100% 합격)**:
+   - 모든 배치 파일 상단에 `@echo off`, `@chcp 65001 >nul`, `setlocal`, `cd /d "%~dp0"`이 누락 없이 적용되었습니다.
+   - 메시지가 표준 영문 ASCII(`[OK]`, `[RUN]`, `[ERROR]`)로 정돈되어 한글 Windows(CP949) 및 영문 Windows 콘솔 어디서든 깨짐이 원천 차단되었습니다.
+2. **Python 미설치 시 사용자 데이터 삭제 방지 (100% 합격)**:
+   - `04_완전삭제.bat`의 `:NO_PY` 분기에서 위험했던 `rmdir /s /q "%USERPROFILE%\Desktop\URY"`가 완전히 제거되었습니다.
+   - `test_removed_features.py`의 `test_windows_uninstaller_does_not_delete_workspace_without_python` 회귀 테스트로 영구 보호를 보장하고 있습니다.
+3. **`build_exe_gui.py` 컴파일 실패 감지 (합격)**:
+   - `if res.returncode != 0:` 검증이 추가되어 PyInstaller 실패 시 오류 로그가 정상적으로 예외 처리됩니다.
+4. **`파이프라인_실행.bat` 폐기 안내 처리 (합격)**:
+   - 제외된 레거시 기능 실행을 막고 Studio 탭 사용을 안내하는 차단문구로 안전하게 교체되었습니다.
+
+---
+
+### 8.5 실제 Windows 기기에서 반드시 확인해야 할 수동 테스트 항목
+
+1. **High-DPI 디스플레이 스케일링 (125%, 150%) 확인**:
+   - `SetProcessDpiAwareness(2)` 호출 시 윈도우 노트북 배율(125%/150%)에서 폰트 및 라운드 카드가 흐려지지 않고 선명하게 렌더링되는지 확인.
+2. **Microsoft Edge 기반 Headless PDF 인쇄**:
+   - `find_chromium_browser()`가 `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`를 정상 감지하고, 실제 강의노트 Markdown을 고품질 PDF로 변환하는지 확인.
+3. **한글 사용자명 경로 (`%USERPROFILE%`) 시험**:
+   - 윈도우 계정명이 한글(예: `C:\Users\홍길동`)인 환경에서 `~/Desktop/URY` 워크스페이스 생성 및 파일 저장이 인코딩 에러 없이 동작하는지 확인.
+4. **Windows Defender SmartScreen 경고 확인**:
+   - 빌드된 `URY.exe` 최초 실행 시 나타나는 "Windows의 PC 보호" 창에서 `[추가 정보] → [실행]`을 눌렀을 때 정상 실행되는지 확인.
+
+---
+
+### 8.6 GPT(Codex) 다음 실행 권장 명령어
+
+```bash
+# 1. 작업 브랜치 확인
+cd /Users/ryuhwanjin/Documents/ChatGPT/URY_windows_phase3
+git branch --show-current
+git status --short
+
+# 2. 테스트 스위트 확인 (정적 검증)
+python3 -B -m unittest discover -s tests
+
+# 3. P0/P1 수정 후 diff 검증
+git diff --check
+
+# 4. GitHub Actions 워크플로우 테스트 트리거 (원격 푸시)
+git add URY_Windows/system/code/config_manager.py .github/workflows/windows-build.yml
+git commit -m "fix(windows): add frozen resource path and embed icon in CI build"
+git push origin windows/phase3
+```
