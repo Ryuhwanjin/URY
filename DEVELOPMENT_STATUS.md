@@ -6,12 +6,13 @@
 
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. `build_exe_gui.py`의 PyInstaller 실패 코드 확인과 GitHub Actions Windows runner 기반 `--onedir` artifact workflow 초안까지 반영.
+  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. `build_exe_gui.py`의 PyInstaller 실패 코드 확인과 GitHub Actions Windows runner 기반 `--onedir` artifact workflow 초안까지 반영. 브랜치 `windows/phase3`, 커밋 `0c83ec4`에 푸시 완료.
   - 바로 다음 명령: Windows runner에서 workflow 실행 후 `dist/URY/URY.exe`·`_internal`·실행 로그를 확인하고 Inno Setup 스크립트를 추가
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
 
+- Windows Phase 3 P0 착수 완료: 실행·환경검증·EXE 빌드·삭제·설정·레거시 파이프라인 배치 파일 6개를 UTF-8/v0.9.6으로 정리하고, Python 미설치 상태에서 사용자 데이터가 삭제되지 않도록 차단. PyInstaller 실패 코드 검증, GitHub Actions Windows `--onedir` artifact workflow, 정적 회귀 테스트 추가. 테스트 40개 통과(1개 환경 의존 제외), 공용 파일 16개 동일 확인, 커밋 `0c83ec4`
 - Antigravity 감사안 최종 결정 반영: GitHub Actions Windows 빌드 + PyInstaller `--onedir` + Inno Setup은 채택하고, SmartScreen 자동 우회·과도한 법적 보장 문구·잘못된 macOS 스크립트 경로는 반려. GPT(Codex)를 최종 구현·검증·병합·릴리즈 담당으로 확정. 문서 커밋 `fb7e28e`, `git diff --check` 통과
 - 협업 역할 확정: GPT(Codex)가 구현·테스트·병합·릴리즈의 최종 결정권을 갖고, Antigravity는 코드 더블체크·위험 지적·아이디어 제안만 수행하도록 `antigravity_gpt.md`·`GEMINI.md`·`IMPLEMENTATION_PLAN.md`에 반영
 - 배포 철학·법적 검토·코드 감사 보고서(`antigravity_gpt.md`) 작성 및 정책 문서화 완료: 인앱 결제/구독/광고를 일체 배제하는 100% 비영리 무료(Ad-free Freeware) 원칙, BYOK(사용자 개인 API Key) 기반 중앙 서버 0 byte 저장으로 저작권/통비법 법적 리스크 원천 차단, Windows 배포본 바이너리 부재 및 `04_완전삭제.bat` 데이터 삭제 위험 등 코드 감사 결과 정리, 버전 정책 안 B(Windows 실기기 검증본 `v0.9.6` 릴리즈 후 `v1.0.0` 승격) 및 모바일(iOS/Android) 빌드 제외 사유를 `antigravity_gpt.md`·`IMPLEMENTATION_PLAN.md`·`FEATURE_MATRIX.md`·`DEVELOPMENT_STATUS.md`에 반영. Windows 분리 개발 전략·인수인계 프롬프트 추가, 문서 커밋 `9e346ba`, `git diff --check` 통과
