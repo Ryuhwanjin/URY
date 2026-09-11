@@ -68,6 +68,7 @@ class RemovedFeaturesTest(unittest.TestCase):
         source = path.read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-latest", source)
         self.assertIn("--onedir", source)
+        self.assertIn("--icon URY_Windows/app_icon.ico", source)
         self.assertIn("actions/upload-artifact@v4", source)
         self.assertNotIn("action-gh-release", source)
 

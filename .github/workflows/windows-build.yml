@@ -36,6 +36,7 @@ jobs:
         run: |
           python -m PyInstaller --noconfirm --clean --onedir --windowed `
             --name URY `
+            --icon URY_Windows/app_icon.ico `
             --paths URY_Windows/system/code `
             --add-data "URY_Windows/system;system" `
             --add-data "assets;assets" `
