@@ -7,7 +7,8 @@
 1. `DEVELOPMENT_STATUS.md` — 직전 작업, 진행 중 항목, 바로 다음 단계
 2. `FEATURE_MATRIX.md` — 구현 완료·부분 구현·예정 기능과 제외 범위
 3. `IMPLEMENTATION_PLAN.md` — 승인 전 전체 개발 계획과 단계별 완료 조건
-4. `AGENTS.md` — 공통 작업·검증·커밋 규칙
+4. `antigravity_gpt.md` — Antigravity 감사 제안과 GPT(Codex) 최종 채택·반려 결정
+5. `AGENTS.md` — 공통 작업·검증·커밋 규칙
 
 ## 필수 작업 규칙
 

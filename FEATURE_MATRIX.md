@@ -71,8 +71,9 @@
 | macOS 후속 DMG v0.9.5 | 완료 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치의 DMG·macOS/Windows ZIP 공개 릴리즈 및 업데이트 인식 검증 완료 |
 | 모바일 앱(iOS/Android) | 제외 | Tkinter 데스크톱 아키텍처 및 로컬 파일 처리 특성상 모바일 빌드 제외 |
 | 인앱 광고 및 유료 결제 | 제외 | 순수 비영리 100% 무료(Ad-free Freeware) 정책에 따라 완전 제외 |
-| 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 100% 무료 배포, 중앙 서버 0 byte 저장으로 법적·비용 리스크 원천 차단 |
+| 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | PyInstaller 산출물명을 `URY.exe`로 정리, 최신 Windows 환경 빌드 검증 필요 |
+| Windows CI 빌드 | 예정 | GitHub Actions Windows runner에서 Python·PyInstaller·`--onedir` 산출물을 자동 생성하고 실제 Windows에서 검증 |
 | Windows 설치마법사·릴리스 | 예정 | Windows 장비에서 설치마법사 기반 설치·업데이트·삭제를 검증한 뒤 배포 (v0.9.6 검증본 거쳐 v1.0.0 승격) |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |
