@@ -6,13 +6,14 @@
 
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Git 상태 점검 완료(사용자 시간표 및 로컬 임시 파일 보존). Windows 빌드/설치/완전삭제 스크립트 및 실기기 배포 파이프라인 정합성 점검 시작.
+  - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Git 상태 점검 완료(사용자 시간표 및 로컬 임시 파일 보존). Windows 빌드/설치/완전삭제 스크립트 및 실기기 배포 파이프라인 정합성 점검 시작.
   - 바로 다음 명령: Windows 빌드 및 설치마법사/제거 스크립트 버전·경로·인코딩 점검 및 공용 코드 무결성 검증
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
 
 - v0.9.6 macOS 릴리즈 빌드 완료: Studio 주차·통합 적재 및 잘린 영문 응답 차단 패치를 반영해 앱 버전·업데이트 검사기·UI를 동기화. `URY.app` ad-hoc 서명·`GUI_SMOKE_OK`, DMG 마운트 및 버전 0.9.6 확인. `배포/URY_Engine_v0.9.6.dmg`(63.1MB), macOS ZIP(111.2MB), Windows ZIP(3.0MB) 생성, 개인 설정·강의자료 제외 검사 통과. 체크섬: DMG `26e306d42d255c33e02fd5c2a9a7de784a70d89b98310856ba177a5886888168`. 릴리즈 준비 커밋 `807a5ee`
+- v0.9.6 GitHub 정식 릴리즈 완료: `v0.9.6` 태그와 GitHub Release에 macOS DMG·macOS ZIP·Windows ZIP을 업로드하고 공개 Releases API에서 최신 릴리즈 및 3개 asset을 확인. [공개 릴리즈](https://github.com/Ryuhwanjin/URY/releases/tag/v0.9.6). 릴리즈 기준 커밋 `6ee7918`
 - Studio 주차·통합 적재 및 영문 부분 응답 보정 완료: `session_only` 생성도 날짜별 원본과 함께 `N주차`·`통합` Markdown을 갱신하고, 같은 날짜 재생성은 해당 섹션을 교체. 18토큰/200자처럼 4개 섹션이 없는 스트리밍 응답은 저장하지 않고 다음 모델로 전환하며, 영문 실패 시 잘린 파일 없이 한국어 결과를 유지. macOS·Windows 공용 코드 동기화, 테스트 38개 통과(1개 환경 의존 제외), 구문·diff 검증 완료. 커밋 `eac2b57`
 - Antigravity 감사안 최종 결정 반영: GitHub Actions Windows 빌드 + PyInstaller `--onedir` + Inno Setup은 채택하고, SmartScreen 자동 우회·과도한 법적 보장 문구·잘못된 macOS 스크립트 경로는 반려. GPT(Codex)를 최종 구현·검증·병합·릴리즈 담당으로 확정. 문서 커밋 `fb7e28e`, `git diff --check` 통과
 - 협업 역할 확정: GPT(Codex)가 구현·테스트·병합·릴리즈의 최종 결정권을 갖고, Antigravity는 코드 더블체크·위험 지적·아이디어 제안만 수행하도록 `antigravity_gpt.md`·`GEMINI.md`·`IMPLEMENTATION_PLAN.md`에 반영
