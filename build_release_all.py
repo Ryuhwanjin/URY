@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY v0.7.9 — macOS & Windows 듀얼 동시 배포 자동화 통합 빌더 (build_release_all.py)
-- macOS 패키지 (URY_macOS -> URY_Engine_v0.7.9_macOS.zip & .dmg)
-- Windows 패키지 (URY_Windows -> URY_Engine_v0.7.9_Windows.zip)
+🎓 URY v0.9.6 — macOS 패키지 및 Windows 소스 ZIP 빌더 (build_release_all.py)
+- macOS 패키지 (URY_macOS -> macOS ZIP & .dmg)
+- Windows 소스 패키지 (URY_Windows -> Windows ZIP)
+- Windows EXE/설치파일은 GitHub Actions windows-latest workflow에서 생성
 - 소스코드 및 문서 100% 최신 동기화 후 '배포/' 디렉터리에 배포본 일괄 출판
 """
 
@@ -17,7 +18,7 @@ MACOS_DIR = os.path.join(ROOT_DIR, "URY_macOS")
 WIN_DIR = os.path.join(ROOT_DIR, "URY_Windows")
 DIST_DIR = os.path.join(ROOT_DIR, "배포")
 
-VERSION = "v0.9.5"
+VERSION = "v0.9.6"
 PRIVATE_FILES = {".env", "settings.json", "processed_history.json", "시간표.json"}
 PRIVATE_DIRS = {
     "__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images",

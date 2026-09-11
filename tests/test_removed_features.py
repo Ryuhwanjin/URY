@@ -40,6 +40,30 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertFalse((mac_code / "build_exe_gui.py").exists())
         self.assertFalse((mac_code / "test_win_environment.py").exists())
 
+    def test_removed_launchers_and_runtime_quarantine_bypass_are_gone(self):
+        root = Path(__file__).parent.parent
+        for relative in (
+            "보안경고_자동해제.command",
+            "URY_Windows/system/보안경고_자동해제.command",
+            "URY_Windows/system/설정관리자.command",
+            "URY_Windows/system/파이프라인_실행.command",
+            "URY_macOS/파이프라인_실행.command",
+            "URY_macOS/system/파이프라인_실행.command",
+            "run_pipeline.py",
+            "URY_macOS/run_pipeline.py",
+            "URY_macOS/system/run_pipeline.py",
+            "URY_Windows/system/run_pipeline.py",
+            "app_icon.png",
+            "app_icon.ico",
+            "app_icon.icns",
+        ):
+            self.assertFalse((root / relative).exists(), relative)
+        for platform in ("URY_macOS", "URY_Windows"):
+            source = (root / platform / "system/code/config_manager.py").read_text(encoding="utf-8")
+            quarantine_fn = source[source.index("def fix_mac_quarantine"):source.index("\ncleanup_duplicate_mac_folders()", source.index("def fix_mac_quarantine"))]
+            self.assertNotIn("xattr", quarantine_fn)
+            self.assertNotIn("chmod", quarantine_fn)
+
     def test_windows_batch_launchers_use_utf8_and_current_version(self):
         win_dir = Path(__file__).parent.parent / "URY_Windows"
         for path in win_dir.glob("*.bat"):

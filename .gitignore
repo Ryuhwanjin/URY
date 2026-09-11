@@ -25,6 +25,7 @@ build/
 *.tar.gz
 *.dmg
 *.exe
+배포/
 URY_*_v*/
 URY_*_Release/
 URY_*_Standalone*/

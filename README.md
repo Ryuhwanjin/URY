@@ -21,19 +21,22 @@
 - 대학별 HEX 포인트컬러와 실행 창·Dock 아이콘 색상 적용
 - AI Notebook 계열 앱을 참고한 고정 사이드바와 자료 중심 Studio 흐름
 - GitHub Release 새 버전 확인, 설치 파일 다운로드 및 실행
-- Windows 설치마법사 기반 설치·업데이트·삭제 (개발 예정)
+- Windows 설치마법사 기반 설치·업데이트·삭제 (v0.9.6 CI artifact, 실기기 QA 예정)
 
 ## 저장소 구조
 
 ```text
 URY/
-├── URY_macOS/       macOS 실행 파일과 시스템 리소스
-├── URY_Windows/     Windows 실행 파일과 시스템 리소스
-├── tests/           회귀 테스트
-├── assets/          macOS/Windows 공용 앱 아이콘 원본
-├── build_release_all.py  안전한 릴리즈 ZIP 패키저
-├── build_dmg.py     macOS DMG 패키저
-└── README.md
+├── URY_macOS/               macOS 실행 스크립트와 시스템 리소스
+├── URY_Windows/             Windows 실행 스크립트와 시스템 리소스
+├── installer/               Inno Setup 설치마법사 스크립트
+├── assets/                  공용 앱 아이콘·User Guide 이미지
+├── tests/                   회귀 테스트
+├── .github/workflows/       Windows CI 빌드 workflow
+├── build_macos_app.py       macOS 앱 빌더
+├── build_dmg.py             macOS DMG 패키저
+├── build_release_all.py     macOS/소스 ZIP 패키저
+└── README.md                프로젝트 안내
 ```
 
 ## 개발 확인
@@ -59,7 +62,18 @@ Tk가 포함된 Python 3.13으로 실행합니다. 현재 개발 Mac에서는 �
 
 앱 빌드 후 `python3 build_dmg.py`로 DMG를 만들 수 있습니다.
 
-배포 전에는 [build_release_all.py](build_release_all.py)를 실행합니다. 이 빌더는 개인 설정과 강의자료를 패키지에 넣지 않으며 원본 폴더도 변경하지 않습니다.
+macOS 배포 전에는 [build_release_all.py](build_release_all.py)를 실행합니다. 이 빌더는 개인 설정과 강의자료를 패키지에 넣지 않으며 원본 폴더도 변경하지 않습니다.
+
+## Windows 빌드 및 설치
+
+Windows EXE와 설치파일은 macOS에서 직접 컴파일하지 않고 GitHub Actions의 `windows-latest` runner에서 생성합니다.
+
+- Workflow: `.github/workflows/windows-build.yml`
+- EXE 패키지: `URY_Windows_v0.9.6_onedir`
+- 설치파일: `URY_Windows_v0.9.6_setup`
+- 설치 스크립트: [installer/URY_v0.9.6.iss](installer/URY_v0.9.6.iss)
+
+설치 위치는 `%LOCALAPPDATA%\Programs\URY`이며, 사용자 학습 데이터는 `%USERPROFILE%\Desktop\URY`에 별도로 보존됩니다. 현재 설치파일은 Windows 실기기에서 설치·업데이트·삭제 회귀시험을 진행하기 전의 검증 후보입니다.
 
 ## 안내
 

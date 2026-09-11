@@ -5142,30 +5142,6 @@ Built for better learning, not shortcuts.""")
         ttk.Button(btn_row, text="저장", style="Primary.TButton", command=save_course).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(btn_row, text="취소", style="Secondary.TButton", command=dlg.destroy).pack(side=tk.RIGHT)
 
-    def run_pipeline_thread(self):
-        if messagebox.askyesno("파이프라인 구동", "전체 과목 마스터 파이프라인을 실행하시겠습니까?"):
-            t = threading.Thread(target=self.execute_pipeline_subprocess, daemon=True)
-            t.start()
-
-    def execute_pipeline_subprocess(self):
-        if getattr(sys, "frozen", False):
-            try:
-                import run_pipeline
-                run_pipeline.main()
-                self.root.after(0, lambda: messagebox.showinfo("완료", "파이프라인 구동이 완료되었습니다!"))
-            except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("오류", f"파이프라인 실행 중 오류: {e}"))
-            return
-        run_script = os.path.join(WORKSPACE_DIR, "run_pipeline.py")
-        if not os.path.exists(run_script):
-            run_script = os.path.join(WORKSPACE_DIR, "code", "run_pipeline.py")
-        cmd = [sys.executable, run_script]
-        try:
-            subprocess.check_call(cmd, cwd=WORKSPACE_DIR)
-            self.root.after(0, lambda: messagebox.showinfo("완료", "파이프라인 구동이 완료되었습니다!"))
-        except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("오류", f"파이프라인 실행 중 오류: {e}"))
-
     # =========================================================================
     # 탭 4: 🛠️ 고급 도구 (프롬프트 / 보관함 동기화 / 윤리 및 법적고지)
     # =========================================================================

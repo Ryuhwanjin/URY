@@ -474,14 +474,8 @@ def cleanup_duplicate_mac_folders():
         pass
 
 def fix_mac_quarantine():
-    """macOS 보안 차단(Quarantine) 격리 속성 해제 및 실행 권한 부여 & 중복 찌꺼기 폴더 청소"""
+    """Clean duplicate Finder artifacts; quarantine approval stays in macOS Settings."""
     cleanup_duplicate_mac_folders()
-    if sys.platform == "darwin":
-        try:
-            subprocess.run(f"xattr -cr '{WORKSPACE_DIR}' 2>/dev/null", shell=True)
-            subprocess.run(f"chmod +x '{WORKSPACE_DIR}'/*.command '{WORKSPACE_DIR}'/code/*.py 2>/dev/null", shell=True)
-        except Exception:
-            pass
 
 cleanup_duplicate_mac_folders()
 

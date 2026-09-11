@@ -6,9 +6,9 @@
 
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. `build_exe_gui.py`의 PyInstaller 실패 코드 확인과 GitHub Actions Windows runner 기반 `--onedir` artifact workflow에 Windows 전용 아이콘 지정까지 반영했다. 브랜치 `windows/phase3`, 커밋 `13606a6`에 푸시했고, 해당 runner 빌드는 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~10장에 기록했다.
-  - 현재 상태: 성공한 Windows artifact의 `_internal/system` 리소스가 frozen 실행에서 탐색되도록 `config_manager.find_resource_dir()`를 공용 macOS·Windows 코드에 추가했고, Settings·강의노트·모의시험 프롬프트가 번들 리소스를 사용하도록 연결했다. CI Verify 단계에 아이콘 파일과 한국어 프롬프트 포함 검사도 추가했다. 새 runner에서 Build·Verify·ZIP·Inno Setup·두 artifact 업로드가 모두 성공했다. 실행 ID `34548574218`.
-  - 바로 다음 명령: `URY_Windows_v0.9.6_setup` artifact를 실제 Windows에서 설치하고, 업데이트·삭제·사용자 워크스페이스 보존 회귀시험을 진행
+  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
+  - 현재 상태: 참조가 없는 루트 아이콘 3개, 배포 제외 보안 우회 스크립트, 수동 전체 파이프라인 런처·wrapper를 제거했다. 런타임 quarantine 우회도 제거하고, README·macOS DMG·릴리즈 빌드 안내를 현재 배포 구조에 맞췄다.
+  - 바로 다음 명령: 정리 커밋을 푸시한 뒤 Windows 실기기 설치 QA로 전환
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
@@ -19,6 +19,7 @@
 - Antigravity 최종 동의 의견 기록: 9장 판정과 CI 아이콘 → runner artifact → 실기기 QA → Inno Setup 순서를 검토하고 동의한 내용을 `antigravity_gpt.md` 10장에 기록
 - Windows CI 아이콘·frozen 리소스 보강: PyInstaller workflow에 `URY_Windows/app_icon.ico`와 번들 프롬프트 검사를 지정하고, 공용 리소스 탐색기와 회귀 테스트를 추가. 테스트 42개 통과(1개 환경 의존 제외), Windows 공용 Python 파일 17개 중 플랫폼 전용 `uninstall_gui.py`를 제외한 16개 동일 확인, 커밋 예정
 - Windows runner artifact 검증 완료: `13606a6` 기준 `URY.exe` 빌드 성공, `0fd46d0` 기준 아이콘·번들 프롬프트 Verify·ZIP artifact 성공. `f094eff` 기준 Inno Setup 설치 스크립트(`installer/URY_v0.9.6.iss`)와 `URY_Windows_v0.9.6_setup`(약 40.5MB)·`URY_Windows_v0.9.6_onedir`(약 53.4MB) artifact 생성 성공. 실제 설치 QA 대기
+- 저장소 구조 정리 완료: 미참조 아이콘·보안 우회 스크립트·수동 전체 파이프라인 런처와 dead wrapper를 제거하고, macOS launcher의 자동 quarantine 해제를 없앴다. README·DMG/릴리즈 빌드 안내를 갱신했으며 전체 테스트 44개 통과(1개 환경 의존 제외), 커밋 예정
 - Antigravity 감사안 최종 결정 반영: GitHub Actions Windows 빌드 + PyInstaller `--onedir` + Inno Setup은 채택하고, SmartScreen 자동 우회·과도한 법적 보장 문구·잘못된 macOS 스크립트 경로는 반려. GPT(Codex)를 최종 구현·검증·병합·릴리즈 담당으로 확정. 문서 커밋 `fb7e28e`, `git diff --check` 통과
 - 협업 역할 확정: GPT(Codex)가 구현·테스트·병합·릴리즈의 최종 결정권을 갖고, Antigravity는 코드 더블체크·위험 지적·아이디어 제안만 수행하도록 `antigravity_gpt.md`·`GEMINI.md`·`IMPLEMENTATION_PLAN.md`에 반영
 - 배포 철학·법적 검토·코드 감사 보고서(`antigravity_gpt.md`) 작성 및 정책 문서화 완료: 인앱 결제/구독/광고를 일체 배제하는 100% 비영리 무료(Ad-free Freeware) 원칙, BYOK(사용자 개인 API Key) 기반 중앙 서버 0 byte 저장으로 저작권/통비법 법적 리스크 원천 차단, Windows 배포본 바이너리 부재 및 `04_완전삭제.bat` 데이터 삭제 위험 등 코드 감사 결과 정리, 버전 정책 안 B(Windows 실기기 검증본 `v0.9.6` 릴리즈 후 `v1.0.0` 승격) 및 모바일(iOS/Android) 빌드 제외 사유를 `antigravity_gpt.md`·`IMPLEMENTATION_PLAN.md`·`FEATURE_MATRIX.md`·`DEVELOPMENT_STATUS.md`에 반영. Windows 분리 개발 전략·인수인계 프롬프트 추가, 문서 커밋 `9e346ba`, `git diff --check` 통과
