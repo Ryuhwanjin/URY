@@ -34,6 +34,7 @@ jobs:
       - name: Build URY onedir bundle
         shell: pwsh
         run: |
+          if (-not (Test-Path "URY_Windows/app_icon.ico")) { throw "Missing URY_Windows/app_icon.ico" }
           python -m PyInstaller --noconfirm --clean --onedir --windowed `
             --name URY `
             --icon URY_Windows/app_icon.ico `
@@ -60,6 +61,9 @@ jobs:
           $exe = "dist/URY/URY.exe"
           if (-not (Test-Path $exe)) { throw "Missing $exe" }
           if (-not (Test-Path "dist/URY/_internal")) { throw "Missing PyInstaller _internal directory" }
+          $prompt = Get-ChildItem -Path "dist/URY" -Recurse -File -Filter "강의노트_한국어_프롬프트.txt" | Select-Object -First 1
+          if (-not $prompt) { throw "Missing bundled lecture-note prompt" }
+          Write-Host "Bundled prompt: $($prompt.FullName)"
           Get-Item $exe
 
       - name: Package build artifact

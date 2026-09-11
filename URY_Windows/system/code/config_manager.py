@@ -111,6 +111,27 @@ def register_history_ledger(fingerprint, course_name, date_str, week_session, pa
     except Exception:
         pass
 
+def _frozen_resource_roots():
+    """Return bundled resource roots for macOS app and Windows PyInstaller builds."""
+    if not getattr(sys, "frozen", False):
+        return []
+    app_dir = os.path.dirname(os.path.abspath(sys.executable))
+    roots = []
+    meipass = getattr(sys, "_MEIPASS", "")
+    if meipass:
+        roots.extend((os.path.join(meipass, "system"), meipass))
+    roots.extend((
+        os.path.join(app_dir, "_internal", "system"),
+        os.path.join(app_dir, "_internal"),
+        os.path.join(app_dir, "system"),
+        app_dir,
+        os.path.abspath(os.path.join(app_dir, "../Resources/system")),
+        os.path.abspath(os.path.join(app_dir, "../Resources")),
+        os.path.abspath(os.path.join(app_dir, "../Frameworks/system")),
+        os.path.abspath(os.path.join(app_dir, "../Frameworks")),
+    ))
+    return list(dict.fromkeys(roots))
+
 def find_config_file(filename):
     p1 = os.path.join(WORKSPACE_DIR, "system", filename)
     if os.path.exists(p1):
@@ -118,13 +139,23 @@ def find_config_file(filename):
     p2 = os.path.join(WORKSPACE_DIR, filename)
     if os.path.exists(p2):
         return p2
-    if getattr(sys, "frozen", False):
-        app_dir = os.path.dirname(os.path.abspath(sys.executable))
-        for sub in ("../Resources/system", "../Frameworks/system", "../Resources", "../Frameworks"):
-            res_p = os.path.abspath(os.path.join(app_dir, sub, filename))
-            if os.path.exists(res_p):
-                return res_p
+    for root in _frozen_resource_roots():
+        res_p = os.path.join(root, filename)
+        if os.path.exists(res_p):
+            return res_p
     return p1
+
+def find_resource_dir(dirname):
+    """Resolve a user-customizable resource directory, then packaged resources."""
+    candidates = [
+        os.path.join(WORKSPACE_DIR, "system", dirname),
+        os.path.join(WORKSPACE_DIR, dirname),
+    ]
+    candidates.extend(os.path.join(root, dirname) for root in _frozen_resource_roots())
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return candidate
+    return candidates[0]
 
 SETTINGS_PATH = find_config_file("settings.json")
 DEFAULT_SETTINGS_PATH = find_config_file("settings.default.json")

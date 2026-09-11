@@ -243,9 +243,7 @@ ensure_requirements.check_and_install_dependencies()
 import config_manager
 WORKSPACE_DIR = config_manager.WORKSPACE_DIR
 
-PROMPTS_DIR = os.path.join(WORKSPACE_DIR, "system", "prompts")
-if not os.path.exists(PROMPTS_DIR):
-    PROMPTS_DIR = os.path.join(WORKSPACE_DIR, "prompts")
+PROMPTS_DIR = config_manager.find_resource_dir("prompts")
 
 LANG_OPTIONS = [
     "국문 + 영문 모두 생성 (권장)",

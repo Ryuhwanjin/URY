@@ -399,9 +399,7 @@ def generate_lecture_note(course_info, file_uri, target_date, week_num, is_engli
     lang_name = "English" if is_english else "Korean"
     print(f"[{course_info['name']} - {date_str}] Gemini 강의노트 생성 중 ({lang_name} 버전)...")
 
-    prompts_dir = os.path.join(WORKSPACE_DIR, "system", "prompts")
-    if not os.path.exists(prompts_dir):
-        prompts_dir = os.path.join(WORKSPACE_DIR, "prompts")
+    prompts_dir = config_manager.find_resource_dir("prompts")
     custom_prompt_file = os.path.join(prompts_dir, "강의노트_영어_프롬프트.txt" if is_english else "강의노트_한국어_프롬프트.txt")
     custom_prompt_loaded = False
 

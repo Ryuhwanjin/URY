@@ -63,12 +63,31 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertIn("if res.returncode != 0:", source)
         self.assertIn("PyInstaller 컴파일 실패", source)
 
+    def test_frozen_resource_resolution_is_shared(self):
+        root = Path(__file__).parent.parent
+        sources = []
+        for platform in ("URY_macOS", "URY_Windows"):
+            source = (root / platform / "system/code/config_manager.py").read_text(encoding="utf-8")
+            sources.append(source)
+            self.assertIn('getattr(sys, "_MEIPASS", "")', source)
+            self.assertIn('os.path.join(app_dir, "_internal", "system")', source)
+            self.assertIn("def find_resource_dir(dirname):", source)
+        self.assertEqual(sources[0], sources[1])
+
+    def test_prompt_consumers_use_shared_resource_resolver(self):
+        root = Path(__file__).parent.parent
+        for platform in ("URY_macOS", "URY_Windows"):
+            for name in ("settings_gui.py", "process_all_lectures.py", "generate_mock_exams.py"):
+                source = (root / platform / "system/code" / name).read_text(encoding="utf-8")
+                self.assertIn('config_manager.find_resource_dir("prompts")', source)
+
     def test_windows_ci_builds_on_windows_and_uploads_artifact_only(self):
         path = Path(__file__).parent.parent / ".github/workflows/windows-build.yml"
         source = path.read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-latest", source)
         self.assertIn("--onedir", source)
         self.assertIn("--icon URY_Windows/app_icon.ico", source)
+        self.assertIn('강의노트_한국어_프롬프트.txt', source)
         self.assertIn("actions/upload-artifact@v4", source)
         self.assertNotIn("action-gh-release", source)
 
