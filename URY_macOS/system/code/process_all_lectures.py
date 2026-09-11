@@ -99,6 +99,14 @@ def stream_gemini_response(request, timeout=240, progress_fn=None):
     return text, usage
 
 
+def _is_complete_lecture_note(text):
+    """부분 스트리밍 응답을 파일로 저장하지 않도록 최소 형식을 확인한다."""
+    if not isinstance(text, str) or len(text.strip()) < 1000:
+        return False
+    required_sections = ("## 📌 1.", "## 💡 2.", "## 🎯 3.", "## 📝 4.")
+    return all(section in text for section in required_sections)
+
+
 def _append_studio_log(message: str) -> None:
     """Studio 실행 로그를 디스크에 남긴다(API Key와 무관한 상태 메시지만 기록)."""
     try:
@@ -624,6 +632,31 @@ The following content was ALREADY synthesized in the earlier session of Week {we
 
     raise RuntimeError("모든 Gemini 모델 요청에 실패했습니다.")
 
+def _replace_note_section(content, new_note_content, date_str):
+    """같은 날짜의 기존 주차/통합 섹션을 새 결과로 교체한다."""
+    if not date_str or not content or not new_note_content:
+        return None
+    lines = content.splitlines(keepends=True)
+    start = None
+    for index, line in enumerate(lines):
+        if date_str in line and line.startswith("# "):
+            start = index
+            break
+    if start is None:
+        return None
+
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if lines[index].startswith("# "):
+            end = index
+            break
+
+    prefix = "".join(lines[:start]).rstrip()
+    suffix = "".join(lines[end:]).lstrip()
+    parts = [prefix, new_note_content.strip(), suffix]
+    return "\n\n".join(part for part in parts if part) + "\n"
+
+
 def append_to_single_note_file(note_path, new_note_content, date_str, week_num, is_english=False, is_combined=True, config=None, source_files=None):
     if not os.path.exists(note_path):
         # 파일이 없을 경우 초기 헤더 작성
@@ -650,6 +683,14 @@ def append_to_single_note_file(note_path, new_note_content, date_str, week_num, 
     else:
         with open(note_path, "r", encoding="utf-8") as f:
             content = f.read()
+
+    # 같은 날짜의 기존 섹션은 재생성 결과로 교체하여 중복을 막는다.
+    replaced_content = _replace_note_section(content, new_note_content, date_str)
+    if replaced_content is not None:
+        with open(note_path, "w", encoding="utf-8") as f:
+            f.write(replaced_content)
+        print(f"[{os.path.basename(note_path)}] {date_str} 강의노트 교체 저장 완료!")
+        return
 
     # 이미 동일 음성 및 내용이 완제품으로 존재할 경우 스킵
     if (source_files and source_files.get("audio") and source_files["audio"] in content) and len(content) > 1000:
@@ -759,7 +800,26 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
                 pass
         append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
         hide_file_os_agnostic(user_w_path)
-        return [user_w_path]
+
+        # Studio 날짜별 원본은 유지하되, 같은 주차와 전체 통합본도 즉시 갱신한다.
+        if not is_english:
+            c_name = f"{config['cname_prefix']}_통합강의노트.md"
+            w_name = f"{config['cname_prefix']}_{week_num}주차_강의노트.md"
+        else:
+            c_name = f"{config['en_prefix']}_Combined_Lecture_Notes.md"
+            w_name = f"{config['en_prefix']}_Week{week_num}_Lecture_Notes.md"
+
+        c_path_cache = os.path.join(cache_c, c_name)
+        w_path_cache = os.path.join(cache_c, w_name)
+        user_w_aggregate = os.path.join(user_week_dir, f".{w_name}")
+        user_c_aggregate = os.path.join(user_comb_dir, f".{c_name}")
+        append_to_single_note_file(w_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        append_to_single_note_file(c_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+        append_to_single_note_file(user_w_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        append_to_single_note_file(user_c_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+        for aggregate_path in (user_w_aggregate, user_c_aggregate):
+            hide_file_os_agnostic(aggregate_path)
+        return [user_w_path, w_path_cache, c_path_cache, user_w_aggregate, user_c_aggregate]
 
     if not is_english:
         c_name = f"{config['cname_prefix']}_통합강의노트.md"
@@ -1146,6 +1206,13 @@ def generate_custom_lecture_note(cname, audio_path=None, slide_paths=None, date_
                     finally:
                         wait_stop.set()
                         ticker.join(timeout=1)
+                    if not _is_complete_lecture_note(note_text):
+                        output_tokens = (usage or {}).get("candidatesTokenCount", 0)
+                        log(
+                            f"  ⚠️ [{model}] 불완전한 응답({len(note_text):,}자 / {output_tokens:,}토큰)은 저장하지 않고 다음 모델로 전환합니다.",
+                            step=2,
+                        )
+                        continue
                     if usage:
                         log(
                             "  📊 토큰 사용량: "
@@ -1347,6 +1414,23 @@ Tone: Professional academic publication tone."""
     user_notes_dir = os.path.join(cdir, "강의노트")
     os.makedirs(user_notes_dir, exist_ok=True)
 
+    def remove_incomplete_english_output():
+        """이전 실행에서 남은 잘린 영문 Markdown/PDF만 정리한다."""
+        name = f"{course_cfg['en_prefix']}_{actual_date_str}_Selected_Materials_Lecture_Notes"
+        md_path = os.path.join(user_notes_dir, f"{week_num}주차", f".{name}.md")
+        if not os.path.exists(md_path):
+            return
+        try:
+            with open(md_path, "r", encoding="utf-8", errors="ignore") as old_file:
+                if _is_complete_lecture_note(old_file.read()):
+                    return
+            for stale_path in (md_path, os.path.splitext(md_path)[0] + ".pdf"):
+                if os.path.exists(stale_path):
+                    os.remove(stale_path)
+            log("  ℹ️ 이전 실행의 불완전한 영문 파일을 정리했습니다.", step=2)
+        except OSError:
+            pass
+
     # 3. 마크다운 생성 및 저장 (한국어 마스터 노트 1차 생성 -> 1:1 완벽 번역으로 영문 노트 생성하여 한/영 100% 대칭 보장)
     if need_ko:
         check_cancel()
@@ -1365,10 +1449,12 @@ Tone: Professional academic publication tone."""
         check_cancel()
         en_eta = 40 if (has_audio and need_ko) else 25
         log("\n[Step 2/4] 🧠 Gemini AI 영문 강의노트 1:1 학술 번역 및 조판 중...", step=2, eta=en_eta)
+        remove_incomplete_english_output()
         
         # 한국어 마스터 노트를 바탕으로 1:1 완벽 대칭 영문 번역 프롬프트 구성
-        if note_ko:
-            prompt_en = f"""You are a senior academic translator.
+        try:
+            if note_ko:
+                prompt_en = f"""You are a senior academic translator.
 Translate the following Korean lecture note into publication-grade academic English for [{cname}].
 
 [STRICT TRANSLATION & LAYOUT DIRECTIVES]
@@ -1382,17 +1468,26 @@ Translate the following Korean lecture note into publication-grade academic Engl
 {note_ko}
 --------------------------------------------------------------------------------
 """
-            note_en = call_gemini_with_parts([], prompt_en)
-        else:
-            prompt_en = build_custom_prompt(is_english=True)
-            note_en = call_gemini_with_parts([], prompt_en, use_uploaded_materials=True)
+                note_en = call_gemini_with_parts([], prompt_en)
+            else:
+                prompt_en = build_custom_prompt(is_english=True)
+                note_en = call_gemini_with_parts([], prompt_en, use_uploaded_materials=True)
+        except RuntimeError as exc:
+            if "사용자에 의해" in str(exc):
+                raise
+            if note_ko:
+                log(f"  ⚠️ 영문 강의노트 생성 실패: {exc} (잘린 파일은 저장하지 않고 한국어 결과만 유지)", step=2)
+                note_en = None
+            else:
+                raise
 
-        check_cancel()
-        saved = save_to_markdown_cache(course_cfg, note_en, actual_date_str, week_num, is_english=True, source_files=source_files_dict, session_only=True)
-        if saved:
-            all_saved_mds.extend(saved)
-        last_content = note_en
-        log("  ✅ 영문 강의노트 적재 완료 (1:1 완벽 대칭 & ASCII/수식 버그 원천 소멸)", step=2, eta=10)
+        if note_en:
+            check_cancel()
+            saved = save_to_markdown_cache(course_cfg, note_en, actual_date_str, week_num, is_english=True, source_files=source_files_dict, session_only=True)
+            if saved:
+                all_saved_mds.extend(saved)
+            last_content = note_en
+            log("  ✅ 영문 강의노트 적재 완료 (1:1 완벽 대칭 & ASCII/수식 버그 원천 소멸)", step=2, eta=10)
 
 
 
