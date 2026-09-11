@@ -1,0 +1,72 @@
+name: Windows build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, windows/phase3]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            URY_Windows/system/requirements.txt
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r URY_Windows/system/requirements.txt pyinstaller pillow python-pptx python-docx
+
+      - name: Build URY onedir bundle
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onedir --windowed `
+            --name URY `
+            --paths URY_Windows/system/code `
+            --add-data "URY_Windows/system;system" `
+            --add-data "assets;assets" `
+            --hidden-import audio_recorder `
+            --hidden-import config_manager `
+            --hidden-import doc_parser `
+            --hidden-import generate_cheatsheet `
+            --hidden-import generate_master_bible `
+            --hidden-import generate_mock_exams `
+            --hidden-import generate_pdfs `
+            --hidden-import generate_roadmap `
+            --hidden-import lecture_tutor `
+            --hidden-import pdf_viewer `
+            --hidden-import process_all_lectures `
+            --hidden-import update_checker `
+            URY_Windows/system/code/settings_gui.py
+
+      - name: Verify bundle
+        shell: pwsh
+        run: |
+          $exe = "dist/URY/URY.exe"
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          if (-not (Test-Path "dist/URY/_internal")) { throw "Missing PyInstaller _internal directory" }
+          Get-Item $exe
+
+      - name: Package build artifact
+        shell: pwsh
+        run: Compress-Archive -Path dist/URY -DestinationPath URY_Windows_v0.9.6_onedir.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: URY_Windows_v0.9.6_onedir
+          path: URY_Windows_v0.9.6_onedir.zip

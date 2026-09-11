@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY v0.7.7 - Windows 독립 실행 .EXE 커스텀 경로 자동 설치/빌드 GUI 도구 (build_exe_gui.py)
+🎓 URY v0.9.6 - Windows 독립 실행 .EXE 커스텀 경로 자동 설치/빌드 GUI 도구 (build_exe_gui.py)
 """
 import os
 import sys
@@ -69,6 +69,9 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
 
         res = subprocess.run(cmd, cwd=root_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
+        if res.returncode != 0:
+            raise RuntimeError(f"PyInstaller 컴파일 실패 (exit {res.returncode}):\n{res.stderr[-4000:]}")
+
         update_status_cb(80, f"[4/5] 지정하신 설치 위치로 프로그램 캡슐화 및 이식 중...")
         built_dist_dir = os.path.join(root_dir, "dist", "URY")
 
@@ -101,12 +104,12 @@ class ExeBuilderGUI:
             try:
                 import ctypes
                 ctypes.windll.shcore.SetProcessDpiAwareness(2)
-                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("URY.Engine.Studio.v063")
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("URY.Studio.v096")
             except Exception:
                 pass
 
         self.root = tk.Tk()
-        self.root.title("URY v0.7.7 — Windows Standalone .EXE Installer/Builder")
+        self.root.title("URY v0.9.6 — Windows Standalone .EXE Installer/Builder")
         self.root.geometry("600x350")
         self.root.minsize(580, 340)
         self.root.configure(bg="#181825")
@@ -138,7 +141,7 @@ class ExeBuilderGUI:
         header_card = tk.Frame(self.root, bg="#1e1e2e", bd=0, highlightthickness=1, highlightbackground="#313244")
         header_card.pack(fill=tk.X, padx=20, pady=(18, 10))
 
-        title_lbl = tk.Label(header_card, text="🚀 URY v0.7.7 - .EXE 커스텀 자동 설치/빌더", font=("Malgun Gothic", 12, "bold"), fg="#ffffff", bg="#1e1e2e")
+        title_lbl = tk.Label(header_card, text="🚀 URY v0.9.6 - .EXE 커스텀 자동 설치/빌더", font=("Malgun Gothic", 12, "bold"), fg="#ffffff", bg="#1e1e2e")
         title_lbl.pack(pady=(12, 4))
 
         sub_lbl = tk.Label(header_card, text="바탕화면 선택 시에도 _internal 폴더가 난잡하게 노출되지 않도록 전용 폴더로 자동 캡슐화됩니다.", font=("Malgun Gothic", 8), fg="#a6adc8", bg="#1e1e2e")

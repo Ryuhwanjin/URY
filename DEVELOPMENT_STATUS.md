@@ -6,8 +6,8 @@
 
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Git 상태 점검 완료(사용자 시간표 및 로컬 임시 파일 보존). Windows 빌드/설치/완전삭제 스크립트 및 실기기 배포 파이프라인 정합성 점검 시작.
-  - 바로 다음 명령: Windows 빌드 및 설치마법사/제거 스크립트 버전·경로·인코딩 점검 및 공용 코드 무결성 검증
+  - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. `build_exe_gui.py`의 PyInstaller 실패 코드 확인과 GitHub Actions Windows runner 기반 `--onedir` artifact workflow 초안까지 반영.
+  - 바로 다음 명령: Windows runner에서 workflow 실행 후 `dist/URY/URY.exe`·`_internal`·실행 로그를 확인하고 Inno Setup 스크립트를 추가
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료

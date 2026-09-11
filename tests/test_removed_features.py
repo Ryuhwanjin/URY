@@ -40,6 +40,37 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertFalse((mac_code / "build_exe_gui.py").exists())
         self.assertFalse((mac_code / "test_win_environment.py").exists())
 
+    def test_windows_batch_launchers_use_utf8_and_current_version(self):
+        win_dir = Path(__file__).parent.parent / "URY_Windows"
+        for path in win_dir.glob("*.bat"):
+            source = path.read_text(encoding="utf-8")
+            with self.subTest(path=path.name):
+                self.assertTrue(source.startswith("@echo off\n@chcp 65001 >nul\n"))
+                self.assertNotIn("v0.6.5", source)
+                self.assertNotIn("v0.7.7", source)
+
+    def test_windows_uninstaller_does_not_delete_workspace_without_python(self):
+        path = Path(__file__).parent.parent / "URY_Windows/04_완전삭제.bat"
+        source = path.read_text(encoding="utf-8")
+        no_python = source.split(":NO_PY", 1)[1]
+        no_python = no_python.split("exit /b 1", 1)[0]
+        self.assertNotIn("rmdir /s /q", no_python.lower())
+        self.assertIn("No user data was deleted.", no_python)
+
+    def test_windows_builder_checks_pyinstaller_exit_code(self):
+        path = Path(__file__).parent.parent / "URY_Windows/system/code/build_exe_gui.py"
+        source = path.read_text(encoding="utf-8")
+        self.assertIn("if res.returncode != 0:", source)
+        self.assertIn("PyInstaller 컴파일 실패", source)
+
+    def test_windows_ci_builds_on_windows_and_uploads_artifact_only(self):
+        path = Path(__file__).parent.parent / ".github/workflows/windows-build.yml"
+        source = path.read_text(encoding="utf-8")
+        self.assertIn("runs-on: windows-latest", source)
+        self.assertIn("--onedir", source)
+        self.assertIn("actions/upload-artifact@v4", source)
+        self.assertNotIn("action-gh-release", source)
+
 
 if __name__ == "__main__":
     unittest.main()
