@@ -396,3 +396,118 @@ Antigravity는 GPT(Codex)의 9절 판정 및 실행 순서를 면밀히 검토�
 
 - **현재 브랜치 작업 준비 완료**: Codex의 실행 계획(CI 아이콘 추가 → Windows runner 실행 및 artifact 확인 → 실기기 검증)에 따라 다음 작업을 진행할 준비가 모두 완료되었습니다.
 - **코드 미수정 원칙 준수**: 본 문서는 상호 검토와 의사결정 기록을 위한 것이며, 실제 프로젝트 소스 코드 및 워크플로우 파일의 수정·커밋·푸시는 전적으로 GPT(Codex)가 수행합니다.
+
+---
+
+## 11. Windows Phase 3 Inno Setup 및 CI Artifact 검증 코드 리뷰 보고서
+
+**검토 대상**: `/Users/ryuhwanjin/Documents/ChatGPT/URY_windows_phase3` (Worktree)
+**검토 브랜치**: `windows/phase3` (`2406a4a`, 기준: `13606a6`)
+**작성 주체**: Antigravity (독립 더블체커 / 코드 미수정 리뷰 전담)
+**CI 빌드 실행 결과**: GitHub Actions Run ID `34548574218` (성공, setup ~40.5MB, onedir ~53.4MB)
+
+---
+
+### 11.1 즉시 수정 필요 (P0)
+
+**현재 발견된 P0(치명적 결함/데이터 유실/설치 차단) 이슈는 없습니다 (0건).**
+
+- **근거 및 검증 완료 사항**:
+  1. GitHub Actions `windows-latest` 환경에서 PyInstaller `--onedir` 빌드, 리소스 Verify, Inno Setup 6 컴파일, Artifact 업로드까지 단일 파이프라인으로 100% 정상 통과했습니다.
+  2. `config_manager._frozen_resource_roots()` 및 `find_resource_dir()`가 번들된 `_internal/system`과 `_MEIPASS`를 정확히 우선 순위로 탐색하도록 보강되어, 패키징된 바이너리(`URY.exe`)의 기본 프롬프트 및 설정 로딩 차단 문제가 해소되었습니다.
+  3. Inno Setup 스크립트(`installer/URY_v0.9.6.iss`)의 삭제 범위는 `{app}`(`%LOCALAPPDATA%\Programs\URY`)으로 철저히 격리되어 있어, 사용자의 `%USERPROFILE%\Desktop\URY` 학습 데이터는 설치·업데이트·완전 삭제 어떤 상황에서도 훼손되지 않습니다.
+
+---
+
+### 11.2 Windows 실기기 테스트 전 확인 (P1)
+
+#### 1) 바탕화면 바로가기와 사용자 워크스페이스 폴더의 명칭 중복 (UI/UX 혼선)
+- **대상 파일**: `installer/URY_v0.9.6.iss` (라인 37)
+- **현상 및 근거**:
+  - `Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\URY.exe"; Tasks: desktopicon`
+  - 위 설정에 따라 바탕화면에 `URY.lnk` 바로가기가 생성됩니다.
+  - 동시에 URY Engine 구동 시 기본 워크스페이스는 `%USERPROFILE%\Desktop\URY` 폴더로 자동 생성됩니다.
+  - Windows 파일 탐색기는 기본적으로 `.lnk` 확장자를 숨기므로, 학생 사용자의 바탕화면에 동일한 이름의 `URY`(실행 바로가기 아이콘)와 `URY`(학습자료 폴더) 2개가 나란히 놓이게 됩니다.
+- **영향 및 권고**:
+  - 파일 시스템상 충돌(에러)은 발생하지 않으나, 사용자가 프로그램을 실행하려다 폴더를 더블클릭하거나 그 반대의 UX 혼선이 생길 수 있습니다.
+  - 바로가기 명칭을 `URY Engine` 또는 `URY 실행` 등으로 명확히 구분하는 방안을 권장합니다. (*실기기 체감 확인 후 조정 가능*)
+
+#### 2) `settings_gui.py`의 아이콘 및 User Guide 리소스 경로 폴백 보강 점검
+- **대상 파일**: `URY_Windows/system/code/settings_gui.py` (라인 1159~1160, 4427~4428)
+- **현상 및 분석**:
+  - `settings_gui.py`에서는 아이콘 및 가이드 이미지를 찾을 때 `os.path.join(getattr(sys, "_MEIPASS", ""), "assets", ...)` 경로를 참조합니다.
+  - PyInstaller `--onedir` 모드에서 `sys._MEIPASS`는 `_internal`을 가리키므로 일반적인 경우 정상 로드되나, `config_manager.py`의 `_frozen_resource_roots()`처럼 `os.path.join(app_dir, "_internal", "assets")`에 대한 명시적 백업 탐색은 빠져 있습니다.
+- **영향 및 권고**:
+  - **[추측/확인필요]** Windows 실기기에서 `URY.exe` 실행 시 창 좌측 상단 아이콘과 `User Guide` 탭의 5개 페이지 스크린샷 이미지가 누락 없이 표시되는지 시각적으로 확인해야 합니다.
+
+#### 3) 한글 윈도우 계정명 환경에서 Microsoft Edge Headless PDF 출력 안정성
+- **대상 파일**: `URY_Windows/system/code/generate_pdfs.py` (라인 78~80, 861~877)
+- **현상 및 분석**:
+  - Windows 사용자 계정명이 한글(예: `C:\Users\홍길동`)인 경우, 임시 렌더링 경로(`%TEMP%`) 및 바탕화면 출력 경로에 한글/공백이 포함됩니다.
+  - Python 3.12의 `subprocess.run(list)`가 인자를 올바르게 전달하지만, Edge 브라우저의 `--print-to-pdf=<경로>` 플래그가 특정 윈도우 빌드에서 비-ASCII 경로를 처리할 때 예외를 발생시키지 않는지 실기기 검증이 필수적입니다.
+- **영향 및 권고**:
+  - **[추측/확인필요]** 한글 계정명 PC에서 Studio 강의노트 생성 후 실제 `~/Desktop/URY/.../*.pdf` 파일이 0바이트가 아닌 정상 출판 크기로 생성되는지 확인합니다.
+
+#### 4) Windows Defender SmartScreen 경고에 대한 사용자 안내 지침 동봉
+- **대상 파일**: 배포 안내 문서 및 GitHub Release 릴리즈 노트
+- **현상 및 분석**:
+  - 비영리 무료 프리웨어 특성상 고가의 EV/OV 코드서명 인증서를 적용하지 않으므로, 다운로드한 `URY_Setup_v0.9.6.exe` 실행 시 "Windows의 PC 보호 (인식할 수 없는 앱)" 팝업이 필연적으로 발생합니다.
+- **조치 방안**:
+  - 배포 시 학생들에게 `[추가 정보] → [실행]`을 누르면 정상 구동된다는 캡처 이미지 또는 명확한 텍스트 가이드를 제공해야 합니다.
+
+---
+
+### 11.3 선택 개선 (P2)
+
+#### 1) Inno Setup 설치 마법사 한국어 언어팩 지원
+- **대상 파일**: `installer/URY_v0.9.6.iss` (라인 26~27)
+- **현상**: 현재 `Name: "english"; MessagesFile: "compiler:Default.isl"`만 선언되어 있어 설치 창이 영문으로 뜹니다.
+- **개선안**:
+  ```iss
+  [Languages]
+  Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+  Name: "english"; MessagesFile: "compiler:Default.isl"
+  ```
+  위와 같이 한국어 언어팩을 추가하면 국내 대학생 사용자에게 보다 친숙한 한글 설치 마법사를 제공할 수 있습니다.
+
+#### 2) Inno Setup 고유 GUID `AppId` 부여 검토
+- **대상 파일**: `installer/URY_v0.9.6.iss` (라인 9)
+- **현상**: 현재 `AppId=URY`로 지정되어 있습니다.
+- **개선안**: 동작상 문제는 없으나 Inno Setup 표준 권장 규격인 중복 방지 GUID 형태(예: `AppId={{...}}`)를 적용하면 향후 다른 프로그램과의 잠재적 식별자 충돌을 원천 예방할 수 있습니다.
+
+#### 3) 구버전 잔여 파일 덮어쓰기 정리 (`[InstallDelete]` 옵션 검토)
+- **대상 파일**: `installer/URY_v0.9.6.iss`
+- **현상**: 향후 `v0.9.7` 등으로 업데이트 설치 시, 구버전의 폐기된 파일이나 구 DLL이 `{app}` 내부에 잔류할 가능성이 있습니다.
+- **개선안**: 향후 버전 업데이트 시 필요에 따라 `[InstallDelete]` 지시자를 통해 구버전 모듈을 안전하게 정리하도록 보강할 수 있습니다.
+
+---
+
+### 11.4 현재 상태에서 승인 가능한 부분 (합격 요소)
+
+1. **GitHub Actions Windows 완전 자동화 파이프라인 (100% 합격)**:
+   - Python 3.12 종속성 설치 → PyInstaller `--onedir` 빌드 → 번들 리소스 Verify → Inno Setup 6 ISCC 컴파일 → Artifact 분리 업로드(`setup`, `onedir`) 전 과정이 에러 없이 완벽히 동작함.
+2. **PyInstaller `--onedir` 및 아이콘 무결성 (100% 합격)**:
+   - `URY.exe` 실행 바이너리와 Inno Setup 설치 파일 모두에 URY 공식 아이콘(`app_icon.ico`)이 적용됨.
+3. **`_internal/system` 번들 리소스 및 프롬프트 로딩 체계 (100% 합격)**:
+   - `config_manager.find_resource_dir()`를 통해 사용자 커스텀 설정/프롬프트가 있으면 우선하고, 없으면 번들된 `_internal/system` 프롬프트를 정확히 폴백하도록 공용 코드 동기화 완료.
+4. **일반 사용자 권한 설치 및 UAC 회피 설계 (100% 합격)**:
+   - `PrivilegesRequired=lowest`와 `{localappdata}\Programs\URY`를 채택하여 학교 도서관, 연구실, 공용 PC 등 관리자 권한이 없는 환경에서도 원클릭 무중단 설치 지원.
+5. **사용자 학습 데이터의 영구적 안전성 보장 (100% 합격)**:
+   - Inno Setup uninstaller 및 `04_완전삭제.bat` 모두 프로그램 바이너리 디렉터리(`{app}`)만 정리하며, `%USERPROFILE%\Desktop\URY`에 저장된 강의자료, 음성, 시간표, 노트는 단 1바이트도 건드리지 않도록 격리 완료.
+
+---
+
+### 11.5 실제 Windows 기기에서 실행할 테스트 체크리스트 (QA Guide)
+
+| 번호 | 검증 항목 | 세부 테스트 내용 | 기대 결과 |
+| :---: | :--- | :--- | :--- |
+| **1** | **클린 환경 설치** | Python이 전혀 설치되지 않은 순정 Windows 10/11 PC에서 `URY_Setup_v0.9.6.exe` 실행 | UAC 관리자 권한 요구 없이 `%LOCALAPPDATA%\Programs\URY`에 원클릭 설치 완료 |
+| **2** | **SmartScreen 대응** | 다운로드 실행 시 "Windows의 PC 보호" 창 발생 확인 | `[추가 정보] → [실행]` 클릭 시 설치 마법사가 즉시 정상 진행됨 |
+| **3** | **바로가기 및 실행** | 설치 완료 후 시작 메뉴 및 바탕화면 바로가기에서 URY 실행 | `URY.exe` 프로세스가 뜨고 메인 설정/스튜디오 창이 정상 렌더링됨 |
+| **4** | **워크스페이스 자동 생성** | 최초 실행 직후 바탕화면 확인 | `%USERPROFILE%\Desktop\URY` 폴더와 하위 `system/` 기본 구조가 자동 생성됨 |
+| **5** | **High-DPI 렌더링** | 125%, 150% 배율 노트북 디스플레이에서 GUI 확인 | `SetProcessDpiAwareness(2)`에 의해 텍스트 및 라운드 버튼이 흐려지지 않고 선명하게 표시됨 |
+| **6** | **리소스 시각 확인** | 앱 좌측 상단 아이콘 및 User Guide 탭 확인 | 창 아이콘 정상 표시 및 User Guide의 5개 안내 스크린샷이 깨짐 없이 렌더링됨 |
+| **7** | **API 연결 테스트** | Settings 탭에서 Google Gemini API Key 입력 후 `연결 확인` 클릭 | `/v1beta/models` 실제 호출 후 녹색 "연결됨" 배지 정상 점등 |
+| **8** | **Edge PDF 발행 (한글 경로)** | 한글 윈도우 계정(`홍길동`)에서 강의자료/음성 입력 후 Studio 강의노트 생성 | MS Edge Headless가 정상 구동되어 고품질 PDF가 `~/Desktop/URY/...`에 저장됨 |
+| **9** | **업데이트 덮어쓰기** | URY가 실행 중인 상태에서 `URY_Setup_v0.9.6.exe` 재실행 | `CloseApplications=yes`에 의해 앱 종료 안내 후 파일 잠김 에러 없이 덮어쓰기 완료 |
+| **10** | **완전 삭제 무결성** | Windows 설정 "설치된 앱"에서 URY 제거 실행 | `{localappdata}\Programs\URY`는 완전 삭제되고, 바탕화면 `URY` 학습 데이터 폴더는 100% 보존됨 |
