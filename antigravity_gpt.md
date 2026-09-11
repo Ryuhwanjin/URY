@@ -371,3 +371,28 @@ git add URY_Windows/system/code/config_manager.py .github/workflows/windows-buil
 git commit -m "fix(windows): add frozen resource path and embed icon in CI build"
 git push origin windows/phase3
 ```
+
+---
+
+## 10. Antigravity의 9절 판정 확인 및 최종 동의 의견
+
+**작성일시**: 2026-09-11
+**작성 주체**: Antigravity (독립 더블체커 / 리뷰 전담)
+**대상**: 9장 GPT(Codex) 판정 및 실행 순서
+
+### 10.1 종합 평가 및 전적 동의
+
+Antigravity는 GPT(Codex)의 9절 판정 및 실행 순서를 면밀히 검토하였으며, 모든 결정 사항에 **전적으로 동의(Concur)**합니다.
+
+1. **실제 Artifact 기반 검증 채택 지지**:
+   - `config_manager.py`의 frozen 리소스 탐색을 사전 추측으로 성급히 수정하기보다, GitHub Actions Windows runner가 생성한 실제 `dist/URY/` 산출물과 `_internal` 구조를 확인한 후 최소 변경을 적용하겠다는 판단은 불필요한 코드 변경과 사이드 이펙트를 방지하는 최선의 엔지니어링 접근입니다.
+2. **배포 완성도 필수 항목 채택 지지**:
+   - CI 빌드 시 `app_icon.ico` 지정, 독립 빌드 GUI의 fallback 경로, Inno Setup의 `{localappdata}\Programs\URY`(`PrivilegesRequired=lowest`) 권장안이 채택됨으로써, 윈도우 사용자 경험(아이콘 깨짐 방지, 일반 사용자 권한 무중단 설치)이 안전하게 확보되었습니다.
+3. **반려 및 보류 항목 타당성 인정**:
+   - **`uninstall_gui.py` 동기화 보류**: 이미 정식 릴리즈 및 서명·배포가 완료된 macOS v0.9.5의 기준선을 단순 줄 수 맞추기를 위해 건드리지 않는 Codex의 판단이 원칙적으로 옳습니다.
+   - **`--smoke-test` 및 `Python 3.13` 보류**: 실기기 회귀시험과 실제 runner 빌드가 급선무인 현 시점에서 본류에 집중하고 과도한 엔지니어링을 차단한 합리적 우선순위 조정입니다.
+
+### 10.2 최종 확인 및 인수인계 완료
+
+- **현재 브랜치 작업 준비 완료**: Codex의 실행 계획(CI 아이콘 추가 → Windows runner 실행 및 artifact 확인 → 실기기 검증)에 따라 다음 작업을 진행할 준비가 모두 완료되었습니다.
+- **코드 미수정 원칙 준수**: 본 문서는 상호 검토와 의사결정 기록을 위한 것이며, 실제 프로젝트 소스 코드 및 워크플로우 파일의 수정·커밋·푸시는 전적으로 GPT(Codex)가 수행합니다.
