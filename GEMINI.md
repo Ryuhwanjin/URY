@@ -24,9 +24,9 @@
 
 ## 현재 즉시 확인할 사항
 
-- 최신 기준은 `git log -1 --oneline`과 세 문서의 마지막 갱신일로 확인한다. macOS v0.9.5 정식 릴리즈까지 완료되어 다음 주력 작업은 Windows Phase 3이다.
+- 최신 기준은 `git log -1 --oneline`과 세 문서의 마지막 갱신일로 확인한다. macOS v0.9.6 정식 릴리즈까지 완료되어 다음 주력 작업은 Windows Phase 3이다.
 - Studio 생성은 Gemini SSE 스트리밍, 최대 출력 8,192토큰, 대기 제한 240초를 사용하며, 음성 발화 범위 제한·동일 날짜 교체 저장·503/429 모델 fallback을 포함한다.
-- 최신 공개 릴리즈는 `https://github.com/Ryuhwanjin/URY/releases/tag/v0.9.5`이며 DMG·macOS ZIP·Windows ZIP 3개 asset과 업데이트 인식을 확인했다. v0.9.6은 Studio 주차·통합 적재 패치 릴리즈 준비 중이다.
+- 최신 공개 릴리즈는 `https://github.com/Ryuhwanjin/URY/releases/tag/v0.9.6`이며 DMG·macOS ZIP·Windows ZIP 3개 asset과 업데이트 인식을 확인했다.
 - Windows는 공용 코드 동기화까지 완료했지만 실기기 UI 회귀시험, 깨끗한 환경의 `URY.exe`, 설치마법사·업데이트·완전삭제 검증이 남아 있다.
 - 동일 자료 업로드 캐시와 실제 쿼터 장애 회귀시험은 Windows 안정화 후 진행할 후속 항목이다.
 
