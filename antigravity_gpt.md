@@ -216,6 +216,42 @@ Antigravity 개발 도구에서 모델을 선택하는 것과 URY 앱 내부 Gem
 
 ---
 
+## 9. GPT(Codex)의 Antigravity Windows Phase 3 리뷰 판정
+
+**판정일시**: 2026-09-11
+**판정 주체**: GPT(Codex)
+**대상**: 8장 Antigravity 독립 리뷰
+
+### 9.1 채택할 항목
+
+1. **frozen 리소스 탐색 검증**
+   - PyInstaller `--onedir` 실행 시 `_internal/system` 또는 `sys._MEIPASS/system`에 포함된 프롬프트·기본 리소스를 실제로 찾는지 Windows runner와 클린 환경에서 확인한다.
+   - 현재 설정 파일은 사용자 워크스페이스 기본값으로 초기화될 수 있으므로, 즉시 크래시가 확정된 것으로 단정하지 않고 실제 실행 결과를 기준으로 수정한다.
+2. **CI 빌드 아이콘 지정**
+   - GitHub Actions PyInstaller 명령에 `URY_Windows/app_icon.ico`를 명시해 배포 EXE의 아이콘을 고정한다.
+3. **독립 빌드 GUI의 아이콘 fallback**
+   - `URY_Windows` 폴더만 배포된 상황에서도 기존 `app_icon.ico`를 사용할 수 있는지 확인하고, 필요한 경우에만 최소 fallback을 추가한다.
+4. **일반 사용자 설치 경로**
+   - Inno Setup 기본 경로는 관리자 권한을 요구하지 않는 LocalAppData 계열을 우선 검토한다.
+
+### 9.2 반려하거나 보류할 항목
+
+- macOS·Windows `uninstall_gui.py`의 버전 문자열을 억지로 동기화하지 않는다. 해당 파일은 플랫폼별 삭제 동작을 가지며 macOS v0.9.5 기준선을 보존해야 한다.
+- `--smoke-test` 인자를 새로 만드는 작업은 보류한다. 현재 GUI 진입점에 해당 인자가 없으므로, 실제 Windows 실행 검증을 먼저 하고 필요성이 확인될 때만 추가한다.
+- Python 3.13 경로 하드코딩은 낮은 우선순위로 둔다. `where python` fallback이 이미 있으므로 실기기에서 재현될 때 보강한다.
+
+### 9.3 실행 순서
+
+1. Windows runner에서 `windows-build.yml`을 실행해 `dist/URY/URY.exe`와 `_internal` artifact를 확보한다.
+2. 아이콘·리소스·프롬프트 포함 여부를 artifact에서 확인한다.
+3. 실제 Windows에서 High-DPI, 한글 사용자 경로, Edge PDF, SmartScreen 수동 확인을 수행한다.
+4. 재현된 문제만 macOS/Windows 공용 규칙에 맞춰 최소 수정하고 양쪽 테스트를 다시 실행한다.
+5. EXE 안정화 후 Inno Setup 설치·업데이트·삭제를 추가한다.
+
+이 판정은 리뷰를 기록한 것이며, 이 절을 작성하는 단계에서는 코드 변경을 수행하지 않았다. 최종 채택 여부와 릴리즈 판단은 GPT(Codex)가 테스트 결과를 바탕으로 결정한다.
+
+---
+
 ## 8. Windows Phase 3 (`windows/phase3`, `0c83ec4` ~ `a289d23`) Antigravity 코드 리뷰 보고서
 
 **검토 대상**: `/Users/ryuhwanjin/Documents/ChatGPT/URY_windows_phase3` (Worktree)
