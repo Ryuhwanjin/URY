@@ -52,6 +52,44 @@ class UpdateDownloadTest(unittest.TestCase):
             expected = "URY_Engine_v0.9.6.dmg" if platform == "URY_macOS" else "URY_Setup_v0.9.6.exe"
             self.assertEqual(selected["name"], expected)
 
+    def test_update_check_compares_matching_platform_asset_version(self):
+        release = {
+            "tag_name": "v0.9.7",
+            "html_url": "https://example.com/release",
+            "assets": [
+                {"name": "URY_Engine_v0.9.6.dmg"},
+                {"name": "URY_Setup_v0.9.7.exe"},
+            ],
+        }
+        for platform_name in ("URY_macOS", "URY_Windows"):
+            path = Path(__file__).parent.parent / platform_name / "system/code/update_checker.py"
+            namespace = {"__name__": "update_checker_test"}
+            exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
+            system = "Darwin" if platform_name == "URY_macOS" else "Windows"
+            with patch.object(namespace["platform"], "system", return_value=system), \
+                    patch("urllib.request.urlopen", return_value=Response(json.dumps(release).encode())):
+                version, url = namespace["get_latest_release"]()
+            expected = "v0.9.6" if platform_name == "URY_macOS" else "v0.9.7"
+            self.assertEqual(version, expected)
+            self.assertEqual(url, release["html_url"])
+            self.assertEqual(namespace["is_newer"](version), platform_name == "URY_Windows")
+
+    def test_update_check_without_matching_platform_asset_is_not_newer(self):
+        release = {
+            "tag_name": "v0.9.7",
+            "assets": [{"name": "URY_Engine_v0.9.7_linux.AppImage"}],
+        }
+        for platform_name in ("URY_macOS", "URY_Windows"):
+            path = Path(__file__).parent.parent / platform_name / "system/code/update_checker.py"
+            namespace = {"__name__": "update_checker_test"}
+            exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
+            system = "Darwin" if platform_name == "URY_macOS" else "Windows"
+            with patch.object(namespace["platform"], "system", return_value=system), \
+                    patch("urllib.request.urlopen", return_value=Response(json.dumps(release).encode())):
+                version, _ = namespace["get_latest_release"]()
+            self.assertEqual(version, "")
+            self.assertFalse(namespace["is_newer"](version))
+
 
 if __name__ == "__main__":
     unittest.main()

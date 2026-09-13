@@ -3,6 +3,7 @@
 import json
 import os
 import platform
+import re
 import subprocess
 import urllib.request
 import webbrowser
@@ -12,6 +13,7 @@ from pathlib import Path
 CURRENT_VERSION = "v0.9.6"
 LATEST_RELEASE_URL = "https://api.github.com/repos/Ryuhwanjin/URY/releases/latest"
 RELEASES_PAGE_URL = "https://github.com/Ryuhwanjin/URY/releases/latest"
+VERSION_PATTERN = re.compile(r"v?(\d+(?:\.\d+)+)", re.IGNORECASE)
 
 
 def _version_key(value):
@@ -22,8 +24,9 @@ def get_latest_release(timeout=4):
     request = urllib.request.Request(LATEST_RELEASE_URL, headers={"Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         release = json.loads(response.read().decode("utf-8"))
-    tag = release.get("tag_name", "")
-    return tag, release.get("html_url", RELEASES_PAGE_URL)
+    asset = _select_platform_asset(release.get("assets", []))
+    version = _asset_version(asset)
+    return version, release.get("html_url", RELEASES_PAGE_URL)
 
 
 def _asset_rank(name):
@@ -50,6 +53,13 @@ def _select_platform_asset(assets):
         if rank is not None:
             candidates.append((rank, item))
     return min(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
+
+
+def _asset_version(asset):
+    if not asset:
+        return ""
+    match = VERSION_PATTERN.search(Path(asset.get("name", "")).name)
+    return f"v{match.group(1)}" if match else ""
 
 
 def download_latest_installer(timeout=30):

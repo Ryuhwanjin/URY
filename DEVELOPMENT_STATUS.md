@@ -13,6 +13,7 @@
 
 ## 최근 완료
 
+- 플랫폼별 업데이트 인식 분리 완료: macOS는 DMG, Windows는 EXE/ZIP asset의 버전만 비교해 다른 플랫폼 업데이트 알림을 차단. macOS·Windows 공용 코드 동일 확인, 회귀 테스트 포함 전체 테스트 49개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - macOS v0.9.6 전체 공용 변경의 Windows 동기화 완료: Studio 기능, 양 플랫폼 v0.9.6 버전 표기·업데이트 기준, 릴리즈 준비 문서를 반영하고 Windows frozen resource·CI 구조는 유지. 전체 테스트 47개 통과(1개 환경 의존 제외), 공용 코드 parity 및 `git diff --check` 통과
 - macOS v0.9.6 Studio 기능의 Windows 동기화 완료: `session_only` 날짜별·주차별·통합 적재, 동일 날짜 교체 저장, 불완전 영문 응답 차단을 양 플랫폼 공용 코드에 반영. `tests/test_note_aggregation.py` 포함 전체 테스트 47개 통과(1개 환경 의존 제외), 공용 Studio 코드 동일 확인, `git diff --check` 통과
 - 업데이트 다운로드 플랫폼 분리 완료: macOS는 DMG(macOS ZIP fallback), Windows는 설치 EXE 우선·Windows ZIP fallback으로 선택해 릴리즈 asset 순서에 따른 타 플랫폼 파일 다운로드를 차단. macOS·Windows 공용 코드 동일화, 플랫폼 선택 회귀 테스트 포함 전체 테스트 45개 통과(1개 환경 의존 제외), `git diff --check` 통과
