@@ -1,4 +1,4 @@
-# URY v0.9.6 User Guide
+# URY v0.9.7 User Guide
 
 macOS·Windows 공통 사용 설명서
 Designed & Built by Ryu.H.J

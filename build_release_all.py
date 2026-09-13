@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🎓 URY v0.9.6 — macOS 패키지 및 Windows 소스 ZIP 빌더 (build_release_all.py)
+🎓 URY v0.9.7 — macOS 패키지 및 Windows 소스 ZIP 빌더 (build_release_all.py)
 - macOS 패키지 (URY_macOS -> macOS ZIP & .dmg)
 - Windows 소스 패키지 (URY_Windows -> Windows ZIP)
 - Windows EXE/설치파일은 GitHub Actions windows-latest workflow에서 생성
@@ -18,7 +18,7 @@ MACOS_DIR = os.path.join(ROOT_DIR, "URY_macOS")
 WIN_DIR = os.path.join(ROOT_DIR, "URY_Windows")
 DIST_DIR = os.path.join(ROOT_DIR, "배포")
 
-VERSION = "v0.9.6"
+VERSION = "v0.9.7"
 PRIVATE_FILES = {".env", "settings.json", "processed_history.json", "시간표.json"}
 PRIVATE_DIRS = {
     "__pycache__", ".markdown_cache", "강의노트", "예상문제", "음성녹음", "칠판사진", "images",

@@ -6,7 +6,7 @@ import venv
 
 ROOT = Path(__file__).resolve().parent
 ENV = ROOT / ".venv-macos-build"
-APP_VERSION = "0.9.6"
+APP_VERSION = "0.9.7"
 ICON_PADDING_RATIO = 0.08
 
 
