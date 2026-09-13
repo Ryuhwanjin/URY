@@ -17,8 +17,7 @@
 
 ## 최근 완료
 
-- v0.9.8 릴리즈: v0.9.7 (`97457ed`) 기반으로 DiagnosticReports의 TCC/SIGABRT 원인인 `NSMicrophoneUsageDescription` 누락을 빌드 시 서명 전에 보완. 전체 테스트 50개 실행(49개 통과, 1개 환경 의존 제외), v0.9.8 앱 재빌드·버전/권한 plist·ad-hoc 서명·GUI smoke 검증 완료. 커밋 `4511b2d`. 실제 마이크 허용 및 녹음 저장은 사용자 확인 필요. 원래 로컬 통합 작업은 `preserve local platform unification before recorder fix 2026-09-15` Git stash에 보존.
-
+- v0.9.8 릴리즈: v0.9.7 (`97457ed`) 기반으로 DiagnosticReports의 TCC/SIGABRT 원인인 `NSMicrophoneUsageDescription` 누락을 빌드 시 서명 전에 보완. 맥미니 v0.9.7 후속 로직인 반응형 UI와 구버전 업데이터 호환용 `URY_Engine_v0.9.8_Installer.exe` 이름도 포함했다. 전체 테스트 50개 실행(49개 통과, 1개 환경 의존 제외), v0.9.8 앱 재빌드·버전/권한 plist·ad-hoc 서명·GUI smoke 검증 완료. 실제 마이크 허용 및 녹음 저장은 사용자 확인 필요. 원래 로컬 통합 작업은 `preserve local platform unification before recorder fix 2026-09-15` Git stash에 보존.
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)
 - 플랫폼별 업데이트 인식 분리 완료: macOS는 DMG, Windows는 EXE/ZIP asset의 버전만 비교해 다른 플랫폼 업데이트 알림을 차단. macOS·Windows 공용 코드 동일 확인, 회귀 테스트 포함 전체 테스트 49개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - macOS v0.9.6 전체 공용 변경의 Windows 동기화 완료: Studio 기능, 양 플랫폼 v0.9.6 버전 표기·업데이트 기준, 릴리즈 준비 문서를 반영하고 Windows frozen resource·CI 구조는 유지. 전체 테스트 47개 통과(1개 환경 의존 제외), 공용 코드 parity 및 `git diff --check` 통과

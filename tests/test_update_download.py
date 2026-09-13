@@ -23,7 +23,7 @@ class UpdateDownloadTest(unittest.TestCase):
             name, system = (
                 ("URY_Engine_v0.9.8.dmg", "Darwin")
                 if platform == "URY_macOS"
-                else ("URY_Setup_v0.9.8.exe", "Windows")
+                else ("URY_Engine_v0.9.8_Installer.exe", "Windows")
             )
             release = {"assets": [{"name": name, "browser_download_url": "https://example.com/file"}]}
             with tempfile.TemporaryDirectory() as directory, \
@@ -41,16 +41,22 @@ class UpdateDownloadTest(unittest.TestCase):
             namespace = {"__name__": "update_checker_test"}
             exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
             system = "Darwin" if platform == "URY_macOS" else "Windows"
-            assets = [
+            assets = sorted([
                 {"name": "URY_Engine_v0.9.8.dmg"},
                 {"name": "URY_Engine_v0.9.8_macOS.zip"},
                 {"name": "URY_Engine_v0.9.8_Windows.zip"},
-                {"name": "URY_Setup_v0.9.8.exe"},
-            ]
+                {"name": "URY_Engine_v0.9.8_Installer.exe"},
+            ], key=lambda item: item["name"])
             with patch.object(namespace["platform"], "system", return_value=system):
                 selected = namespace["_select_platform_asset"](assets)
-            expected = "URY_Engine_v0.9.8.dmg" if platform == "URY_macOS" else "URY_Setup_v0.9.8.exe"
+            expected = "URY_Engine_v0.9.8.dmg" if platform == "URY_macOS" else "URY_Engine_v0.9.8_Installer.exe"
             self.assertEqual(selected["name"], expected)
+            if platform == "URY_Windows":
+                legacy_selected = next(
+                    item for item in assets
+                    if item["name"].lower().endswith((".exe", ".zip"))
+                )
+                self.assertEqual(legacy_selected["name"], "URY_Engine_v0.9.8_Installer.exe")
 
     def test_update_check_compares_matching_platform_asset_version(self):
         release = {
@@ -58,7 +64,7 @@ class UpdateDownloadTest(unittest.TestCase):
             "html_url": "https://example.com/release",
             "assets": [
                 {"name": "URY_Engine_v0.9.8.dmg"},
-                {"name": "URY_Setup_v0.9.9.exe"},
+                {"name": "URY_Engine_v0.9.9_Installer.exe"},
             ],
         }
         for platform_name in ("URY_macOS", "URY_Windows"):
