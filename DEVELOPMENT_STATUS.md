@@ -5,9 +5,9 @@
 ## 진행 중
 
 - 플랫폼별 업데이트 인식 수정의 v0.9.7 배포 빌드:
-  - 대상 파일: macOS 앱·DMG·ZIP, Windows EXE·설치파일·ZIP, GitHub Release asset
-  - 현재 상태: v0.9.7 버전 표기 갱신, macOS 앱·DMG·ZIP 빌드 완료. Windows v0.9.7 Actions 빌드 실행 대기
-  - 바로 다음 명령: 버전 갱신 커밋을 push하고 Windows Actions의 EXE·설치파일 artifact 생성 결과 확인
+  - 대상 파일: macOS 앱·DMG·ZIP, Windows EXE·설치파일·ZIP, 설명서, GitHub Release asset
+  - 현재 상태: v0.9.7 버전 표기 갱신, macOS 앱·DMG·ZIP 빌드 완료. Windows 설치 번들에 설명서 포함 보강과 Actions 재빌드 전
+  - 바로 다음 명령: 설명서 포함 패치를 커밋·push하고 Windows Actions의 EXE·설치파일 artifact 및 설명서 포함 여부 확인
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.

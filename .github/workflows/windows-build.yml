@@ -55,6 +55,17 @@ jobs:
             --hidden-import update_checker `
             URY_Windows/system/code/settings_gui.py
 
+      - name: Include user documentation
+        shell: pwsh
+        run: |
+          $documents = @("USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf")
+          foreach ($document in $documents) {
+            $source = Join-Path "URY_Windows" $document
+            $target = Join-Path "dist/URY" $document
+            if (-not (Test-Path $source)) { throw "Missing source document: $source" }
+            Copy-Item $source $target -Force
+          }
+
       - name: Verify bundle
         shell: pwsh
         run: |
@@ -64,6 +75,10 @@ jobs:
           $prompt = Get-ChildItem -Path "dist/URY" -Recurse -File -Filter "강의노트_한국어_프롬프트.txt" | Select-Object -First 1
           if (-not $prompt) { throw "Missing bundled lecture-note prompt" }
           Write-Host "Bundled prompt: $($prompt.FullName)"
+          $documents = @("USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf")
+          foreach ($document in $documents) {
+            if (-not (Test-Path (Join-Path "dist/URY" $document))) { throw "Missing user document: $document" }
+          }
           Get-Item $exe
 
       - name: Package build artifact

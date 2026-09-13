@@ -112,6 +112,8 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertIn("--onedir", source)
         self.assertIn("--icon URY_Windows/app_icon.ico", source)
         self.assertIn('강의노트_한국어_프롬프트.txt', source)
+        for document in ("USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf"):
+            self.assertIn(document, source)
         self.assertIn("actions/upload-artifact@v4", source)
         self.assertNotIn("action-gh-release", source)
 

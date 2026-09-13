@@ -78,6 +78,11 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         if not os.path.exists(built_dist_dir):
             raise RuntimeError(f"PyInstaller 컴파일 실패:\n{res.stderr}")
 
+        for document in ("USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf"):
+            source = os.path.join(win_dir, document)
+            if os.path.isfile(source):
+                shutil.copy2(source, os.path.join(built_dist_dir, document))
+
         os.makedirs(target_install_dir, exist_ok=True)
         target_exe = os.path.join(target_install_dir, "URY.exe")
 

@@ -71,7 +71,7 @@
 | 업데이트 인식 | 완료 | 현재 플랫폼의 macOS DMG 또는 Windows EXE/ZIP asset 버전을 비교하고, 다른 플랫폼만 업데이트된 경우 알림을 표시하지 않음 |
 | macOS 후속 DMG v0.9.5 | 완료 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치의 DMG·macOS/Windows ZIP 공개 릴리즈 및 업데이트 인식 검증 완료 |
 | macOS DMG v0.9.6 | 완료 | Studio 주차·통합 적재 및 불완전 영문 응답 차단 패치를 포함해 GitHub Release asset 검증 완료 |
-| v0.9.7 플랫폼별 업데이트 수정 | 준비 중 | 현재 플랫폼 DMG 또는 Windows EXE/ZIP만 비교하는 업데이트 검사기 반영. macOS 앱·DMG·ZIP 빌드 완료, Windows Actions·GitHub Release 검증 대기 |
+| v0.9.7 플랫폼별 업데이트 수정 | 준비 중 | 현재 플랫폼 DMG 또는 Windows EXE/ZIP만 비교하는 업데이트 검사기와 배포 설명서 포함 반영. macOS 앱·DMG·ZIP 빌드 완료, Windows Actions·GitHub Release 검증 대기 |
 | 모바일 앱(iOS/Android) | 제외 | Tkinter 데스크톱 아키텍처 및 로컬 파일 처리 특성상 모바일 빌드 제외 |
 | 인앱 광고 및 유료 결제 | 제외 | 순수 비영리 100% 무료(Ad-free Freeware) 정책에 따라 완전 제외 |
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
