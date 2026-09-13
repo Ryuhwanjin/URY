@@ -26,13 +26,37 @@ def get_latest_release(timeout=4):
     return tag, release.get("html_url", RELEASES_PAGE_URL)
 
 
+def _asset_rank(name):
+    """Return the preferred rank for an installer matching this platform."""
+    name = Path(name).name.lower()
+    system = platform.system()
+    if system == "Darwin":
+        if name.endswith(".dmg"):
+            return 0
+        if name.endswith(".zip") and "mac" in name:
+            return 1
+    elif system == "Windows":
+        if name.endswith(".exe") and any(marker in name for marker in ("windows", "win", "setup", "installer")):
+            return 0
+        if name.endswith(".zip") and any(marker in name for marker in ("windows", "win")):
+            return 1
+    return None
+
+
+def _select_platform_asset(assets):
+    candidates = []
+    for item in assets:
+        rank = _asset_rank(item.get("name", ""))
+        if rank is not None:
+            candidates.append((rank, item))
+    return min(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
+
+
 def download_latest_installer(timeout=30):
     request = urllib.request.Request(LATEST_RELEASE_URL, headers={"Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         release = json.loads(response.read().decode("utf-8"))
-    suffixes = (".dmg",) if platform.system() == "Darwin" else (".exe", ".zip")
-    asset = next((item for item in release.get("assets", [])
-                  if item.get("name", "").lower().endswith(suffixes)), None)
+    asset = _select_platform_asset(release.get("assets", []))
     if not asset:
         return None
     target = Path.home() / "Downloads" / Path(asset["name"]).name

@@ -20,8 +20,12 @@ class UpdateDownloadTest(unittest.TestCase):
             path = Path(__file__).parent.parent / platform / "system/code/update_checker.py"
             namespace = {"__name__": "update_checker_test"}
             exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
-            suffix, system = (".dmg", "Darwin") if platform == "URY_macOS" else (".exe", "Windows")
-            release = {"assets": [{"name": f"URY_Engine{suffix}", "browser_download_url": "https://example.com/file"}]}
+            name, system = (
+                ("URY_Engine_v0.9.6.dmg", "Darwin")
+                if platform == "URY_macOS"
+                else ("URY_Setup_v0.9.6.exe", "Windows")
+            )
+            release = {"assets": [{"name": name, "browser_download_url": "https://example.com/file"}]}
             with tempfile.TemporaryDirectory() as directory, \
                     patch.object(namespace["platform"], "system", return_value=system), \
                     patch.object(namespace["Path"], "home", return_value=Path(directory)), \
@@ -30,6 +34,23 @@ class UpdateDownloadTest(unittest.TestCase):
                 result = Path(namespace["download_latest_installer"]())
                 self.assertEqual(result.read_bytes(), b"installer")
                 self.assertFalse(result.with_suffix(result.suffix + ".download").exists())
+
+    def test_platform_asset_selection_ignores_other_platform_and_prefers_installer(self):
+        for platform in ("URY_macOS", "URY_Windows"):
+            path = Path(__file__).parent.parent / platform / "system/code/update_checker.py"
+            namespace = {"__name__": "update_checker_test"}
+            exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
+            system = "Darwin" if platform == "URY_macOS" else "Windows"
+            assets = [
+                {"name": "URY_Engine_v0.9.6.dmg"},
+                {"name": "URY_Engine_v0.9.6_macOS.zip"},
+                {"name": "URY_Engine_v0.9.6_Windows.zip"},
+                {"name": "URY_Setup_v0.9.6.exe"},
+            ]
+            with patch.object(namespace["platform"], "system", return_value=system):
+                selected = namespace["_select_platform_asset"](assets)
+            expected = "URY_Engine_v0.9.6.dmg" if platform == "URY_macOS" else "URY_Setup_v0.9.6.exe"
+            self.assertEqual(selected["name"], expected)
 
 
 if __name__ == "__main__":
