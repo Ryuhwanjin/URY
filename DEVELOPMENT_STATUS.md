@@ -4,10 +4,6 @@
 
 ## 진행 중
 
-- 플랫폼별 업데이트 인식 수정의 v0.9.7 배포 빌드:
-  - 대상 파일: macOS 앱·DMG·ZIP, Windows EXE·설치파일·ZIP, 설명서, GitHub Release asset
-  - 현재 상태: v0.9.7 macOS 앱·DMG·ZIP과 설명서 갱신 완료. Windows Actions EXE·설치파일도 설명서 포함 검증 성공
-  - 바로 다음 명령: 최종 패키지를 GitHub `v0.9.7` Release asset으로 업로드하고 기존 v0.9.6에서 업데이트 설치 확인
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
@@ -17,6 +13,7 @@
 
 ## 최근 완료
 
+- v0.9.7 정식 릴리즈 완료: macOS DMG·macOS ZIP·Windows onedir ZIP·Windows setup EXE 4개 asset을 GitHub Release에 업로드하고 공개 상태를 확인. Windows Actions Run `34740150437` 성공, 기존 v0.9.6에서 플랫폼별 업데이트 설치 확인 대기
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)
 - 플랫폼별 업데이트 인식 분리 완료: macOS는 DMG, Windows는 EXE/ZIP asset의 버전만 비교해 다른 플랫폼 업데이트 알림을 차단. macOS·Windows 공용 코드 동일 확인, 회귀 테스트 포함 전체 테스트 49개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - macOS v0.9.6 전체 공용 변경의 Windows 동기화 완료: Studio 기능, 양 플랫폼 v0.9.6 버전 표기·업데이트 기준, 릴리즈 준비 문서를 반영하고 Windows frozen resource·CI 구조는 유지. 전체 테스트 47개 통과(1개 환경 의존 제외), 공용 코드 parity 및 `git diff --check` 통과
