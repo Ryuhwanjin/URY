@@ -41,7 +41,7 @@ if sys.platform == "win32":
             pass
 try:
     import tkinter as tk
-    from tkinter import ttk, messagebox, filedialog
+    from tkinter import ttk, messagebox, filedialog, font as tkfont
 except ImportError:
     print("=" * 65)
     print("⚠️ [오류] 현재 Python 환경에 GUI(tkinter) 라이브러리가 포함되어 있지 않습니다.")
@@ -349,6 +349,7 @@ class SquareRoundButton(tk.Canvas):
         self.font = font
         self.btn_state = state
         self.h = height
+        self._font_root = parent._root()
         
         if parent_bg is None:
             try:
@@ -361,11 +362,8 @@ class SquareRoundButton(tk.Canvas):
                 except Exception:
                     parent_bg = "#ffffff"
         self.parent_bg = parent_bg
-        
-        if width is None:
-            self.w = max(72, len(text) * 11 + radius * 2 + 20)
-        else:
-            self.w = width
+
+        self.w = max(width or 0, self._text_width(text) + radius * 2 + 20, 72)
             
         super().__init__(parent, width=self.w, height=self.h, bg=self.parent_bg,
                          highlightthickness=0, bd=0, **kwargs)
@@ -380,6 +378,12 @@ class SquareRoundButton(tk.Canvas):
             self.bind("<Button-1>", self.on_press)
             self.bind("<ButtonRelease-1>", self.on_release)
             self.config(cursor="hand2")
+
+    def _text_width(self, text):
+        try:
+            return tkfont.Font(root=self._font_root, font=self.font).measure(text)
+        except Exception:
+            return len(text) * 11
             
     def draw(self, fill_color=None):
         self.delete("all")
@@ -463,7 +467,7 @@ class SquareRoundButton(tk.Canvas):
             redraw = True
         if "text" in kwargs:
             self.btn_text = kwargs.pop("text")
-            new_w = max(self.w, len(self.btn_text) * 11 + self.radius * 2 + 20)
+            new_w = max(self.w, self._text_width(self.btn_text) + self.radius * 2 + 20)
             if new_w > self.w:
                 self.w = new_w
                 super().config(width=self.w)
@@ -658,18 +662,21 @@ class UnifiedDashboardApp:
             "end": self.settings.get("semester_end_date", "2026-12-21"),
         })
 
-        # 창모드 해상도 자동 감지 및 1280x820 최소 해상도 보장 설정
+        # 창모드 해상도 자동 감지. 화면보다 큰 고정 최소값은 노트북/배율 환경에서
+        # 창과 하단 컨트롤을 잘라내므로 사용 가능한 작업 영역 안에서만 제한한다.
         self.root.resizable(True, True)
-        self.root.minsize(1280, 820)
-        
         sw = self.root.winfo_screenwidth()
         sh = self.root.winfo_screenheight()
-        default_w = min(1440, max(1280, int(sw * 0.85)))
-        default_h = min(920, max(820, int(sh * 0.82)))
+        available_w = min(sw, max(640, sw - 40))
+        available_h = min(sh, max(480, sh - 80))
+        min_w = min(1280, available_w)
+        min_h = min(820, available_h)
+        self.root.minsize(min_w, min_h)
+
+        default_w = min(1440, available_w, max(min_w, int(sw * 0.85)))
+        default_h = min(920, available_h, max(min_h, int(sh * 0.82)))
         x = max(0, (sw - default_w) // 2)
         y = max(35, (sh - default_h) // 2 - 10)
-
-        self.root.minsize(1280, 820)
 
         saved_geo = self.settings.get("window_geometry", "")
         applied_geo = False
@@ -801,7 +808,14 @@ class UnifiedDashboardApp:
         hdr_frame.pack(side=tk.TOP, fill=tk.X)
 
         tk.Label(hdr_frame, text="🎓 URY 저작권 준수 및 학업 윤리 서약서", font=("Pretendard", 12, "bold"), bg="#ffffff", fg=self.accent_color("#1c4732")).pack(anchor=tk.W)
-        tk.Label(hdr_frame, text="대한민국 저작권법 제30조(사적이용을 위한 복제) 및 대학 학업 윤리 가이드라인", font=("Pretendard", 9), bg="#ffffff", fg="#64748b").pack(anchor=tk.W, pady=(3, 0))
+        hdr_subtitle = tk.Label(
+            hdr_frame,
+            text="대한민국 저작권법 제30조(사적이용을 위한 복제) 및 대학 학업 윤리 가이드라인",
+            font=("Pretendard", 9), bg="#ffffff", fg="#64748b", justify=tk.LEFT,
+            wraplength=560
+        )
+        hdr_subtitle.pack(anchor=tk.W, fill=tk.X, pady=(3, 0))
+        hdr_frame.bind("<Configure>", lambda e: hdr_subtitle.config(wraplength=max(280, e.width - 40)))
 
         # 2. 하단 서약 확인 및 버튼 프레임 (하단 최우선 고정 -> 창 크기에 상관없이 항상 100% 노출!)
         btm_frame = tk.Frame(dialog, bg="#ffffff", padx=16, pady=12, highlightthickness=1, highlightbackground="#e2e8f0")
@@ -877,9 +891,10 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
             font=("Pretendard", 9, "bold"),
             bg=self.accent_color("#f0fdf4"),
             fg=self.accent_color("#166534"),
-            cursor="hand2"
+            cursor="hand2", justify=tk.LEFT, wraplength=420
         )
         chk_text.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        card_agree.bind("<Configure>", lambda e: chk_text.config(wraplength=max(240, e.width - 56)))
 
         def update_toggle_ui():
             if agree_var.get():
@@ -1410,6 +1425,10 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
                 if not getattr(self, "_res_editing", False):
                     self.res_width_var.set(str(w))
                     self.res_height_var.set(str(h))
+            if hasattr(self, "tutor_disclaimer_lbl"):
+                self.tutor_disclaimer_lbl.configure(wraplength=max(260, w - 260))
+            if hasattr(self, "_resize_guide_image"):
+                self._resize_guide_image()
 
     def save_current_window_state(self):
         try:
@@ -1444,6 +1463,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
                     pass
             screen_w = self.root.winfo_screenwidth()
             screen_h = self.root.winfo_screenheight()
+            width, height = self._fit_window_size(width, height, screen_w, screen_h)
             x = max(0, (screen_w - width) // 2)
             y = max(30, (screen_h - height) // 2 - 20)
             self.root.geometry(f"{width}x{height}+{x}+{y}")
@@ -1452,6 +1472,13 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
             self.save_current_window_state()
         except Exception as e:
             messagebox.showwarning("해상도 변경 오류", f"창 크기를 적용할 수 없습니다: {e}")
+
+    @staticmethod
+    def _fit_window_size(width, height, screen_w, screen_h):
+        """프리셋/사용자 입력이 현재 모니터 밖으로 나가지 않게 제한한다."""
+        available_w = min(screen_w, max(640, screen_w - 40))
+        available_h = min(screen_h, max(480, screen_h - 80))
+        return min(int(width), available_w), min(int(height), available_h)
 
     def toggle_fullscreen(self, event=None):
         try:
@@ -1804,8 +1831,22 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
         left_card = tk.Frame(studio_container, bg="#ffffff", bd=0, highlightthickness=0 if sys.platform == "win32" else 1, highlightbackground="#edf2f7")
         left_card.grid(row=0, column=0, sticky="nsew", padx=(10, 6), pady=8)
 
-        left_content = tk.Frame(left_card, bg="#ffffff", padx=18, pady=14)
-        left_content.pack(fill=tk.BOTH, expand=True)
+        left_canvas = tk.Canvas(left_card, bg="#ffffff", highlightthickness=0, bd=0)
+        left_scroll = ttk.Scrollbar(left_card, orient=tk.VERTICAL, command=left_canvas.yview)
+        left_content = tk.Frame(left_canvas, bg="#ffffff", padx=18, pady=14)
+        left_window = left_canvas.create_window((0, 0), window=left_content, anchor="nw")
+        left_content.bind("<Configure>", lambda e: left_canvas.configure(scrollregion=left_canvas.bbox("all")))
+        left_canvas.bind("<Configure>", lambda e: left_canvas.itemconfigure(left_window, width=e.width))
+        left_canvas.configure(yscrollcommand=left_scroll.set)
+        left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        left_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def scroll_studio_left(event):
+            left_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            return "break"
+
+        left_canvas.bind("<MouseWheel>", scroll_studio_left)
+        left_content.bind("<MouseWheel>", scroll_studio_left)
 
         # -------------------------------------------------------------
         # Step 1: 과목 및 강의 정보 설정
@@ -2065,7 +2106,8 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
         )
         self.generate_studio_btn.pack(fill=tk.X)
 
-        # 액션 하단 행: 보조 유틸리티 버튼들
+        # 액션 하단 행: 보조 유틸리티 버튼들. 좁은 창에서도 한 줄이 넘치지 않도록
+        # 마지막 두 컨트롤을 별도 행으로 둔다.
         act_row_bot = tk.Frame(action_bar, bg="#ffffff")
         act_row_bot.pack(fill=tk.X)
 
@@ -2112,8 +2154,11 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
         )
         self.studio_clear_log_btn.pack(side=tk.LEFT, padx=(0, 5))
 
+        act_row_last = tk.Frame(action_bar, bg="#ffffff")
+        act_row_last.pack(fill=tk.X, pady=(4, 0))
+
         self.studio_open_log_btn = SquareRoundButton(
-            act_row_bot,
+            act_row_last,
             text="🧾 로그 파일 열기",
             bg="#f1f5f9",
             hover_bg="#e2e8f0",
@@ -2127,7 +2172,7 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
         self.studio_open_log_btn.pack(side=tk.LEFT, padx=(0, 5))
 
         self.studio_stop_btn = SquareRoundButton(
-            act_row_bot,
+            act_row_last,
             text="⏹ 작업 중단",
             bg="#dc2626",
             hover_bg="#b91c1c",
@@ -2894,8 +2939,10 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
         SquareRoundButton(btn_bar, text="📅 학습 로드맵 생성", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_period_roadmap_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="📝 모의시험 PDF", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_mock_exam_now_action).pack(side=tk.LEFT, padx=(0, 6))
         SquareRoundButton(btn_bar, text="⚡ 벼락치기 정리노트", bg=self.accent_color("#1c4732"), hover_bg=self.accent_color("#265e43"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.generate_cheatsheet_action).pack(side=tk.LEFT, padx=(0, 6))
-        SquareRoundButton(btn_bar, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
-        self.exam_open_pdf_btn = SquareRoundButton(btn_bar, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
+        exam_file_row = ttk.Frame(form)
+        exam_file_row.pack(fill=tk.X, pady=(5, 0))
+        SquareRoundButton(exam_file_row, text="📂 문제 폴더", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, font=("Pretendard", 9, "bold"), command=self.open_exam_folder_action).pack(side=tk.LEFT, padx=(0, 6))
+        self.exam_open_pdf_btn = SquareRoundButton(exam_file_row, text="📄 시험지 열기", bg="#e2e8f0", hover_bg="#cbd5e1", fg=self.accent_color("#14281e"), radius=8, height=34, state="disabled", font=("Pretendard", 9, "bold"), command=self.open_last_exam_pdf)
         self.exam_open_pdf_btn.pack(side=tk.LEFT)
 
         # 실시간 진행 상황 및 로그 콘솔 프레임 (ETA & Progress Bar)
@@ -3689,10 +3736,14 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
             disclaimer_frame,
             text="⚠️ [안내] 본 튜터는 복습 보조용입니다. 강의 외 전공 기초 이론도 친절히 해설하며, 공식 시험 일정/범위는 e-캠퍼스 공식 공지를 반드시 최종 확인하세요.",
             font=("Pretendard", 9),
-            foreground="#92400e",
-            background="#fffbeb"
+            foreground="#92400e", background="#fffbeb", justify=tk.LEFT,
+            wraplength=900
         )
-        self.tutor_disclaimer_lbl.pack(side=tk.LEFT)
+        self.tutor_disclaimer_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        disclaimer_frame.bind(
+            "<Configure>",
+            lambda e: self.tutor_disclaimer_lbl.configure(wraplength=max(260, e.width - 20))
+        )
 
         # 2. 대화 내역 표시창 (Chat View)
 
@@ -4306,8 +4357,16 @@ URY는 사용자의 로컬 컴퓨터 내에서만 독립적으로 동작하며, 
     def build_info_page(self, parent, title, subtitle, body):
         card = ttk.LabelFrame(parent, text=f" {title} ", padding="18")
         card.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(card, text=subtitle, font=("Pretendard", 11, "bold"),
-                  foreground=self.accent_color("#1c4732")).pack(anchor=tk.W, pady=(0, 12))
+        subtitle_label = ttk.Label(
+            card, text=subtitle, font=("Pretendard", 11, "bold"),
+            foreground=self.accent_color("#1c4732"), justify=tk.LEFT, wraplength=760
+        )
+        subtitle_label.pack(anchor=tk.W, fill=tk.X, pady=(0, 12))
+        parent.bind(
+            "<Configure>",
+            lambda e: subtitle_label.configure(wraplength=max(260, e.width - 50)),
+            add="+"
+        )
         text = tk.Text(card, wrap=tk.WORD, font=("Pretendard", 10), bg="#ffffff", fg="#334155",
                        relief=tk.FLAT, padx=12, pady=12, spacing2=4)
         scrollbar = ttk.Scrollbar(card, orient=tk.VERTICAL, command=text.yview)
@@ -4403,6 +4462,7 @@ API Key·학기·과목·개인 자료는 배포 파일에 포함되지 않으�
         content = ttk.LabelFrame(container, text=" User Guide ", padding="16")
         content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         image_frame = ttk.Frame(content)
+        self.guide_image_frame = image_frame
         image_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
         self.guide_image_label = ttk.Label(image_frame, anchor=tk.CENTER)
         self.guide_image_label.pack(fill=tk.BOTH, expand=True)
@@ -4415,6 +4475,24 @@ API Key·학기·과목·개인 자료는 배포 파일에 포함되지 않으�
         self.guide_text.configure(yscrollcommand=guide_scroll.set, state=tk.DISABLED)
         self.guide_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         guide_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.guide_source_image = None
+
+        def resize_guide_image(_event=None):
+            if self.guide_source_image is None:
+                return
+            available_w = max(1, image_frame.winfo_width() - 8)
+            available_h = max(1, image_frame.winfo_height() - 8)
+            if available_w < 20 or available_h < 20:
+                return
+            from PIL import Image, ImageTk
+            image = self.guide_source_image.copy()
+            image.thumbnail((min(1200, available_w), min(500, available_h)), Image.Resampling.LANCZOS)
+            self.guide_page_image = ImageTk.PhotoImage(image)
+            self.guide_image_label.configure(image=self.guide_page_image, text="")
+
+        self._resize_guide_image = resize_guide_image
+        image_frame.bind("<Configure>", resize_guide_image)
 
         def show_page(name):
             filename, instructions = pages[name]
@@ -4429,14 +4507,12 @@ API Key·학기·과목·개인 자료는 배포 파일에 포함되지 않으�
             image_path = next((path for path in candidates if os.path.isfile(path)), "")
             if image_path:
                 from PIL import Image, ImageTk
-                image = Image.open(image_path).convert("RGB")
-                # 원본(1600×996)은 유지하고, 화면에서는 최대 1200×500으로만 축소한다.
-                image.thumbnail((1200, 500), Image.Resampling.LANCZOS)
-                self.guide_page_image = ImageTk.PhotoImage(image)
+                self.guide_source_image = Image.open(image_path).convert("RGB")
                 if not image_frame.winfo_manager():
                     image_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8), before=text_frame)
-                self.guide_image_label.configure(image=self.guide_page_image, text="")
+                resize_guide_image()
             else:
+                self.guide_source_image = None
                 image_frame.pack_forget()
                 self.guide_image_label.configure(image="", text="")
 
@@ -4660,7 +4736,7 @@ Built for better learning, not shortcuts.""")
             ("1440×900 레티나", 1440, 900),
             ("1600×980 대화면", 1600, 980),
         ]
-        for p_label, pw, ph in res_presets:
+        for p_label, pw, ph in res_presets[:3]:
             SquareRoundButton(
                 preset_row,
                 text=p_label,
@@ -4674,8 +4750,24 @@ Built for better learning, not shortcuts.""")
                 parent_bg="#ffffff"
             ).pack(side=tk.LEFT, padx=(0, 6))
 
+        preset_row2 = ttk.Frame(res_frame)
+        preset_row2.pack(fill=tk.X, pady=(4, 0))
+        for p_label, pw, ph in res_presets[3:]:
+            SquareRoundButton(
+                preset_row2,
+                text=p_label,
+                bg="#f1f5f9",
+                hover_bg="#e2e8f0",
+                fg="#334155",
+                radius=8,
+                height=28,
+                font=("Pretendard", 8, "bold"),
+                command=lambda w=pw, h=ph: self.apply_resolution(w, h),
+                parent_bg="#ffffff"
+            ).pack(side=tk.LEFT, padx=(0, 6))
+
         SquareRoundButton(
-            preset_row,
+            preset_row2,
             text="⛶ 전체 화면",
             bg="#f1f5f9",
             hover_bg="#e2e8f0",
