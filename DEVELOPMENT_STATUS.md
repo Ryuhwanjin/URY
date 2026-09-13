@@ -1,6 +1,6 @@
 # URY Engine 개발 현황
 
-마지막 갱신: 2026-09-11
+마지막 갱신: 2026-09-13
 
 ## 진행 중
 
@@ -12,6 +12,7 @@
 
 ## 최근 완료
 
+- 프로젝트별 Ponytail `full` 모드 적용 완료: 루트 `AGENTS.md`에 YAGNI·기존 코드/표준 라이브러리/플랫폼 기능 우선·최소 변경 원칙을 추가. `git diff --check` 통과
 - v0.9.6 macOS 릴리즈 빌드 완료: Studio 주차·통합 적재 및 잘린 영문 응답 차단 패치를 반영해 앱 버전·업데이트 검사기·UI를 동기화. `URY.app` ad-hoc 서명·`GUI_SMOKE_OK`, DMG 마운트 및 버전 0.9.6 확인. `배포/URY_Engine_v0.9.6.dmg`(63.1MB), macOS ZIP(111.2MB), Windows ZIP(3.0MB) 생성, 개인 설정·강의자료 제외 검사 통과. 체크섬: DMG `26e306d42d255c33e02fd5c2a9a7de784a70d89b98310856ba177a5886888168`. 릴리즈 준비 커밋 `807a5ee`
 - v0.9.6 GitHub 정식 릴리즈 완료: `v0.9.6` 태그와 GitHub Release에 macOS DMG·macOS ZIP·Windows ZIP을 업로드하고 공개 Releases API에서 최신 릴리즈 및 3개 asset을 확인. [공개 릴리즈](https://github.com/Ryuhwanjin/URY/releases/tag/v0.9.6). 릴리즈 기준 커밋 `6ee7918`
 - Studio 주차·통합 적재 및 영문 부분 응답 보정 완료: `session_only` 생성도 날짜별 원본과 함께 `N주차`·`통합` Markdown을 갱신하고, 같은 날짜 재생성은 해당 섹션을 교체. 18토큰/200자처럼 4개 섹션이 없는 스트리밍 응답은 저장하지 않고 다음 모델로 전환하며, 영문 실패 시 잘린 파일 없이 한국어 결과를 유지. macOS·Windows 공용 코드 동기화, 테스트 38개 통과(1개 환경 의존 제외), 구문·diff 검증 완료. 커밋 `eac2b57`

@@ -7,3 +7,4 @@
 - 사용자 데이터인 `URY_macOS/system/시간표.json`과 로컬 테스트 파일은 명시적 요청 없이 커밋하지 않는다.
 - macOS와 Windows 공용 Python 코드는 양쪽에 동일하게 반영하고 테스트한다.
 - 계획 변경이나 신규 기능이 생기면 `FEATURE_MATRIX.md`와 `IMPLEMENTATION_PLAN.md`도 함께 갱신한다.
+- 코드 작업에는 Ponytail 플러그인 `full` 모드를 기본 적용한다: YAGNI, 기존 코드·표준 라이브러리·플랫폼 기능 우선, 최소 파일·최소 변경을 유지한다.
