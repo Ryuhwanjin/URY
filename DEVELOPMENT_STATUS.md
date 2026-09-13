@@ -4,10 +4,6 @@
 
 ## 진행 중
 
-- Windows UI 반응형/고DPI 잘림 보정:
-  - 대상 파일: `URY_Windows/system/code/settings_gui.py`, 동일 공용 코드 `URY_macOS/system/code/settings_gui.py`
-  - 현재 상태: 화면보다 큰 고정 최소 창 크기, 실제 글자 폭보다 작은 Canvas 버튼, 짧은 창에서 잘리는 Studio/Exam/Guide/약관/Tutor 영역을 확인. 공용 코드에 작업영역 기반 창 크기 제한·실측 버튼 폭·스크롤/줄바꿈·가이드 이미지 리사이즈를 적용 중
-  - 바로 다음 명령: 구문·공용 코드 parity·전체 테스트를 실행하고 가능한 GUI smoke/layout 검증 후 커밋
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
@@ -17,6 +13,7 @@
 
 ## 최근 완료
 
+- Windows UI 반응형/고DPI 잘림 보정 완료: 작업영역에 맞춰 최소 창 크기와 해상도 프리셋을 제한하고, Canvas 버튼 글자 폭을 실제 폰트로 측정. Studio 좌측 스크롤, Exam 작업 버튼 행 분리, User Guide 이미지 자동 축소, 약관/Tutor 긴 문장 줄바꿈, 설정 프리셋 2행 배치를 macOS·Windows 공용 코드에 동일 반영. `py_compile`, 공용 코드 parity, `git diff --check`, 전체 테스트 49개 통과(1개 환경 의존 제외), Windows Actions Run `34741458484` 성공
 - v0.9.5 Windows 업데이트 부트스트랩 보정 완료: 구버전 업데이터가 첫 `.exe`/`.zip`을 선택하는 동작을 고려해 Windows 설치파일을 `URY_Engine_v0.9.7_Installer.exe`로 표준화하고, GitHub `v0.9.7` asset 순서를 `DMG → Windows EXE → macOS ZIP → Windows ZIP`으로 확인. 구버전 선택 회귀 테스트 및 전체 테스트 49개 통과(1개 환경 의존 제외)
 - v0.9.7 정식 릴리즈 완료: macOS DMG·macOS ZIP·Windows onedir ZIP·Windows setup EXE 4개 asset을 GitHub Release에 업로드하고 공개 상태를 확인. Windows Actions Run `34740150437` 성공, 기존 v0.9.6에서 플랫폼별 업데이트 설치 확인 대기
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)
