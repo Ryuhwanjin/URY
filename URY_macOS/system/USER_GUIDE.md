@@ -59,6 +59,7 @@ API Key와 설정은 `workspace/system/settings.json`, `.env`에 저장됩니다
 
 Updates 탭에서 GitHub Release를 확인하고 새 DMG/Windows 설치 파일을 열어 업데이트합니다. API Key·학기·과목·개인
 자료는 배포 파일에 포함되지 않고 workspace에 유지되므로, 업데이트 전 결과물을 백업하세요.
+macOS는 macOS DMG/macOS ZIP, Windows는 Windows EXE/Windows ZIP asset만 비교하므로 다른 플랫폼만 업데이트되어도 알림이 뜨지 않습니다.
 
 ## Terms & Ethics
 
