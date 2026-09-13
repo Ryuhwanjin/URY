@@ -4,6 +4,10 @@
 
 ## 진행 중
 
+- macOS v0.9.6 기능의 Windows 공용 코드 동기화:
+  - 대상 파일: `URY_macOS/system/code/*.py`, `URY_Windows/system/code/*.py` 및 관련 테스트/문서
+  - 현재 상태: Windows Phase 3 브랜치의 공용 코드가 macOS v0.9.6의 Studio 주차·통합 적재·불완전 영문 응답 차단까지 포함하는지 비교 중. Windows 전용 삭제 도구와 경로 차이는 유지
+  - 바로 다음 명령: 공용 Python 파일 차이 및 최신 기능 회귀 테스트를 확인한 뒤 누락분만 반영
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
