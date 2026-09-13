@@ -92,7 +92,7 @@ jobs:
           if (-not (Test-Path $iscc)) { throw "Missing Inno Setup compiler: $iscc" }
           & $iscc "installer\URY_v0.9.7.iss"
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
-          $setup = "dist/installer/URY_Setup_v0.9.7.exe"
+          $setup = "dist/installer/URY_Engine_v0.9.7_Installer.exe"
           if (-not (Test-Path $setup)) { throw "Missing $setup" }
 
       - name: Upload build artifact

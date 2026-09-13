@@ -13,6 +13,7 @@
 
 ## 최근 완료
 
+- v0.9.5 Windows 업데이트 부트스트랩 보정 완료: 구버전 업데이터가 첫 `.exe`/`.zip`을 선택하는 동작을 고려해 Windows 설치파일을 `URY_Engine_v0.9.7_Installer.exe`로 표준화하고, GitHub `v0.9.7` asset 순서를 `DMG → Windows EXE → macOS ZIP → Windows ZIP`으로 확인. 구버전 선택 회귀 테스트 및 전체 테스트 49개 통과(1개 환경 의존 제외)
 - v0.9.7 정식 릴리즈 완료: macOS DMG·macOS ZIP·Windows onedir ZIP·Windows setup EXE 4개 asset을 GitHub Release에 업로드하고 공개 상태를 확인. Windows Actions Run `34740150437` 성공, 기존 v0.9.6에서 플랫폼별 업데이트 설치 확인 대기
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)
 - 플랫폼별 업데이트 인식 분리 완료: macOS는 DMG, Windows는 EXE/ZIP asset의 버전만 비교해 다른 플랫폼 업데이트 알림을 차단. macOS·Windows 공용 코드 동일 확인, 회귀 테스트 포함 전체 테스트 49개 통과(1개 환경 의존 제외), `git diff --check` 통과
