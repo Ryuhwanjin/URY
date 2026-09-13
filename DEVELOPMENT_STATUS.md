@@ -4,10 +4,6 @@
 
 ## 진행 중
 
-- macOS v0.9.6 기능의 Windows 공용 코드 동기화:
-  - 대상 파일: `URY_macOS/system/code/*.py`, `URY_Windows/system/code/*.py` 및 관련 테스트/문서
-  - 현재 상태: Windows Phase 3 브랜치의 공용 코드가 macOS v0.9.6의 Studio 주차·통합 적재·불완전 영문 응답 차단까지 포함하는지 비교 중. Windows 전용 삭제 도구와 경로 차이는 유지
-  - 바로 다음 명령: 공용 Python 파일 차이 및 최신 기능 회귀 테스트를 확인한 뒤 누락분만 반영
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.5 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.6 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
@@ -17,6 +13,7 @@
 
 ## 최근 완료
 
+- macOS v0.9.6 Studio 기능의 Windows 동기화 완료: `session_only` 날짜별·주차별·통합 적재, 동일 날짜 교체 저장, 불완전 영문 응답 차단을 양 플랫폼 공용 코드에 반영. `tests/test_note_aggregation.py` 포함 전체 테스트 47개 통과(1개 환경 의존 제외), 공용 Studio 코드 동일 확인, `git diff --check` 통과
 - 업데이트 다운로드 플랫폼 분리 완료: macOS는 DMG(macOS ZIP fallback), Windows는 설치 EXE 우선·Windows ZIP fallback으로 선택해 릴리즈 asset 순서에 따른 타 플랫폼 파일 다운로드를 차단. macOS·Windows 공용 코드 동일화, 플랫폼 선택 회귀 테스트 포함 전체 테스트 45개 통과(1개 환경 의존 제외), `git diff --check` 통과
 - Windows Phase 3 P0 착수 완료: 실행·환경검증·EXE 빌드·삭제·설정·레거시 파이프라인 배치 파일 6개를 UTF-8/v0.9.6으로 정리하고, Python 미설치 상태에서 사용자 데이터가 삭제되지 않도록 차단. PyInstaller 실패 코드 검증, GitHub Actions Windows `--onedir` artifact workflow, 정적 회귀 테스트 추가. 테스트 40개 통과(1개 환경 의존 제외), 공용 파일 16개 동일 확인, 커밋 `0c83ec4`
 - Antigravity Windows Phase 3 독립 리뷰 수신: frozen 리소스 탐색·CI 아이콘·설치 경로·실기기 회귀시험 등 P0/P1/P2 의견을 `antigravity_gpt.md` 8장에 기록. 의견은 GPT(Codex) 검증 후 필요한 항목만 채택하며, 리뷰 단계에서 코드는 수정하지 않음
