@@ -119,7 +119,7 @@ class RemovedFeaturesTest(unittest.TestCase):
 
     def test_windows_inno_setup_preserves_user_workspace(self):
         root = Path(__file__).parent.parent
-        script = (root / "installer/URY_v0.9.7.iss").read_text(encoding="utf-8")
+        script = (root / "installer/URY_v0.9.8.iss").read_text(encoding="utf-8")
         self.assertIn("PrivilegesRequired=lowest", script)
         self.assertIn("DefaultDirName={localappdata}\\Programs\\URY", script)
         self.assertIn("Source: \"..\\dist\\URY\\*\"", script)
@@ -127,7 +127,7 @@ class RemovedFeaturesTest(unittest.TestCase):
         self.assertEqual(script.count("Type: filesandordirs;"), 1)
         workflow = (root / ".github/workflows/windows-build.yml").read_text(encoding="utf-8")
         self.assertIn("Inno Setup 6\\ISCC.exe", workflow)
-        self.assertIn("URY_Windows_v0.9.7_setup", workflow)
+        self.assertIn("URY_Windows_v0.9.8_setup", workflow)
 
 
 if __name__ == "__main__":

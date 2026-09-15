@@ -1,13 +1,9 @@
 # URY Engine 개발 현황
 
-마지막 갱신: 2026-09-13
+마지막 갱신: 2026-09-15
 
 ## 진행 중
 
-- 플랫폼별 업데이트 인식 수정의 v0.9.7 배포 빌드:
-  - 대상 파일: macOS 앱·DMG·ZIP, Windows EXE·설치파일·ZIP, 설명서, GitHub Release asset
-  - 현재 상태: v0.9.7 macOS 앱·DMG·ZIP과 설명서 갱신 완료. Windows Actions EXE·설치파일도 설명서 포함 검증 성공
-  - 바로 다음 명령: 최종 패키지를 GitHub `v0.9.7` Release asset으로 업로드하고 기존 v0.9.6에서 업데이트 설치 확인
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
@@ -16,6 +12,8 @@
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
+
+- v0.9.8 릴리즈: v0.9.7 (`97457ed`) 기반으로 DiagnosticReports의 TCC/SIGABRT 원인인 `NSMicrophoneUsageDescription` 누락을 빌드 시 서명 전에 보완. 전체 테스트 50개 실행(49개 통과, 1개 환경 의존 제외), v0.9.8 앱 재빌드·버전/권한 plist·ad-hoc 서명·GUI smoke 검증 완료. 커밋 `4511b2d`. 실제 마이크 허용 및 녹음 저장은 사용자 확인 필요. 원래 로컬 통합 작업은 `preserve local platform unification before recorder fix 2026-09-15` Git stash에 보존.
 
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)
 - 플랫폼별 업데이트 인식 분리 완료: macOS는 DMG, Windows는 EXE/ZIP asset의 버전만 비교해 다른 플랫폼 업데이트 알림을 차단. macOS·Windows 공용 코드 동일 확인, 회귀 테스트 포함 전체 테스트 49개 통과(1개 환경 의존 제외), `git diff --check` 통과

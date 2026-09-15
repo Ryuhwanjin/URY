@@ -21,9 +21,9 @@ class UpdateDownloadTest(unittest.TestCase):
             namespace = {"__name__": "update_checker_test"}
             exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
             name, system = (
-                ("URY_Engine_v0.9.7.dmg", "Darwin")
+                ("URY_Engine_v0.9.8.dmg", "Darwin")
                 if platform == "URY_macOS"
-                else ("URY_Setup_v0.9.7.exe", "Windows")
+                else ("URY_Setup_v0.9.8.exe", "Windows")
             )
             release = {"assets": [{"name": name, "browser_download_url": "https://example.com/file"}]}
             with tempfile.TemporaryDirectory() as directory, \
@@ -42,23 +42,23 @@ class UpdateDownloadTest(unittest.TestCase):
             exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
             system = "Darwin" if platform == "URY_macOS" else "Windows"
             assets = [
-                {"name": "URY_Engine_v0.9.7.dmg"},
-                {"name": "URY_Engine_v0.9.7_macOS.zip"},
-                {"name": "URY_Engine_v0.9.7_Windows.zip"},
-                {"name": "URY_Setup_v0.9.7.exe"},
+                {"name": "URY_Engine_v0.9.8.dmg"},
+                {"name": "URY_Engine_v0.9.8_macOS.zip"},
+                {"name": "URY_Engine_v0.9.8_Windows.zip"},
+                {"name": "URY_Setup_v0.9.8.exe"},
             ]
             with patch.object(namespace["platform"], "system", return_value=system):
                 selected = namespace["_select_platform_asset"](assets)
-            expected = "URY_Engine_v0.9.7.dmg" if platform == "URY_macOS" else "URY_Setup_v0.9.7.exe"
+            expected = "URY_Engine_v0.9.8.dmg" if platform == "URY_macOS" else "URY_Setup_v0.9.8.exe"
             self.assertEqual(selected["name"], expected)
 
     def test_update_check_compares_matching_platform_asset_version(self):
         release = {
-            "tag_name": "v0.9.7",
+            "tag_name": "v0.9.8",
             "html_url": "https://example.com/release",
             "assets": [
-                {"name": "URY_Engine_v0.9.7.dmg"},
-                {"name": "URY_Setup_v0.9.8.exe"},
+                {"name": "URY_Engine_v0.9.8.dmg"},
+                {"name": "URY_Setup_v0.9.9.exe"},
             ],
         }
         for platform_name in ("URY_macOS", "URY_Windows"):
@@ -69,7 +69,7 @@ class UpdateDownloadTest(unittest.TestCase):
             with patch.object(namespace["platform"], "system", return_value=system), \
                     patch("urllib.request.urlopen", return_value=Response(json.dumps(release).encode())):
                 version, url = namespace["get_latest_release"]()
-            expected = "v0.9.7" if platform_name == "URY_macOS" else "v0.9.8"
+            expected = "v0.9.8" if platform_name == "URY_macOS" else "v0.9.9"
             self.assertEqual(version, expected)
             self.assertEqual(url, release["html_url"])
             self.assertEqual(namespace["is_newer"](version), platform_name == "URY_Windows")

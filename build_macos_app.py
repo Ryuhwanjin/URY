@@ -6,7 +6,7 @@ import venv
 
 ROOT = Path(__file__).resolve().parent
 ENV = ROOT / ".venv-macos-build"
-APP_VERSION = "0.9.7"
+APP_VERSION = "0.9.8"
 ICON_PADDING_RATIO = 0.08
 
 
@@ -48,6 +48,8 @@ def main():
     plist = app / "Contents/Info.plist"
     subprocess.run(["plutil", "-replace", "CFBundleShortVersionString", "-string", APP_VERSION, str(plist)], check=True)
     subprocess.run(["plutil", "-replace", "CFBundleVersion", "-string", APP_VERSION, str(plist)], check=True)
+    subprocess.run(["plutil", "-replace", "NSMicrophoneUsageDescription", "-string",
+                    "강의 음성을 녹음하여 선택한 과목의 음성녹음 폴더에 저장합니다.", str(plist)], check=True)
     subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)], check=True)
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
     check = subprocess.run([str(app / "Contents/MacOS/URY"), "--smoke-test"],

@@ -1,8 +1,8 @@
-; URY Windows installer (v0.9.7)
+; URY Windows installer (v0.9.8)
 ; The installer owns only the application directory. User data remains in %USERPROFILE%\Desktop\URY.
 
 #define MyAppName "URY"
-#define MyAppVersion "0.9.7"
+#define MyAppVersion "0.9.8"
 #define MyAppPublisher "Ryu.H.J"
 
 [Setup]
