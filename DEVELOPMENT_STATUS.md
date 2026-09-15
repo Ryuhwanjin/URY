@@ -8,6 +8,10 @@
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: v0.9.8 공개 릴리즈 완료. 첫 실행 Markdown 권한 fallback 및 PyInstaller windowed 표준 출력 보완이 Windows Run 33에서 테스트 63개 통과(1개 GUI 환경 의존 제외), `URY.exe` ZIP 54.5MiB·설치 EXE 41.2MiB 생성까지 성공했다. 실제 Windows 설치·마이크·첫 Markdown 생성·업데이트·완전삭제 QA가 남아 있다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
   - 바로 다음 명령: Windows 실기기에서 설치 후 마이크 녹음, 해상도, 강의노트 생성, 업데이트·완전삭제를 검증한다.
+- 개발 안정화·Windows QA 종료 후 저장소 정리:
+  - 대상: Git 로컬·원격 브랜치와 프로젝트 디렉터리 트리
+  - 현재 상태: 사용자가 안정화 작업 뒤 브랜치·폴더 정리를 요청했다. 현재 `codex/windows-markdown-permission-v0.9.9` 작업 트리는 깨끗하고 원격과 동기화되어 있다. 실제 브랜치·폴더 정리는 안정화 완료 뒤 진행한다.
+  - 바로 다음 명령: `git branch -vv`로 브랜치 병합·추적 상태를 확인하고 `find . -maxdepth 2 -type d -not -path './.git*' | sort`로 폴더 트리를 점검한다.
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
