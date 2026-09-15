@@ -181,7 +181,10 @@ def get_markdown_cache_dir(*parts):
                     target = os.path.join(cache, name.lstrip("."))
                     if not os.path.exists(target):
                         os.makedirs(cache, exist_ok=True)
-                        shutil.copy2(os.path.join(root, name), target)
+                        try:
+                            shutil.copy2(os.path.join(root, name), target)
+                        except PermissionError as error:
+                            print(f"[Warn] Markdown 복사 권한이 없어 기존 파일을 건너뜁니다: {os.path.join(root, name)} ({error})")
     return cache
 
 def get_semester_dir(semester=None):

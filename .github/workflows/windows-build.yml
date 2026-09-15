@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main, windows/phase3]
-    tags: ["v0.9.8"]
+    tags: ["v0.9.9"]
 
 permissions:
   contents: read
@@ -89,32 +89,32 @@ jobs:
 
       - name: Package build artifact
         shell: pwsh
-        run: Compress-Archive -Path dist/URY -DestinationPath URY_Windows_v0.9.8_onedir.zip
+        run: Compress-Archive -Path dist/URY -DestinationPath URY_Windows_v0.9.9_onedir.zip
 
       - name: Build Inno Setup installer
         shell: pwsh
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { throw "Missing Inno Setup compiler: $iscc" }
-          & $iscc "installer\URY_v0.9.8.iss"
+          & $iscc "installer\URY_v0.9.9.iss"
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
-          $setup = "dist/installer/URY_Engine_v0.9.8_Installer.exe"
+          $setup = "dist/installer/URY_Engine_v0.9.9_Installer.exe"
           if (-not (Test-Path $setup)) { throw "Missing $setup" }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: URY_Windows_v0.9.8_onedir
-          path: URY_Windows_v0.9.8_onedir.zip
+          name: URY_Windows_v0.9.9_onedir
+          path: URY_Windows_v0.9.9_onedir.zip
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: URY_Windows_v0.9.8_setup
-          path: dist/installer/URY_Engine_v0.9.8_Installer.exe
+          name: URY_Windows_v0.9.9_setup
+          path: dist/installer/URY_Engine_v0.9.9_Installer.exe
 
   publish-release:
-    if: github.ref == 'refs/tags/v0.9.8'
+    if: github.ref == 'refs/tags/v0.9.9'
     needs: build-windows
     runs-on: windows-latest
     permissions:
@@ -126,30 +126,30 @@ jobs:
       - name: Download onedir artifact
         uses: actions/download-artifact@v4
         with:
-          name: URY_Windows_v0.9.8_onedir
+          name: URY_Windows_v0.9.9_onedir
           path: release-assets/onedir
 
       - name: Download installer artifact
         uses: actions/download-artifact@v4
         with:
-          name: URY_Windows_v0.9.8_setup
+          name: URY_Windows_v0.9.9_setup
           path: release-assets/setup
 
-      - name: Update v0.9.8 release assets and notes
+      - name: Update v0.9.9 release assets and notes
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:GITHUB_REF_NAME
           $notes = "RELEASE_NOTES_$tag.md"
-          $onedir = "release-assets/onedir/URY_Windows_v0.9.8_onedir.zip"
-          $installer = "release-assets/setup/URY_Engine_v0.9.8_Installer.exe"
-          $releaseZip = "release-assets/URY_Engine_v0.9.8_Windows.zip"
+          $onedir = "release-assets/onedir/URY_Windows_v0.9.9_onedir.zip"
+          $installer = "release-assets/setup/URY_Engine_v0.9.9_Installer.exe"
+          $releaseZip = "release-assets/URY_Engine_v0.9.9_Windows.zip"
           foreach ($file in @($notes, $onedir, $installer)) {
             if (-not (Test-Path $file)) { throw "Missing release file: $file" }
           }
           Copy-Item $onedir $releaseZip -Force
-          gh release edit $tag --title "URY v0.9.8 — Windows 녹음·강의노트 수정" --notes-file $notes
+          gh release edit $tag --title "URY v0.9.9 — Windows Markdown 접근 오류 수정" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw "Could not update release notes for $tag" }
           gh release upload $tag $releaseZip $installer --clobber
           if ($LASTEXITCODE -ne 0) { throw "Could not upload Windows release assets for $tag" }

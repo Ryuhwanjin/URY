@@ -13,7 +13,7 @@
 | 과목 강의자료 폴더 기반 복수 선택 | 완료 | 사용자가 선택한 파일만 생성 입력에 포함 |
 | 음성 녹음 및 파일 선택 | 부분 구현 | 날짜·과목 기반 파일명 지원. macOS v0.9.8의 권한 설명 누락과 Windows의 ffmpeg `WinError 2`를 수정해 Windows sounddevice/PortAudio WAV 입력을 번들; 실제 macOS·Windows 마이크 녹음 확인 필요 |
 | 출력 언어 설정 연동 | 완료 | 한국어, 영어, 한·영 동시 생성 |
-| 강의노트 Markdown·PDF 생성 | 부분 구현 | 날짜별 원본과 주차별·전체 통합 Markdown을 갱신하고 PDF로 변환. Windows에서 열려 있는 기존 PDF는 덮어쓰지 않고 새 이름으로 저장; 실기기 확인 필요 |
+| 강의노트 Markdown·PDF 생성 | 부분 구현 | 날짜별 원본과 주차별·전체 통합 Markdown을 갱신하고 PDF로 변환. Windows v0.9.9 후보에서 잠기거나 읽을 수 없는 Markdown을 보존·건너뛰어 전체 생성이 중단되지 않도록 보정; 실기기 확인 필요 |
 | 음성 범위 기반 강의노트 | 완료 | 음성 녹음이 있으면 교수님이 실제로 말한 범위를 hard boundary로 삼고, 미진행 슬라이드·추가 배경지식은 제외 |
 | 동일 날짜 재생성 중복 방지 | 완료 | 날짜별·주차별·통합 숨김 Markdown에서 같은 날짜 섹션을 교체하여 PDF 중복을 방지 |
 | 불완전 영문 응답 차단 | 완료 | 4개 필수 섹션이 없거나 1,000자 미만인 스트리밍 응답은 저장하지 않고 다음 모델로 전환 |
@@ -72,11 +72,12 @@
 | macOS 후속 DMG v0.9.5 | 완료 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치의 DMG·macOS/Windows ZIP 공개 릴리즈 및 업데이트 인식 검증 완료 |
 | macOS DMG v0.9.6 | 완료 | Studio 주차·통합 적재 및 불완전 영문 응답 차단 패치를 포함해 GitHub Release asset 검증 완료 |
 | v0.9.8 녹음기 권한 수정 | 완료 | v0.9.7 기반 macOS TCC 권한 설명 누락을 빌드·서명 단계에서 보완하고, 앱·업데이터·패키징·Windows 설치 버전을 동기화. 전체 테스트와 macOS 앱 smoke 검증 완료 |
+| Windows v0.9.9 Markdown 권한 수정 | 부분 구현 | 캐시 복사·노트 갱신에서 `PermissionError`가 나면 원본을 보존하고 대체 Markdown에 기록하며, PDF 변환 중 접근할 수 없는 입력은 건너뜀. 회귀 테스트 통과, Actions 빌드·실기기 확인 필요 |
 | 모바일 앱(iOS/Android) | 제외 | Tkinter 데스크톱 아키텍처 및 로컬 파일 처리 특성상 모바일 빌드 제외 |
 | 인앱 광고 및 유료 결제 | 제외 | 순수 비영리 100% 무료(Ad-free Freeware) 정책에 따라 완전 제외 |
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화. 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정; 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | 기존 runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 현재 수정본은 PortAudio DLL 포함 검증을 추가했으며 실제 Windows 클린 환경 실행시험 필요 |
-| Windows CI 빌드 | 부분 구현 | Actions Run 27 성공. `URY.exe`, 사용자 설명서, PortAudio DLL을 검증하고 v0.9.8 Windows ZIP·설치 EXE를 릴리즈에 첨부. 실제 Windows 동작 검증 필요 |
-| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.8.iss`로 `URY_Engine_v0.9.8_Installer.exe` 생성 및 v0.9.8 릴리즈 첨부 완료. 설치·업데이트·삭제 실기기 검증 필요 |
+| Windows CI 빌드 | 부분 구현 | v0.9.8 Release에 `URY.exe`, 사용자 설명서, PortAudio DLL 포함 ZIP·설치 EXE를 첨부 완료. Markdown 권한 수정 v0.9.9 후보는 Actions 빌드·실기기 동작 확인 필요 |
+| Windows 설치마법사·릴리스 | 부분 구현 | v0.9.8 릴리즈 완료. Inno Setup `URY_v0.9.9.iss` 기반 수정 후보의 설치·업데이트·삭제 실기기 검증 및 공개 릴리즈는 대기 중 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |

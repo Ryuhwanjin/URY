@@ -1,11 +1,11 @@
 @echo off
 @chcp 65001 >nul
 setlocal
-title URY v0.9.8 - Windows Standalone EXE Builder
+title URY v0.9.9 - Windows Standalone EXE Builder
 cd /d "%~dp0"
 
 echo =========================================================
-echo  URY v0.9.8 Windows Standalone EXE Builder
+echo  URY v0.9.9 Windows Standalone EXE Builder
 echo =========================================================
 echo.
 

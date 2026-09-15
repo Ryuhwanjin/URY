@@ -729,15 +729,20 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
     clean_base = os.path.basename(md_path).lstrip('.')
     safe_name = re.sub(r'[\s/]', '_', clean_base)
     html_path = os.path.join(tempfile.gettempdir(), f"ury_pdf_{safe_name}.html")
-    latest_date = get_latest_date_from_md(md_path)
+    try:
+        with open(md_path, "r", encoding="utf-8") as f_md:
+            raw_md = f_md.read()
+    except PermissionError as error:
+        print(f"[Warn] [{display_name}] Markdown 파일에 접근할 수 없어 PDF 생성을 건너뜁니다: {md_path} ({error})")
+        return None
+    dates = re.findall(r"(\d{4}-\d{2}-\d{2})", raw_md)
+    latest_date = sorted(dates)[-1] if dates else datetime.now().strftime("%Y-%m-%d")
 
     print(f"[{display_name}] HTML 변환 중...")
 
     # 0. 마크다운 원문에서 아스키 박스 라인 및 각주 100% 완전 소멸 프리클리닝 (원문 파일은 보존)
     tmp_clean_md = os.path.join(tempfile.gettempdir(), f"ury_clean_{safe_name}.md")
     try:
-        with open(md_path, "r", encoding="utf-8") as f_md:
-            raw_md = f_md.read()
         cleaned_md = clean_ascii_boxes_from_markdown(raw_md)
         cleaned_md = re.sub(r'(?m)^\s*\[\^?[a-zA-Z0-9_-]+\]:\s*.*(?:\n(?:[ \t]+.*|\s*$))*', '', cleaned_md)
         cleaned_md = re.sub(r'\[\^?[a-zA-Z0-9_-]+\]', '', cleaned_md)
@@ -982,7 +987,11 @@ def process_course_pdfs(course_folder, cname, en_prefix):
     for md_p in md_files:
         fname = os.path.basename(md_p)
         clean_fname = fname.lstrip('.')
-        latest_date = get_latest_date_from_md(md_p)
+        try:
+            latest_date = get_latest_date_from_md(md_p)
+        except PermissionError as error:
+            print(f"[Warn] Markdown 파일에 접근할 수 없어 이 노트 PDF 생성을 건너뜁니다: {md_p} ({error})")
+            continue
 
         # 1. 전체 통합본인 경우 (강의노트/통합/ 에 저장)
         if "통합강의노트" in clean_fname or "Combined" in clean_fname:

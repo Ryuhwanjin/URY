@@ -656,8 +656,49 @@ def _replace_note_section(content, new_note_content, date_str):
     return "\n\n".join(part for part in parts if part) + "\n"
 
 
+def _new_markdown_fallback_path(note_path):
+    stem, ext = os.path.splitext(note_path)
+    return f"{stem}_새로생성_{time.time_ns()}{ext}"
+
+
+def _write_markdown_note(note_path, content):
+    """Write notes atomically; preserve a locked Windows Markdown file and save a sibling copy."""
+    temp_path = f"{note_path}.ury-{time.time_ns()}.tmp"
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        try:
+            os.replace(temp_path, note_path)
+            return note_path
+        except PermissionError:
+            if sys.platform != "win32":
+                raise
+            fallback_path = _new_markdown_fallback_path(note_path)
+            with open(fallback_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"[Warn] Markdown 파일 사용 권한 문제로 새 파일에 저장했습니다: {fallback_path}")
+            return fallback_path
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+
+
 def append_to_single_note_file(note_path, new_note_content, date_str, week_num, is_english=False, is_combined=True, config=None, source_files=None):
-    if not os.path.exists(note_path):
+    content = None
+    if os.path.exists(note_path):
+        try:
+            with open(note_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except PermissionError:
+            if sys.platform != "win32":
+                raise
+            note_path = _new_markdown_fallback_path(note_path)
+            print(f"[Warn] 기존 Markdown 파일에 접근할 수 없어 별도 파일을 만듭니다: {note_path}")
+
+    if content is None:
         # 파일이 없을 경우 초기 헤더 작성
         audio_ref = f" (`{source_files['audio']}`)" if (source_files and source_files.get('audio')) else ""
         slide_ref = f" (`{', '.join(source_files['slides'])}`)" if (source_files and source_files.get('slides')) else ""
@@ -679,21 +720,17 @@ def append_to_single_note_file(note_path, new_note_content, date_str, week_num, 
             if is_combined:
                 header += "## 📑 Table of Contents\n- *(Subsequent weekly lecture notes will be appended chronologically below)*\n\n---\n\n"
         content = header
-    else:
-        with open(note_path, "r", encoding="utf-8") as f:
-            content = f.read()
 
     # 같은 날짜의 기존 섹션은 재생성 결과로 교체하여 중복을 막는다.
     replaced_content = _replace_note_section(content, new_note_content, date_str)
     if replaced_content is not None:
-        with open(note_path, "w", encoding="utf-8") as f:
-            f.write(replaced_content)
+        note_path = _write_markdown_note(note_path, replaced_content)
         print(f"[{os.path.basename(note_path)}] {date_str} 강의노트 교체 저장 완료!")
-        return
+        return note_path
 
     # 이미 동일 음성 및 내용이 완제품으로 존재할 경우 스킵
     if (source_files and source_files.get("audio") and source_files["audio"] in content) and len(content) > 1000:
-        return
+        return note_path
 
     # 목차 갱신 (통합본인 경우)
     if is_combined:
@@ -743,9 +780,9 @@ def append_to_single_note_file(note_path, new_note_content, date_str, week_num, 
         else:
             updated_content = content.rstrip() + "\n\n---\n\n" + new_note_content.strip() + "\n"
 
-    with open(note_path, "w", encoding="utf-8") as f:
-        f.write(updated_content)
+    note_path = _write_markdown_note(note_path, updated_content)
     print(f"[{os.path.basename(note_path)}] {date_str} 강의노트 저장 완료!")
+    return note_path
 
 def save_to_markdown_cache(config, new_note_content, date_str, week_num, is_english=False, source_files=None, session_only=False):
     """주차별 개별 마크다운과 전체 통합본 마크다운을 .markdown_cache/ 및 사용자 강의노트/ 폴더에 동시 저장"""
@@ -797,7 +834,7 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
                 os.remove(user_w_path)
             except OSError:
                 pass
-        append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        user_w_path = append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
         hide_file_os_agnostic(user_w_path)
 
         # Studio 날짜별 원본은 유지하되, 같은 주차와 전체 통합본도 즉시 갱신한다.
@@ -812,10 +849,10 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
         w_path_cache = os.path.join(cache_c, w_name)
         user_w_aggregate = os.path.join(user_week_dir, f".{w_name}")
         user_c_aggregate = os.path.join(user_comb_dir, f".{c_name}")
-        append_to_single_note_file(w_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
-        append_to_single_note_file(c_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
-        append_to_single_note_file(user_w_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
-        append_to_single_note_file(user_c_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+        w_path_cache = append_to_single_note_file(w_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        c_path_cache = append_to_single_note_file(c_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+        user_w_aggregate = append_to_single_note_file(user_w_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+        user_c_aggregate = append_to_single_note_file(user_c_aggregate, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
         for aggregate_path in (user_w_aggregate, user_c_aggregate):
             hide_file_os_agnostic(aggregate_path)
         return [user_w_path, w_path_cache, c_path_cache, user_w_aggregate, user_c_aggregate]
@@ -831,8 +868,8 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
     # 1. .markdown_cache/ 격리 저장소 (기본 마크다운 소스)
     c_path_cache = os.path.join(cache_c, c_name)
     w_path_cache = os.path.join(cache_c, w_name)
-    append_to_single_note_file(c_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
-    append_to_single_note_file(w_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+    c_path_cache = append_to_single_note_file(c_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+    w_path_cache = append_to_single_note_file(w_path_cache, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
     saved_paths.extend([c_path_cache, w_path_cache])
 
     # 2. 사용자의 강의노트 하위 폴더(N주차, 통합)에만 마크다운 숨김 파일 저장 (루트 폴더 중복 노출 차단)
@@ -841,8 +878,8 @@ def save_lecture_note_files(new_note_content: str, date_str: str, week_num: int,
     user_w_path = os.path.join(user_week_dir, dot_w_name)
     user_c_path = os.path.join(user_comb_dir, dot_c_name)
 
-    append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
-    append_to_single_note_file(user_c_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
+    user_w_path = append_to_single_note_file(user_w_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=False, config=config, source_files=source_files)
+    user_c_path = append_to_single_note_file(user_c_path, new_note_content, date_str, week_num, is_english=is_english, is_combined=True, config=config, source_files=source_files)
 
     hide_file_os_agnostic(user_w_path)
     hide_file_os_agnostic(user_c_path)

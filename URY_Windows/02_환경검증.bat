@@ -1,11 +1,11 @@
 @echo off
 @chcp 65001 >nul
 setlocal
-title URY v0.9.8 - Windows Environment Test
+title URY v0.9.9 - Windows Environment Test
 cd /d "%~dp0"
 
 echo =========================================================
-echo  URY v0.9.8 Windows Environment Test
+echo  URY v0.9.9 Windows Environment Test
 echo =========================================================
 echo.
 

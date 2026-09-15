@@ -1,11 +1,11 @@
 @echo off
 @chcp 65001 >nul
 setlocal
-title URY v0.9.8 - Windows Academic Studio
+title URY v0.9.9 - Windows Academic Studio
 cd /d "%~dp0"
 
 echo =========================================================
-echo  URY v0.9.8 (Windows Academic Studio)
+echo  URY v0.9.9 (Windows Academic Studio)
 echo =========================================================
 echo.
 

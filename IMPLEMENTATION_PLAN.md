@@ -35,7 +35,8 @@
 
 ## 3. 현재 기준선
 
-- v0.9.8 유지보수: v0.9.7 (`97457ed`) 기반으로 마이크 권한 설명을 서명 전에 추가하고, 앱·업데이터·패키징 버전 및 회귀 테스트를 동기화한다.
+- v0.9.8 유지보수: v0.9.7 (`97457ed`) 기반으로 마이크 권한 설명을 서명 전에 추가하고, 앱·업데이터·패키징 버전 및 회귀 테스트를 동기화했다.
+- Windows v0.9.9 유지보수 후보: Markdown 캐시 복사·노트 읽기/쓰기 권한 오류가 강의노트 생성 전체를 중단시키지 않게 보정하고 Windows 설치파일을 재빌드한다.
 
 - 최신 기준: v0.9.8 (v0.9.7 `97457ed` 기반 녹음기 TCC 권한 수정)
 - 배포 정책 확정: 비영리 100% 무료 배포(무광고), 버전 정책 안 B(v0.9.6 검증 후 v1.0.0 승격)
@@ -108,7 +109,7 @@
 3. 딱딱한 직사각형 위젯을 현재 macOS 카드·라운드 UI와 동일하게 조정
 4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트. Studio QA에는 마이크 실녹음, 작은 화면에서 창 크기 복구, 노트 생성 중 콘솔 미노출, 기존 PDF가 열려 있을 때 저장을 포함
 5. PyInstaller 단독 EXE 빌드 및 깨끗한 Windows 환경 실행시험
-6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify를 완료하고, `installer/URY_v0.9.8.iss` 기반 Inno Setup 설치·업데이트·완전삭제 패키지를 생성·검증
+6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify 및 `installer/URY_v0.9.8.iss` Inno Setup 패키지를 완료. Markdown 권한 수정 v0.9.9 후보의 새 Windows 빌드를 별도 검증한다.
 
 완료 조건:
 

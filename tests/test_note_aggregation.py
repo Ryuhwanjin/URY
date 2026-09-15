@@ -4,21 +4,27 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
 def load_save_functions(platform):
     path = Path(__file__).parent.parent / platform / "system/code/process_all_lectures.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
-    wanted = {"_replace_note_section", "append_to_single_note_file", "save_lecture_note_files"}
+    wanted = {
+        "_replace_note_section", "_new_markdown_fallback_path", "_write_markdown_note",
+        "append_to_single_note_file", "save_lecture_note_files",
+    }
     nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
     namespace = {
         "os": os,
-        "sys": types.SimpleNamespace(platform="darwin"),
+        "sys": types.SimpleNamespace(platform="win32" if platform == "URY_Windows" else "darwin"),
         "subprocess": subprocess,
         "re": re,
+        "time": time,
         "get_default_config": lambda: {},
         "hide_file_os_agnostic": lambda path: path,
     }
@@ -27,6 +33,59 @@ def load_save_functions(platform):
 
 
 class NoteAggregationTest(unittest.TestCase):
+    def test_locked_markdown_is_preserved_and_replacement_is_saved_to_new_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "DB_1주차_강의노트.md"
+            original = "# DB 1주차 맞춤 강의노트 (2026-09-01)\nOLD\n"
+            target.write_text(original, encoding="utf-8")
+            namespace = load_save_functions("URY_Windows")
+            real_replace = os.replace
+
+            def replace_unless_locked(source, destination):
+                if Path(destination) == target:
+                    raise PermissionError(13, "Permission denied")
+                return real_replace(source, destination)
+
+            with mock.patch("os.replace", side_effect=replace_unless_locked):
+                output = namespace["append_to_single_note_file"](
+                    str(target), "# DB 1주차 맞춤 강의노트 (2026-09-01)\nNEW\n",
+                    "2026-09-01", 1, is_combined=False,
+                    config={"name": "DB", "en_name": "Database", "prof": "Professor"},
+                )
+
+            output = Path(output)
+            self.assertNotEqual(output, target)
+            self.assertEqual(target.read_text(encoding="utf-8"), original)
+            self.assertIn("NEW", output.read_text(encoding="utf-8"))
+            self.assertFalse(list(Path(tmp).glob("*.ury-*.tmp")))
+
+    def test_unreadable_markdown_is_preserved_and_note_goes_to_sibling_file(self):
+        import builtins
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "DB_1주차_강의노트.md"
+            original = "private existing note"
+            target.write_text(original, encoding="utf-8")
+            namespace = load_save_functions("URY_Windows")
+            real_open = builtins.open
+
+            def open_unless_locked(path, mode="r", *args, **kwargs):
+                if Path(path) == target and "r" in mode:
+                    raise PermissionError(13, "Permission denied")
+                return real_open(path, mode, *args, **kwargs)
+
+            with mock.patch("builtins.open", side_effect=open_unless_locked):
+                output = namespace["append_to_single_note_file"](
+                    str(target), "# DB 1주차 맞춤 강의노트 (2026-09-01)\nNEW\n",
+                    "2026-09-01", 1, is_combined=False,
+                    config={"name": "DB", "en_name": "Database", "prof": "Professor"},
+                )
+
+            output = Path(output)
+            self.assertNotEqual(output, target)
+            self.assertEqual(target.read_text(encoding="utf-8"), original)
+            self.assertIn("NEW", output.read_text(encoding="utf-8"))
+
     def test_studio_session_updates_week_and_combined_notes(self):
         for platform in ("URY_macOS", "URY_Windows"):
             with self.subTest(platform=platform), tempfile.TemporaryDirectory() as tmp:

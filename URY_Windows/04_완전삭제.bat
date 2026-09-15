@@ -1,11 +1,11 @@
 @echo off
 @chcp 65001 >nul
 setlocal
-title URY v0.9.8 - URY Uninstaller
+title URY v0.9.9 - URY Uninstaller
 cd /d "%~dp0"
 
 echo =========================================================
-echo  URY v0.9.8 Complete Program Uninstaller
+echo  URY v0.9.9 Complete Program Uninstaller
 echo =========================================================
 echo.
 
