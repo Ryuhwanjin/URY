@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unicodedata
 from datetime import datetime
@@ -18,6 +19,10 @@ def load_renderer(platform):
     nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) or
              (isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant))]
     ns = dict(globals())
+    helper_path = path.with_name("subprocess_utils.py")
+    helper_tree = ast.parse(helper_path.read_text(encoding="utf-8"))
+    helper_nodes = [node for node in helper_tree.body if isinstance(node, ast.FunctionDef)]
+    exec(compile(ast.Module(body=helper_nodes, type_ignores=[]), str(helper_path), "exec"), ns)
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), ns)
     ns["get_pandoc_path"] = lambda: None
     # QA uses local fonts and plain text, without downloading scripts.

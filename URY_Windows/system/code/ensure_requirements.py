@@ -20,6 +20,8 @@ REQUIRED_PACKAGES = [
     ("docx", "python-docx"),
     ("PIL", "pillow"),
 ]
+if sys.platform == "win32":
+    REQUIRED_PACKAGES.append(("sounddevice", "sounddevice"))
 
 
 def check_and_install_dependencies():

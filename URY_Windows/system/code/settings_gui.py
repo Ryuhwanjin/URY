@@ -669,8 +669,8 @@ class UnifiedDashboardApp:
         sh = self.root.winfo_screenheight()
         available_w = min(sw, max(640, sw - 40))
         available_h = min(sh, max(480, sh - 80))
-        min_w = min(1280, available_w)
-        min_h = min(820, available_h)
+        min_w = min(700, available_w)
+        min_h = min(500, available_h)
         self.root.minsize(min_w, min_h)
 
         default_w = min(1440, available_w, max(min_w, int(sw * 0.85)))
@@ -686,9 +686,13 @@ class UnifiedDashboardApp:
                 m = re.match(r"(\d+)x(\d+)(?:([+-]\d+)([+-]\d+))?", saved_geo)
                 if m:
                     gw, gh = int(m.group(1)), int(m.group(2))
-                    if gw <= sw and gh <= (sh - 50):
-                        self.root.geometry(saved_geo)
-                        applied_geo = True
+                    gw, gh = self._fit_window_size(gw, gh, sw, sh)
+                    gx = int(m.group(3)) if m.group(3) else x
+                    gy = int(m.group(4)) if m.group(4) else y
+                    gx = min(max(0, gx), max(0, sw - gw))
+                    gy = min(max(0, gy), max(0, sh - gh))
+                    self.root.geometry(f"{gw}x{gh}+{gx}+{gy}")
+                    applied_geo = True
             except Exception:
                 pass
         if not applied_geo:

@@ -106,9 +106,9 @@
 1. macOS 공용 기능과 Windows 소스 차이 감사
 2. 경로, 파일 선택기, 폰트, 아이콘, subprocess 호출을 Windows 방식으로 검증
 3. 딱딱한 직사각형 위젯을 현재 macOS 카드·라운드 UI와 동일하게 조정
-4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트
+4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트. Studio QA에는 마이크 실녹음, 작은 화면에서 창 크기 복구, 노트 생성 중 콘솔 미노출, 기존 PDF가 열려 있을 때 저장을 포함
 5. PyInstaller 단독 EXE 빌드 및 깨끗한 Windows 환경 실행시험
-6. GitHub Actions Windows runner 기반 `--onedir` 빌드·아이콘·번들 리소스 Verify를 완료하고, `installer/URY_v0.9.6.iss` 기반 Inno Setup 설치·업데이트·완전삭제 패키지를 생성·검증
+6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify를 완료하고, `installer/URY_v0.9.8.iss` 기반 Inno Setup 설치·업데이트·완전삭제 패키지를 생성·검증
 
 완료 조건:
 

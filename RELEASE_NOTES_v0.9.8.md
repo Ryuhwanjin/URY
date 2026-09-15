@@ -6,5 +6,9 @@
 - 앱 표시·업데이트 검사·macOS 패키징·Windows 설치 및 CI 버전을 0.9.8로 맞췄습니다.
 - 맥미니에서 v0.9.7에 추가된 반응형·고DPI UI 보정과 구버전 업데이터 호환용 `URY_Engine_v0.9.8_Installer.exe` 이름을 복원했습니다.
 - 권한 설명 생성과 서명 순서를 검사하는 회귀 테스트를 추가했습니다.
+- Windows 녹음은 외부 `ffmpeg` 실행에 의존하지 않고 sounddevice/PortAudio로 WAV를 기록해 `WinError 2`를 해결했습니다. Windows 빌드에서 PortAudio DLL 포함 여부도 확인합니다.
+- Windows에서 강의노트용 하위 프로세스의 콘솔 창을 숨기고, 작은 화면에서 창이 화면 밖에 남거나 최소 크기 때문에 프리셋 적용이 막히는 문제를 보정했습니다.
+- Windows에서 기존 PDF가 다른 앱에서 열려 덮어쓸 수 없으면 기존 파일을 보존하고 새 이름으로 저장합니다.
+- Windows onedir ZIP과 설치 EXE는 Windows CI 빌드가 성공하면 v0.9.8 릴리즈에 첨부됩니다.
 
-실제 마이크 허용 후 녹음·저장 및 Windows 실기기 검증은 별도로 필요합니다. Git 소스 푸시와 GitHub Release 설치파일 배포는 별개입니다.
+실제 Windows 마이크 장치와 설치파일 실행은 Windows 실기기에서 확인해야 합니다.

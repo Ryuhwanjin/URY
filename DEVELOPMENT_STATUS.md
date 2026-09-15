@@ -4,11 +4,14 @@
 
 ## 진행 중
 
+- Windows v0.9.7 실기기 QA 오류 수정 및 v0.9.8 EXE 재빌드:
+  - 대상 파일: `URY_Windows/system/code/process_all_lectures.py`, `generate_pdfs.py`, `audio_recorder.py`, `settings_gui.py`, 관련 회귀 테스트 및 Windows Actions 빌드
+  - 현재 상태: 창 최소 크기·화면 밖 저장 좌표, 강의노트 하위 프로세스 콘솔 노출, 열려 있는 PDF의 `Error 13`, 마이크의 `WinError 2`를 수정했다. Windows 녹음은 외부 실행 파일 대신 sounddevice/PortAudio WAV backend를 쓰며, CI가 PortAudio DLL 번들을 확인하도록 추가했다. 전체 53개 테스트 통과(1개 제외); 실제 Windows Actions 빌드가 남아 있다.
+  - 바로 다음 명령: 변경분을 커밋·푸시하고 v0.9.8 태그로 Windows Actions 빌드 및 설치파일 생성을 검증한다.
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
-  - 현재 상태: 참조가 없는 루트 아이콘 3개, 배포 제외 보안 우회 스크립트, 수동 전체 파이프라인 런처·wrapper를 제거했다. 런타임 quarantine 우회도 제거하고, README·macOS DMG·릴리즈 빌드 안내를 현재 배포 구조에 맞췄다.
-  - 바로 다음 명령: 정리 커밋을 푸시한 뒤 Windows 실기기 설치 QA로 전환
+  - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. 참조가 없는 루트 아이콘 3개, 배포 제외 보안 우회 스크립트, 수동 전체 파이프라인 런처·wrapper를 제거했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했으며 Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
+  - 바로 다음 명령: 이번 QA 수정 빌드가 통과한 뒤 Windows 실기기 설치 QA로 전환
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료

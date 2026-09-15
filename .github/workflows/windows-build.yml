@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main, windows/phase3]
-    tags: ["v*"]
+    tags: ["v0.9.8"]
 
 permissions:
   contents: read
@@ -42,6 +42,9 @@ jobs:
             --add-data "URY_Windows/system;system" `
             --add-data "assets;assets" `
             --hidden-import audio_recorder `
+            --hidden-import sounddevice `
+            --collect-all sounddevice `
+            --collect-all _sounddevice_data `
             --hidden-import config_manager `
             --hidden-import doc_parser `
             --hidden-import generate_cheatsheet `
@@ -75,6 +78,9 @@ jobs:
           $prompt = Get-ChildItem -Path "dist/URY" -Recurse -File -Filter "강의노트_한국어_프롬프트.txt" | Select-Object -First 1
           if (-not $prompt) { throw "Missing bundled lecture-note prompt" }
           Write-Host "Bundled prompt: $($prompt.FullName)"
+          $portaudio = Get-ChildItem -Path "dist/URY" -Recurse -File -Filter "libportaudio*.dll" | Select-Object -First 1
+          if (-not $portaudio) { throw "Missing bundled PortAudio DLL" }
+          Write-Host "Bundled PortAudio: $($portaudio.FullName)"
           $documents = @("USER_GUIDE.md", "USER_GUIDE.pdf", "시스템_저장경로_안내.md", "시스템_저장경로_안내.pdf")
           foreach ($document in $documents) {
             if (-not (Test-Path (Join-Path "dist/URY" $document))) { throw "Missing user document: $document" }
@@ -106,3 +112,45 @@ jobs:
         with:
           name: URY_Windows_v0.9.8_setup
           path: dist/installer/URY_Engine_v0.9.8_Installer.exe
+
+  publish-release:
+    if: github.ref == 'refs/tags/v0.9.8'
+    needs: build-windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v4
+
+      - name: Download onedir artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: URY_Windows_v0.9.8_onedir
+          path: release-assets/onedir
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: URY_Windows_v0.9.8_setup
+          path: release-assets/setup
+
+      - name: Update v0.9.8 release assets and notes
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag.TrimStart('v')
+          $notes = "RELEASE_NOTES_$version.md"
+          $onedir = "release-assets/onedir/URY_Windows_v0.9.8_onedir.zip"
+          $installer = "release-assets/setup/URY_Engine_v0.9.8_Installer.exe"
+          $releaseZip = "release-assets/URY_Engine_v0.9.8_Windows.zip"
+          foreach ($file in @($notes, $onedir, $installer)) {
+            if (-not (Test-Path $file)) { throw "Missing release file: $file" }
+          }
+          Copy-Item $onedir $releaseZip -Force
+          gh release edit $tag --title "URY v0.9.8 — Windows 녹음·강의노트 수정" --notes-file $notes
+          if ($LASTEXITCODE -ne 0) { throw "Could not update release notes for $tag" }
+          gh release upload $tag $releaseZip $installer --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Could not upload Windows release assets for $tag" }

@@ -3,7 +3,8 @@
 """
 🎓 URY Engine — 노트북 내장 실시간 오디오 녹음기 모듈 v2.0 (audio_recorder.py)
 - macOS: 네이티브 AVFoundation mac_audio_rec 바이너리 활용 ➔ Apple AAC/M4A 100% 무설치 고음질 녹음
-- Windows / 기타: ffmpeg / sox / wave fallback 녹음
+- Windows: sounddevice/PortAudio 직접 WAV 녹음 (외부 ffmpeg 불필요)
+- 기타: ffmpeg / sox / wave fallback 녹음
 - 녹음 완료 시 오늘 날짜 해당 과목 '음성녹음' 폴더에 자동 안착
 """
 
@@ -98,9 +99,55 @@ def build_recording_filename(rec_dir, date_str, course_name, ext):
 class AudioRecorder:
     def __init__(self):
         self.process = None
+        self._stream = None
+        self._wave_file = None
         self.output_file = None
         self.is_recording = False
         self.start_time = None
+
+    def _start_windows_recording(self):
+        import wave
+        import sounddevice as sd
+
+        device = sd.query_devices(kind="input")
+        channels = min(2, int(device["max_input_channels"]))
+        if channels < 1:
+            raise RuntimeError("사용 가능한 Windows 마이크 입력 장치가 없습니다.")
+
+        self._wave_file = wave.open(self.output_file, "wb")
+        self._wave_file.setnchannels(channels)
+        self._wave_file.setsampwidth(2)
+        self._wave_file.setframerate(int(device["default_samplerate"]))
+
+        def write_audio(indata, frames, timing, status):
+            self._wave_file.writeframesraw(indata)
+
+        self._stream = sd.RawInputStream(
+            samplerate=int(device["default_samplerate"]),
+            channels=channels,
+            dtype="int16",
+            callback=write_audio,
+        )
+        try:
+            self._stream.start()
+        except Exception:
+            self._stream.close()
+            self._stream = None
+            self._wave_file.close()
+            self._wave_file = None
+            raise
+
+    def _stop_windows_recording(self):
+        stream, self._stream = self._stream, None
+        wave_file, self._wave_file = self._wave_file, None
+        try:
+            if stream:
+                stream.stop()
+        finally:
+            if stream:
+                stream.close()
+            if wave_file:
+                wave_file.close()
 
     def start_recording(self, course_name_or_folder: str, lecture_date: str = None) -> dict:
         """녹음 시작: 과목 폴더에 YYYY-MM-DD_과목명_1교시_실시간녹음 형식으로 기록."""
@@ -135,6 +182,16 @@ class AudioRecorder:
                     }
 
                 cmd = [mac_bin, self.output_file]
+            elif sys.platform == "win32":
+                self._start_windows_recording()
+                self.is_recording = True
+                self.start_time = time.time()
+                print(f"🔴 [AudioRecorder] 실시간 마이크 녹음 시작: {self.output_file}")
+                return {
+                    "status": "success",
+                    "output_file": self.output_file,
+                    "file_name": filename
+                }
             else:
                 cmd = [
                     "ffmpeg",
@@ -178,6 +235,11 @@ class AudioRecorder:
             }
 
         except Exception as e:
+            if self._stream or self._wave_file:
+                try:
+                    self._stop_windows_recording()
+                except Exception:
+                    pass
             self.is_recording = False
             self.process = None
             print(f"⚠️ 녹음 구동 오류: {e}")
@@ -185,19 +247,22 @@ class AudioRecorder:
 
     def stop_recording(self) -> dict:
         """녹음 중지 및 파일 정상 닫기"""
-        if not self.is_recording or not self.process:
+        if not self.is_recording or not (self.process or self._stream):
             return {"status": "not_running", "message": "녹음 중이 아닙니다."}
 
         try:
-            if sys.platform == "win32":
+            if sys.platform == "win32" and self._stream:
+                self._stop_windows_recording()
+            elif sys.platform == "win32":
                 self.process.terminate()
             else:
                 self.process.send_signal(signal.SIGINT)
 
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
+            if self.process:
+                try:
+                    self.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
 
             duration_sec = int(time.time() - self.start_time) if self.start_time else 0
             self.is_recording = False

@@ -17,6 +17,7 @@ import shutil
 import argparse
 import unicodedata
 from datetime import datetime
+from subprocess_utils import quiet_subprocess_kwargs
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -703,6 +704,18 @@ def clean_ascii_boxes_from_markdown(content):
     res = re.sub(r'\n{3,}', '\n\n', res)
     return res
 
+def _replace_rendered_pdf(source_path, target_path):
+    try:
+        os.replace(source_path, target_path)
+    except PermissionError:
+        if sys.platform != "win32" or not os.path.exists(target_path):
+            raise
+        stem, ext = os.path.splitext(target_path)
+        target_path = f"{stem}_새로생성_{time.time_ns()}{ext}"
+        os.replace(source_path, target_path)
+    return target_path
+
+
 def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir):
     """단일 마크다운 문서를 지정된 PDF 경로로 컴파일 (마크다운 볼드체/서식 100% 치환)"""
     pdf_output_path = unicodedata.normalize("NFC", pdf_output_path)
@@ -743,7 +756,7 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
                 pandoc_bin, "-s", "--mathjax", target_md_for_pandoc, "-o", html_path,
                 "--metadata", f"title={display_name}"
             ]
-            subprocess.check_call(cmd_pandoc)
+            subprocess.check_call(cmd_pandoc, **quiet_subprocess_kwargs())
         except Exception:
             fallback_md_to_html(target_md_for_pandoc, html_path, title=display_name)
     else:
@@ -870,9 +883,12 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
             html_path
         ]
         try:
-            res = subprocess.run(cmd_browser, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+            res = subprocess.run(cmd_browser, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20, **quiet_subprocess_kwargs())
             if res.returncode == 0 and os.path.exists(pending_pdf) and os.path.getsize(pending_pdf) > 100:
-                os.replace(pending_pdf, pdf_output_path)
+                original_pdf_path = pdf_output_path
+                pdf_output_path = _replace_rendered_pdf(pending_pdf, pdf_output_path)
+                if pdf_output_path != original_pdf_path:
+                    print(f"[{display_name}] 기존 PDF가 사용 중이어서 새 파일로 저장했습니다: {os.path.basename(pdf_output_path)}")
                 pdf_rendered = True
                 print(f"[{display_name}] ✨ Chromium Headless 고품질 PDF 출판 성공! ({round(os.path.getsize(pdf_output_path)/1024/1024, 2)}MB)")
         except Exception as e:
@@ -906,6 +922,18 @@ def convert_single_md_to_pdf(md_path, pdf_output_path, display_name, folder_dir)
                 shutil.copy2(pdf_output_path, dest_user_pdf)
                 print(f"[{display_name}] 📂 사용자 강의노트 폴더로 PDF 복사 완료: {dest_user_pdf}")
                 pdf_output_path = dest_user_pdf
+            except PermissionError as e_cp:
+                if sys.platform == "win32" and os.path.exists(dest_user_pdf):
+                    stem, ext = os.path.splitext(dest_user_pdf)
+                    dest_user_pdf = f"{stem}_새로생성_{time.time_ns()}{ext}"
+                    try:
+                        shutil.copy2(pdf_output_path, dest_user_pdf)
+                        pdf_output_path = dest_user_pdf
+                        print(f"[{display_name}] 기존 PDF가 사용 중이어서 새 파일로 복사했습니다: {dest_user_pdf}")
+                    except Exception as fallback_error:
+                        print(f"[Warn] 사용자 폴더 복사 알림: {fallback_error}")
+                else:
+                    print(f"[Warn] 사용자 폴더 복사 알림: {e_cp}")
             except Exception as e_cp:
                 print(f"[Warn] 사용자 폴더 복사 알림: {e_cp}")
 

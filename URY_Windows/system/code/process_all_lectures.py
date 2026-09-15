@@ -22,6 +22,7 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from subprocess_utils import quiet_subprocess_kwargs
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
@@ -320,7 +321,7 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None, api_key=None):
         "-d", json.dumps({"file": {"display_name": file_name}})
     ]
     try:
-        out1 = subprocess.check_output(cmd1, timeout=35).decode("utf-8", errors="ignore")
+        out1 = subprocess.check_output(cmd1, timeout=35, **quiet_subprocess_kwargs()).decode("utf-8", errors="ignore")
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         raise RuntimeError("파일 업로드 연결 실패 또는 30초 제한시간 초과") from None
     upload_url = None
@@ -357,7 +358,7 @@ def upload_file_to_gemini(file_path, mime_type=None, log_fn=None, api_key=None):
     ticker_th.start()
 
     try:
-        out2 = subprocess.check_output(cmd2, timeout=185).decode("utf-8", errors="ignore")
+        out2 = subprocess.check_output(cmd2, timeout=185, **quiet_subprocess_kwargs()).decode("utf-8", errors="ignore")
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         raise RuntimeError("파일 전송 실패 또는 180초 제한시간 초과") from None
     finally:
@@ -760,7 +761,7 @@ def hide_file_os_agnostic(filepath):
             ctypes.windll.kernel32.SetFileAttributesW(str(filepath), 0x02)
         except Exception:
             try:
-                subprocess.run(["attrib", "+h", str(filepath)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["attrib", "+h", str(filepath)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **quiet_subprocess_kwargs())
             except Exception:
                 pass
     return filepath
@@ -974,7 +975,7 @@ def scan_and_process_all_lectures(target_courses=None, target_audio_files=None):
                 cmd = [sys.executable, os.path.join(SCRIPT_DIR, "generate_pdfs.py")]
                 if target_courses:
                     cmd.extend(["--courses"] + target_courses)
-                subprocess.check_call(cmd)
+                subprocess.check_call(cmd, **quiet_subprocess_kwargs())
             print("✅ 주차별 및 전체 통합본 PDF 최신화까지 자동 완료되었습니다!", flush=True)
         except Exception as e:
             print(f"[Warn] PDF 생성 중 오류: {e}", flush=True)

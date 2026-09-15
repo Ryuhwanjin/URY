@@ -16,7 +16,7 @@ except ImportError:
     tk = None
 
 HIDDEN_MODULES = (
-    "audio_recorder", "config_manager", "doc_parser",
+    "audio_recorder", "config_manager", "doc_parser", "sounddevice",
     "generate_cheatsheet", "generate_master_bible", "generate_mock_exams",
     "generate_pdfs", "generate_roadmap", "lecture_tutor", "pdf_viewer",
     "process_all_lectures", "update_checker",
@@ -61,6 +61,7 @@ def run_build_process(target_install_dir, update_status_cb, on_complete_cb):
         ]
         for module in HIDDEN_MODULES:
             cmd.extend(["--hidden-import", module])
+        cmd.extend(["--collect-all", "sounddevice", "--collect-all", "_sounddevice_data"])
         if os.path.exists(ico_file):
             cmd.extend(["--icon", ico_file])
         if os.path.isdir(assets_dir):
