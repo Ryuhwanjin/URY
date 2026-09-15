@@ -141,8 +141,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:GITHUB_REF_NAME
-          $version = $tag.TrimStart('v')
-          $notes = "RELEASE_NOTES_$version.md"
+          $notes = "RELEASE_NOTES_$tag.md"
           $onedir = "release-assets/onedir/URY_Windows_v0.9.8_onedir.zip"
           $installer = "release-assets/setup/URY_Engine_v0.9.8_Installer.exe"
           $releaseZip = "release-assets/URY_Engine_v0.9.8_Windows.zip"
