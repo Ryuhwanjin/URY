@@ -3,7 +3,7 @@ name: Windows build
 on:
   workflow_dispatch:
   push:
-    branches: [main, windows/phase3]
+    branches: [main, windows/phase3, "codex/**"]
     tags: ["v0.9.9"]
 
 permissions:

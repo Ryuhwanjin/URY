@@ -7,7 +7,7 @@
 - Windows 강의노트 Markdown `PermissionError` 수정:
   - 대상 파일: 공용 `config_manager.py`, `process_all_lectures.py`, `generate_pdfs.py`; Windows v0.9.9 updater·설치 스크립트·Actions 빌드; 회귀 테스트와 릴리즈 문서
   - 현재 상태: 캐시 복사 오류는 건너뛰고, 잠긴 Markdown은 원본을 보존해 대체 파일에 저장하며, 읽을 수 없는 PDF 입력은 해당 노트만 건너뛰도록 구현했다. 전체 테스트 57개 통과(1개 GUI 환경 의존 제외). Windows v0.9.9 CI 빌드 대기.
-  - 바로 다음 명령: 변경을 커밋·푸시하고 Windows Actions workflow_dispatch를 실행해 EXE·설치마법사 빌드 검증
+  - 바로 다음 명령: workflow가 `codex/**` 브랜치 푸시도 빌드하도록 추가하고 푸시해 EXE·설치마법사 검증 실행
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. 참조가 없는 루트 아이콘 3개, 배포 제외 보안 우회 스크립트, 수동 전체 파이프라인 런처·wrapper를 제거했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했으며, 이번 v0.9.8 수정본도 Actions Run 27에서 빌드와 공개 릴리즈 asset 첨부를 완료했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
