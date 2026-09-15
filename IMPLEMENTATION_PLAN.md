@@ -36,7 +36,7 @@
 ## 3. 현재 기준선
 
 - v0.9.8 유지보수: v0.9.7 (`97457ed`) 기반으로 마이크 권한 설명을 서명 전에 추가하고, 앱·업데이터·패키징 버전 및 회귀 테스트를 동기화했다.
-- Windows v0.9.9 유지보수 후보: Run 28의 첫 수정은 기존 Markdown 접근 문제에만 적용되어 첫 실행의 새 Markdown 생성 오류를 해결하지 못했다. 워크스페이스 쓰기 권한을 실제 파일 생성으로 검사하고 Windows 사용자 데이터 폴더로 전환하는 보완을 구현했다. 선택한 대체 경로는 이후 실행과 완전 삭제에서도 유지된다. Run 30의 ZIP·설치 EXE 빌드는 성공했다. 첫 저장 실패 경로와 Windows 표준 스트림 테스트를 추가했다. Run 32는 CP1252 로그 출력에서 실패했고, windowed 앱의 표준 스트림 fallback과 테스트 로그 격리를 넣어 Windows 재검증 중이다. 네이티브 CI와 실기기 확인 후 공개 릴리즈한다.
+- Windows v0.9.9 유지보수 후보: Run 28의 첫 수정은 기존 Markdown 접근 문제에만 적용되어 첫 실행의 새 Markdown 생성 오류를 해결하지 못했다. 워크스페이스 쓰기 권한을 실제 파일 생성으로 검사하고 Windows 사용자 데이터 폴더로 전환하는 보완을 구현했다. 선택한 대체 경로는 이후 실행과 완전 삭제에서도 유지된다. `--windowed` 표준 스트림 부재와 CP1252 로그 인코딩도 보완했다. Run 33에서 Windows 테스트 63개 통과(1개 GUI 환경 의존 제외), ZIP·설치 EXE 빌드를 확인했다. 실기기 확인 후 공개 릴리즈한다.
 
 - 최신 기준: v0.9.8 (v0.9.7 `97457ed` 기반 녹음기 TCC 권한 수정)
 - 배포 정책 확정: 비영리 100% 무료 배포(무광고), 버전 정책 안 B(v0.9.6 검증 후 v1.0.0 승격)
@@ -109,7 +109,7 @@
 3. 딱딱한 직사각형 위젯을 현재 macOS 카드·라운드 UI와 동일하게 조정
 4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트. Studio QA에는 첫 실행 Markdown 생성 및 Desktop 권한 fallback, 마이크 실녹음, 작은 화면에서 창 크기 복구, 노트 생성 중 콘솔 미노출, 기존 PDF가 열려 있을 때 저장을 포함
 5. PyInstaller 단독 EXE 빌드 및 깨끗한 Windows 환경 실행시험
-6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify 및 `installer/URY_v0.9.8.iss` Inno Setup 패키지를 완료. v0.9.9 ZIP·설치 EXE는 Run 30에서 빌드했다. workflow가 패키징 전 전체 unittest를 실행하도록 바꿨으며, Run 32에서 찾은 CP1252 로그 오류를 고쳐 네이티브 runner 재검증 중이다. 실제 Windows 설치·기능 QA가 남아 있다.
+6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify 및 `installer/URY_v0.9.8.iss` Inno Setup 패키지를 완료. v0.9.9 workflow는 패키징 전 전체 unittest 63개를 실행한다. Run 33에서 테스트·Windows ZIP 54.5MiB·Inno Setup 41.2MiB 빌드가 성공했다. 실제 Windows 설치·기능 QA가 남아 있다.
 
 완료 조건:
 

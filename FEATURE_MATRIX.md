@@ -72,12 +72,12 @@
 | macOS 후속 DMG v0.9.5 | 완료 | 음성 발화 범위 제한과 동일 날짜 재생성 중복 방지 패치의 DMG·macOS/Windows ZIP 공개 릴리즈 및 업데이트 인식 검증 완료 |
 | macOS DMG v0.9.6 | 완료 | Studio 주차·통합 적재 및 불완전 영문 응답 차단 패치를 포함해 GitHub Release asset 검증 완료 |
 | v0.9.8 녹음기 권한 수정 | 완료 | v0.9.7 기반 macOS TCC 권한 설명 누락을 빌드·서명 단계에서 보완하고, 앱·업데이터·패키징·Windows 설치 버전을 동기화. 전체 테스트와 macOS 앱 smoke 검증 완료 |
-| Windows v0.9.9 첫 저장 권한 수정 | 부분 구현 | 워크스페이스를 실제 파일 생성으로 검사하고 Desktop 쓰기가 거부되면 `%LOCALAPPDATA%\URY`로 전환해 이후 실행에도 유지. 완전 삭제 기능도 활성 경로를 찾음. 새 폴더 첫 저장·후보 경로 모두 거부·사용자 지정 경로 회귀 테스트 추가; Windows CI 결과와 실기기 확인 필요 |
+| Windows v0.9.9 첫 저장 권한 수정 | 부분 구현 | 워크스페이스 실제 쓰기 검사, Desktop 실패 시 `%LOCALAPPDATA%\URY` fallback과 지속성, 완전 삭제 경로 일치. 새 폴더 첫 저장·두 후보 경로 거부·사용자 지정 경로 테스트를 macOS 및 Windows CI에서 통과; 실기기 확인 필요 |
 | 모바일 앱(iOS/Android) | 제외 | Tkinter 데스크톱 아키텍처 및 로컬 파일 처리 특성상 모바일 빌드 제외 |
 | 인앱 광고 및 유료 결제 | 제외 | 순수 비영리 100% 무료(Ad-free Freeware) 정책에 따라 완전 제외 |
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
-| Windows UI 코드 동기화 | 부분 구현 | 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정. `--windowed` 실행 시 표준 출력이 없는 환경과 CP1252 로그 출력을 UTF-8로 안전하게 처리하도록 보완; 실제 Windows 최종 QA 필요 |
+| Windows UI 코드 동기화 | 부분 구현 | 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정. `--windowed` 표준 스트림 부재 및 CP1252 로그를 UTF-8로 안전하게 처리; Windows Run 33 테스트·패키징 통과, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | 기존 runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 현재 수정본은 PortAudio DLL 포함 검증을 추가했으며 실제 Windows 클린 환경 실행시험 필요 |
-| Windows CI 빌드 | 부분 구현 | v0.9.8 공개 릴리즈 완료. Markdown 권한 수정 v0.9.9 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB는 Run 30에서 생성·검증. 전체 unittest를 먼저 돌린 Run 32는 기본 CP1252 로그 출력에서 실패했고, 표준 스트림·테스트 로그 처리를 보완해 Windows 재검증 중; 실기기 동작·공개 릴리즈 대기 |
+| Windows CI 빌드 | 부분 구현 | v0.9.8 공개 릴리즈 완료. v0.9.9 Windows Run 33에서 전체 테스트 63개 통과(1개 GUI 환경 의존 제외), `URY.exe` ZIP 54.5MiB 및 설치 EXE 41.2MiB 생성·검증 성공. 실기기 동작·공개 릴리즈 대기 |
 | Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.9.iss` 설치 EXE 빌드 성공. Windows 실기기 설치·업데이트·삭제 검증 및 공개 릴리즈는 대기 중 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |
