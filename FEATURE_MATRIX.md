@@ -77,6 +77,6 @@
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화. 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정; 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | 기존 runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 현재 수정본은 PortAudio DLL 포함 검증을 추가했으며 실제 Windows 클린 환경 실행시험 필요 |
-| Windows CI 빌드 | 부분 구현 | `windows-latest`에서 PyInstaller `--onedir`·아이콘·프롬프트·사용자 설명서·PortAudio DLL Verify 및 v0.9.8 artifact 생성 설정 완료. 성공 시 Windows ZIP·설치 EXE를 v0.9.8 릴리즈에 첨부; 현재 수정본 CI 실행 필요 |
-| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.8.iss`로 `URY_Engine_v0.9.8_Installer.exe` 생성·릴리즈 첨부 설정 완료. 설치·업데이트·삭제 실기기 검증 필요 |
+| Windows CI 빌드 | 부분 구현 | Actions Run 27 성공. `URY.exe`, 사용자 설명서, PortAudio DLL을 검증하고 v0.9.8 Windows ZIP·설치 EXE를 릴리즈에 첨부. 실제 Windows 동작 검증 필요 |
+| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.8.iss`로 `URY_Engine_v0.9.8_Installer.exe` 생성 및 v0.9.8 릴리즈 첨부 완료. 설치·업데이트·삭제 실기기 검증 필요 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |

@@ -1,4 +1,4 @@
-# v0.9.8 — macOS 녹음기 종료 수정
+# v0.9.8 — macOS·Windows 녹음 및 강의노트 오류 수정
 
 - v0.9.7 (`97457ed`) 소스를 기반으로 수정했습니다.
 - 녹음 시작 직후 코드 `-6`으로 종료되는 원인을 수정했습니다. macOS 크래시 로그에서 마이크 사용 목적 설명 누락에 따른 TCC/SIGABRT를 확인했습니다.
@@ -9,6 +9,6 @@
 - Windows 녹음은 외부 `ffmpeg` 실행에 의존하지 않고 sounddevice/PortAudio로 WAV를 기록해 `WinError 2`를 해결했습니다. Windows 빌드에서 PortAudio DLL 포함 여부도 확인합니다.
 - Windows에서 강의노트용 하위 프로세스의 콘솔 창을 숨기고, 작은 화면에서 창이 화면 밖에 남거나 최소 크기 때문에 프리셋 적용이 막히는 문제를 보정했습니다.
 - Windows에서 기존 PDF가 다른 앱에서 열려 덮어쓸 수 없으면 기존 파일을 보존하고 새 이름으로 저장합니다.
-- Windows onedir ZIP과 설치 EXE는 Windows CI 빌드가 성공하면 v0.9.8 릴리즈에 첨부됩니다.
+- Windows onedir ZIP과 설치 EXE를 Windows CI에서 빌드해 v0.9.8 릴리즈에 첨부했습니다.
 
 실제 Windows 마이크 장치와 설치파일 실행은 Windows 실기기에서 확인해야 합니다.
