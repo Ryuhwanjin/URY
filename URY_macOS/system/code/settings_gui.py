@@ -25,12 +25,24 @@ import threading
 import queue
 from datetime import datetime, date, timedelta
 
+def _configure_windows_stdio():
+    """Keep logging safe when a frozen windowed build has no console streams."""
+    for name, mode in (("stdin", "r"), ("stdout", "w"), ("stderr", "w")):
+        stream = getattr(sys, name, None)
+        if stream is None:
+            try:
+                setattr(sys, name, open(os.devnull, mode, encoding="utf-8", errors="replace"))
+            except OSError:
+                continue
+        else:
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, OSError):
+                pass
+
+
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
-        pass
+    _configure_windows_stdio()
     try:
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(2)

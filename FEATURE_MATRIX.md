@@ -76,8 +76,8 @@
 | 모바일 앱(iOS/Android) | 제외 | Tkinter 데스크톱 아키텍처 및 로컬 파일 처리 특성상 모바일 빌드 제외 |
 | 인앱 광고 및 유료 결제 | 제외 | 순수 비영리 100% 무료(Ad-free Freeware) 정책에 따라 완전 제외 |
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
-| Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화. 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정; 실제 Windows 최종 QA 필요 |
+| Windows UI 코드 동기화 | 부분 구현 | 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정. `--windowed` 실행 시 표준 출력이 없는 환경과 CP1252 로그 출력을 UTF-8로 안전하게 처리하도록 보완; 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | 기존 runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 현재 수정본은 PortAudio DLL 포함 검증을 추가했으며 실제 Windows 클린 환경 실행시험 필요 |
-| Windows CI 빌드 | 부분 구현 | v0.9.8 공개 릴리즈 완료. Markdown 권한 수정 v0.9.9 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB는 Run 30에서 생성·검증. 이제 `windows-latest`에서 unittest 전체를 먼저 실행하도록 변경; 첫 네이티브 CI 결과·실기기 동작·공개 릴리즈는 대기 중 |
+| Windows CI 빌드 | 부분 구현 | v0.9.8 공개 릴리즈 완료. Markdown 권한 수정 v0.9.9 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB는 Run 30에서 생성·검증. 전체 unittest를 먼저 돌린 Run 32는 기본 CP1252 로그 출력에서 실패했고, 표준 스트림·테스트 로그 처리를 보완해 Windows 재검증 중; 실기기 동작·공개 릴리즈 대기 |
 | Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.9.iss` 설치 EXE 빌드 성공. Windows 실기기 설치·업데이트·삭제 검증 및 공개 릴리즈는 대기 중 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |

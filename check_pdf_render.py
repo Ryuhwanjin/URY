@@ -24,6 +24,7 @@ def load_renderer(platform):
     helper_nodes = [node for node in helper_tree.body if isinstance(node, ast.FunctionDef)]
     exec(compile(ast.Module(body=helper_nodes, type_ignores=[]), str(helper_path), "exec"), ns)
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), ns)
+    ns["print"] = lambda *args, **kwargs: None
     ns["get_pandoc_path"] = lambda: None
     # QA uses local fonts and plain text, without downloading scripts.
     ns["CSS_STYLE"] = re.sub(r"@import[^;]+;", "", ns["CSS_STYLE"])

@@ -44,6 +44,7 @@ class RemovedFeaturesTest(unittest.TestCase):
                 "os": os,
                 "sys": types.SimpleNamespace(platform="win32"),
                 "tempfile": tempfile,
+                "print": lambda *args, **kwargs: None,
                 "__file__": str(fake_source),
             }
             exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)
@@ -88,6 +89,7 @@ class RemovedFeaturesTest(unittest.TestCase):
                 "os": os,
                 "sys": types.SimpleNamespace(platform="win32"),
                 "tempfile": tempfile,
+                "print": lambda *args, **kwargs: None,
                 "__file__": str(fake_source),
             }
             exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)
@@ -116,6 +118,7 @@ class RemovedFeaturesTest(unittest.TestCase):
                 "os": os,
                 "sys": types.SimpleNamespace(platform="win32"),
                 "tempfile": tempfile,
+                "print": lambda *args, **kwargs: None,
                 "__file__": str(fake_source),
             }
             exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)

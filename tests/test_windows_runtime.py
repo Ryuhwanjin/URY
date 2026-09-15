@@ -1,6 +1,9 @@
+import ast
+import io
 import os
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -15,6 +18,50 @@ import subprocess_utils
 
 
 class WindowsRuntimeTests(unittest.TestCase):
+    def test_windowed_app_standard_streams_are_safe_for_korean_logs(self):
+        root = Path(__file__).parents[1]
+        function_sources = []
+        for platform in ("URY_macOS", "URY_Windows"):
+            path = root / platform / "system/code/settings_gui.py"
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            function = next(
+                node for node in tree.body
+                if isinstance(node, ast.FunctionDef) and node.name == "_configure_windows_stdio"
+            )
+            function_sources.append(ast.dump(function, include_attributes=False))
+            fake_sys = types.SimpleNamespace(stdin=None, stdout=None, stderr=None)
+            namespace = {"os": os, "sys": fake_sys}
+            exec(compile(ast.Module(body=[function], type_ignores=[]), str(path), "exec"), namespace)
+            configure = namespace["_configure_windows_stdio"]
+
+            for encoding in (None, "cp1252"):
+                if encoding is None:
+                    fake_sys = types.SimpleNamespace(stdin=None, stdout=None, stderr=None)
+                else:
+                    fake_sys = types.SimpleNamespace(
+                        stdin=io.TextIOWrapper(io.BytesIO(), encoding=encoding),
+                        stdout=io.TextIOWrapper(io.BytesIO(), encoding=encoding),
+                        stderr=io.TextIOWrapper(io.BytesIO(), encoding=encoding),
+                    )
+                namespace["sys"] = fake_sys
+                try:
+                    configure()
+                    for stream_name in ("stdin", "stdout", "stderr"):
+                        stream = getattr(fake_sys, stream_name)
+                        self.assertIsNotNone(stream)
+                        self.assertEqual(stream.encoding.lower().replace("_", "-"), "utf-8")
+                    fake_sys.stdout.write("한글 로그")
+                    fake_sys.stdout.flush()
+                    fake_sys.stderr.write("한글 오류")
+                    fake_sys.stderr.flush()
+                finally:
+                    for stream_name in ("stdin", "stdout", "stderr"):
+                        stream = getattr(fake_sys, stream_name)
+                        if stream is not None:
+                            stream.close()
+
+        self.assertEqual(function_sources[0], function_sources[1])
+
     def test_cli_children_are_configured_without_console_windows(self):
         with mock.patch.object(subprocess_utils.sys, "platform", "win32"):
             self.assertEqual(
@@ -74,7 +121,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         fake_sounddevice.RawInputStream.side_effect = FakeStream
 
         with tempfile.TemporaryDirectory() as folder:
-            with mock.patch.dict(sys.modules, {"sounddevice": fake_sounddevice}), mock.patch.object(
+            with mock.patch("builtins.print"), mock.patch.dict(sys.modules, {"sounddevice": fake_sounddevice}), mock.patch.object(
                 audio_recorder.sys, "platform", "win32"
             ), mock.patch.object(audio_recorder.config_manager, "load_settings", return_value={"courses": []}), mock.patch.object(
                 audio_recorder.config_manager, "get_course_dir", return_value=folder

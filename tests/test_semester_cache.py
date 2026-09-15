@@ -13,7 +13,8 @@ class SemesterCacheTest(unittest.TestCase):
                 source = Path(__file__).parent.parent / platform / "system/code/config_manager.py"
                 tree = ast.parse(source.read_text(encoding="utf-8"))
                 fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "get_markdown_cache_dir")
-                ns = {"os": os, "WORKSPACE_DIR": tmp, "get_current_semester": lambda: "2026년 2학기"}
+                ns = {"os": os, "print": lambda *args, **kwargs: None,
+                      "WORKSPACE_DIR": tmp, "get_current_semester": lambda: "2026년 2학기"}
                 exec(compile(ast.Module(body=[fn], type_ignores=[]), str(source), "exec"), ns)
                 note = Path(tmp) / "2026년 2학기" / "공통과목/강의노트/1주차/note.md"
                 note.parent.mkdir(parents=True)
@@ -33,7 +34,8 @@ class SemesterCacheTest(unittest.TestCase):
                 tree = ast.parse(source.read_text(encoding="utf-8"))
                 fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "get_markdown_cache_dir")
                 semester = ["2026년 2학기"]
-                ns = {"os": os, "WORKSPACE_DIR": tmp, "get_current_semester": lambda: semester[0]}
+                ns = {"os": os, "print": lambda *args, **kwargs: None,
+                      "WORKSPACE_DIR": tmp, "get_current_semester": lambda: semester[0]}
                 exec(compile(ast.Module(body=[fn], type_ignores=[]), str(source), "exec"), ns)
                 old_note = Path(tmp) / semester[0] / "공통과목/강의노트/1주차/.note.md"
                 old_note.parent.mkdir(parents=True)

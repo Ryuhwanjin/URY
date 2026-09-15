@@ -25,6 +25,7 @@ def load_save_functions(platform):
         "subprocess": subprocess,
         "re": re,
         "time": time,
+        "print": lambda *args, **kwargs: None,
         "get_default_config": lambda: {},
         "hide_file_os_agnostic": lambda path: path,
     }

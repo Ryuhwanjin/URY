@@ -5,9 +5,9 @@
 ## 진행 중
 
 - Windows 오류 예방 검증: 첫 실행 Markdown 저장과 주변 저장·삭제 경로의 미검증 실패 조건을 확인하고, Windows CI에서 회귀 테스트를 실행하도록 보강한다.
-  - 대상 파일: `.github/workflows/windows-build.yml`, `tests/test_removed_features.py`, `tests/test_note_aggregation.py`, `tests/test_accent_widgets.py`, `tests/test_microphone_permission.py`, `tests/test_semester_cache.py`, 개발 현황 문서
-  - 현재 상태: macOS 기준 전체 62개 통과(1개 GUI 환경 의존 제외), 공용 설정 코드 동일 및 `git diff --check` 통과. Windows runner에서 전체 테스트를 패키징 전에 실행하도록 추가했으며 실제 runner 결과를 확인해야 한다.
-  - 바로 다음 명령: 변경 파일을 커밋·푸시해 Windows Actions 회귀 테스트 및 패키지 빌드를 확인한다.
+  - 대상 파일: `.github/workflows/windows-build.yml`, macOS·Windows `settings_gui.py`, `check_pdf_render.py`, `tests/test_windows_runtime.py`, 저장·PDF·경로 관련 테스트 및 개발 현황 문서
+  - 현재 상태: Windows Run 32에서 CP1252 로그 출력 때문에 테스트가 실패했다. PyInstaller `--windowed` 앱이 stdout/stderr 부재와 CP1252를 모두 처리하도록 양 플랫폼 코드에 동일한 시작부 fallback을 추가했다. 단위 테스트 로그를 분리한 뒤 macOS에서 63개 통과(1개 GUI 환경 의존 제외), 양 플랫폼 UI 코드 동일 확인 및 `git diff --check` 완료.
+  - 바로 다음 명령: 변경 파일을 커밋·푸시하고 Windows runner 회귀 테스트와 빌드 결과를 확인한다.
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: Windows 배치 실행·안전한 삭제와 GitHub runner 기반 EXE·설치마법사 빌드를 유지 중이다. v0.9.8 공개 릴리즈 완료. 첫 실행 Markdown Error 13 수정 후보는 Run 30에서 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB 빌드를 통과했다. 실제 Windows 설치·마이크·첫 Markdown 생성·업데이트·완전삭제 QA가 남아 있다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
