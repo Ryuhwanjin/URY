@@ -33,6 +33,52 @@ def load_save_functions(platform):
 
 
 class NoteAggregationTest(unittest.TestCase):
+    def test_studio_first_save_creates_all_markdown_folders_and_files(self):
+        for platform in ("URY_macOS", "URY_Windows"):
+            with self.subTest(platform=platform), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                course_dir = root / "2026년 2학기" / "DB"
+                cache_dir = root / "2026년 2학기" / ".markdown_cache" / "DB"
+
+                class ConfigManager:
+                    def get_markdown_cache_dir(self, _folder):
+                        return str(cache_dir)
+
+                def resolve_course_dir(_folder):
+                    for folder in ("음성녹음", "강의자료", "강의노트", "예상문제", "과제"):
+                        (course_dir / folder).mkdir(parents=True, exist_ok=True)
+                    return str(course_dir)
+
+                namespace = load_save_functions(platform)
+                namespace["config_manager"] = ConfigManager()
+                namespace["resolve_course_dir"] = resolve_course_dir
+                config = {
+                    "folder_name": "DB",
+                    "name": "DB",
+                    "en_name": "Database",
+                    "cname_prefix": "DB",
+                    "en_prefix": "Database",
+                    "prof": "담당 교수님",
+                }
+                note = (
+                    "# DB 1주차 맞춤 강의노트 (2026-09-01)\n"
+                    "> 📌 **수업 일자**: 2026-09-01\n\n"
+                    "## 📌 1.\n## 💡 2.\n## 🎯 3.\n## 📝 4.\n첫 수업 내용"
+                )
+
+                self.assertFalse(course_dir.exists())
+                self.assertFalse(cache_dir.exists())
+                saved_paths = namespace["save_lecture_note_files"](
+                    note, "2026-09-01", 1, config=config, session_only=True
+                )
+
+                self.assertEqual(len(saved_paths), 5)
+                for saved_path in saved_paths:
+                    path = Path(saved_path)
+                    with self.subTest(path=path):
+                        self.assertTrue(path.is_file())
+                        self.assertIn("첫 수업 내용", path.read_text(encoding="utf-8"))
+
     def test_locked_markdown_is_preserved_and_replacement_is_saved_to_new_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "DB_1주차_강의노트.md"

@@ -40,16 +40,16 @@ class SemesterCacheTest(unittest.TestCase):
                 old_note.write_text("old semester", encoding="utf-8")
                 resolve = ns["get_markdown_cache_dir"]
                 old_cache = Path(resolve("공통과목"))
-                self.assertEqual((old_cache / "note.md").read_text(), "old semester")
+                self.assertEqual((old_cache / "note.md").read_text(encoding="utf-8"), "old semester")
                 semester[0] = "2027년 1학기"
                 new_cache = Path(resolve("공통과목"))
                 self.assertNotEqual(old_cache, new_cache)
                 self.assertFalse((new_cache / "note.md").exists())
                 self.assertTrue(old_note.exists())
                 semester[0] = "2026년 2학기"
-                (old_cache / "note.md").write_text("updated")
+                (old_cache / "note.md").write_text("updated", encoding="utf-8")
                 resolve("공통과목")
-                self.assertEqual((old_cache / "note.md").read_text(), "updated")
+                self.assertEqual((old_cache / "note.md").read_text(encoding="utf-8"), "updated")
 
 
 if __name__ == "__main__":

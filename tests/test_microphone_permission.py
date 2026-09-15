@@ -10,7 +10,7 @@ import unittest
 class MicrophonePermissionTest(unittest.TestCase):
     def test_build_sets_microphone_description_before_signing(self):
         source = Path(__file__).resolve().parents[1] / "build_macos_app.py"
-        tree = ast.parse(source.read_text())
+        tree = ast.parse(source.read_text(encoding="utf-8"))
         calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
                  and ast.unparse(node.func) == "subprocess.run"]
         permission = next((node for node in calls

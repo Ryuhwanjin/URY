@@ -31,6 +31,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r URY_Windows/system/requirements.txt pyinstaller pillow python-pptx python-docx
 
+      - name: Run regression tests
+        shell: pwsh
+        run: python -B -m unittest discover -s tests
+
       - name: Build URY onedir bundle
         shell: pwsh
         run: |

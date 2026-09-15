@@ -73,6 +73,56 @@ class RemovedFeaturesTest(unittest.TestCase):
                 with mock.patch("os.path.expanduser", side_effect=resolve_home):
                     self.assertEqual(Path(namespace["get_root_workspace"]()), workspace)
 
+    def test_windows_workspace_fails_clearly_when_desktop_and_fallback_are_unwritable(self):
+        source = (Path(__file__).parent.parent / "URY_Windows/system/code/config_manager.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        wanted = {"_workspace_is_writable", "get_root_workspace"}
+        nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            desktop = root / "Desktop" / "URY"
+            local_app_data = root / "AppData" / "Local"
+            fake_source = root / "app" / "system" / "code" / "config_manager.py"
+            namespace = {
+                "os": os,
+                "sys": types.SimpleNamespace(platform="win32"),
+                "tempfile": tempfile,
+                "__file__": str(fake_source),
+            }
+            exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)
+            real_expanduser = os.path.expanduser
+
+            def resolve_home(path):
+                return str(desktop) if path == "~/Desktop/URY" else real_expanduser(path)
+
+            with mock.patch.dict(os.environ, {"WORKSPACE_DIR": "", "LOCALAPPDATA": str(local_app_data)}):
+                with mock.patch("os.path.expanduser", side_effect=resolve_home), mock.patch(
+                    "tempfile.TemporaryFile", side_effect=PermissionError(13, "Permission denied")
+                ):
+                    with self.assertRaisesRegex(PermissionError, "URY 저장 폴더에 쓸 수 없습니다"):
+                        namespace["get_root_workspace"]()
+
+    def test_windows_workspace_uses_writable_explicit_path(self):
+        source = (Path(__file__).parent.parent / "URY_Windows/system/code/config_manager.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        wanted = {"_workspace_is_writable", "get_root_workspace"}
+        nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            explicit_workspace = Path(tmp) / "custom workspace"
+            fake_source = Path(tmp) / "app" / "system" / "code" / "config_manager.py"
+            namespace = {
+                "os": os,
+                "sys": types.SimpleNamespace(platform="win32"),
+                "tempfile": tempfile,
+                "__file__": str(fake_source),
+            }
+            exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)
+            with mock.patch.dict(os.environ, {"WORKSPACE_DIR": str(explicit_workspace)}):
+                self.assertEqual(namespace["get_root_workspace"](), str(explicit_workspace))
+            self.assertTrue(explicit_workspace.is_dir())
+
     def test_uninstaller_resolves_the_active_fallback_workspace(self):
         source = (Path(__file__).parent.parent / "URY_Windows/system/code/uninstall_gui.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
@@ -172,6 +222,7 @@ class RemovedFeaturesTest(unittest.TestCase):
         path = Path(__file__).parent.parent / ".github/workflows/windows-build.yml"
         source = path.read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-latest", source)
+        self.assertIn("python -B -m unittest discover -s tests", source)
         self.assertIn("--onedir", source)
         self.assertIn("--icon URY_Windows/app_icon.ico", source)
         self.assertIn('강의노트_한국어_프롬프트.txt', source)

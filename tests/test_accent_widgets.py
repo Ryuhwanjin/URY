@@ -14,7 +14,7 @@ class AccentWidgetsTest(unittest.TestCase):
 
         for platform in ("URY_macOS", "URY_Windows"):
             path = Path(__file__).resolve().parent.parent / platform / "system/code/settings_gui.py"
-            tree = ast.parse(path.read_text())
+            tree = ast.parse(path.read_text(encoding="utf-8"))
             button = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SquareRoundButton")
             app = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "UnifiedDashboardApp")
             methods = {n.name: n for n in app.body if isinstance(n, ast.FunctionDef)}
