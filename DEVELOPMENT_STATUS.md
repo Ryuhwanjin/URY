@@ -4,18 +4,15 @@
 
 ## 진행 중
 
-- Windows 강의노트 Markdown `PermissionError` 수정:
-  - 대상 파일: 공용 `config_manager.py`, `process_all_lectures.py`, `generate_pdfs.py`; Windows v0.9.9 updater·설치 스크립트·Actions 빌드; 회귀 테스트와 릴리즈 문서
-  - 현재 상태: 캐시 복사 오류는 건너뛰고, 잠긴 Markdown은 원본을 보존해 대체 파일에 저장하며, 읽을 수 없는 PDF 입력은 해당 노트만 건너뛰도록 구현했다. 전체 테스트 57개 통과(1개 GUI 환경 의존 제외). Windows v0.9.9 CI 빌드 대기.
-  - 바로 다음 명령: workflow가 `codex/**` 브랜치 푸시도 빌드하도록 추가하고 푸시해 EXE·설치마법사 검증 실행
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
-  - 현재 상태: macOS v0.9.6 정식 릴리즈 완료 상태 확인. Windows 배치 파일 6개를 UTF-8 코드페이지·v0.9.7 표기로 정리했고, Python 미설치 시 사용자 폴더를 삭제하지 않도록 안전장치를 적용했다. 참조가 없는 루트 아이콘 3개, 배포 제외 보안 우회 스크립트, 수동 전체 파이프라인 런처·wrapper를 제거했다. GitHub Windows runner에서 `URY.exe`·`_internal`·Inno Setup 설치파일 생성까지 성공했으며, 이번 v0.9.8 수정본도 Actions Run 27에서 빌드와 공개 릴리즈 asset 첨부를 완료했다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
+  - 현재 상태: Windows 배치 실행·안전한 삭제와 GitHub runner 기반 EXE·설치마법사 빌드를 유지 중이다. v0.9.8 공개 릴리즈와 v0.9.9 Markdown 권한 오류 수정 빌드를 완료했다. Actions Run 28에서 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB를 생성했으며, 실제 Windows 설치·마이크·Markdown 생성·업데이트·완전삭제 QA가 남아 있다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
   - 바로 다음 명령: Windows 실기기에서 설치 후 마이크 녹음, 해상도, 강의노트 생성, 업데이트·완전삭제를 검증한다.
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
 
+- Windows v0.9.9 Markdown Error 13 수정 및 EXE 빌드 완료: 캐시 복사 권한 거부 시 건너뛰기, Markdown 갱신을 원자적으로 저장하고 잠긴 원본 대신 새 파일 사용, PDF에서 읽지 못하는 Markdown만 건너뛰도록 수정. macOS·Windows 공용 코드 동일, 테스트 57개 통과(1개 GUI 환경 의존 제외). Actions Run 28 성공: `URY_Windows_v0.9.9_onedir` 54.5MB, `URY_Windows_v0.9.9_setup` 41.2MB. Windows 실기기 QA와 공개 릴리즈는 대기 중. 커밋 `f876171`, CI 트리거 `dab6f64`; [Actions Run 28](https://github.com/Ryuhwanjin/URY/actions/runs/34934946365)
 - v0.9.8 Windows QA 오류 수정 및 EXE·설치마법사 재빌드 완료: 화면 크기·저장 좌표 보정, 노트 생성 subprocess 콘솔 숨김, PDF 잠금 시 대체 저장, Windows sounddevice/PortAudio 마이크 backend와 DLL 패키징을 반영했다. 전체 테스트 53개 통과(1개 환경 의존 제외), 공용 Python 파일 동기화와 구문 검증 통과. Actions Run 27 성공, 54.5MB Windows ZIP·41.7MB 설치 EXE를 v0.9.8 Release에 첨부했다. 실제 Windows 마이크·설치 실기기 QA는 남아 있다. 커밋 `d7e8996` (release workflow 경로 보정 `6d82d2a`); [Actions Run 27](https://github.com/Ryuhwanjin/URY/actions/runs/34933475727)
 - v0.9.8 릴리즈: v0.9.7 (`97457ed`) 기반으로 DiagnosticReports의 TCC/SIGABRT 원인인 `NSMicrophoneUsageDescription` 누락을 빌드 시 서명 전에 보완. 맥미니 v0.9.7 후속 로직인 반응형 UI와 구버전 업데이터 호환용 `URY_Engine_v0.9.8_Installer.exe` 이름도 포함했다. 전체 테스트 50개 실행(49개 통과, 1개 환경 의존 제외), v0.9.8 앱 재빌드·버전/권한 plist·ad-hoc 서명·GUI smoke 검증 완료. 실제 마이크 허용 및 녹음 저장은 사용자 확인 필요. 원래 로컬 통합 작업은 `preserve local platform unification before recorder fix 2026-09-15` Git stash에 보존.
 - v0.9.7 설명서 패키징 완료: 플랫폼별 업데이트 동작 안내를 Markdown·PDF에 반영하고 macOS DMG/ZIP 및 Windows Actions onedir/setup 패키지에 사용자 가이드·저장경로 안내를 포함. PDF 2페이지 렌더 검증, Windows Actions 성공(Run `34739939721`)

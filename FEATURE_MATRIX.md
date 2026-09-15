@@ -78,6 +78,6 @@
 | 비영리 무료 배포(BYOK) | 완료 | 사용자 개인 API Key를 사용하는 무광고 무료 배포. URY 자체 서버에는 저장하지 않지만 선택 자료는 Google API로 전송될 수 있으며 법적 면책을 보장하지 않음 |
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화. 작은 화면 최소 크기·저장 좌표 복구, CLI 자식 프로세스 콘솔 숨김을 보정; 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | 기존 runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 현재 수정본은 PortAudio DLL 포함 검증을 추가했으며 실제 Windows 클린 환경 실행시험 필요 |
-| Windows CI 빌드 | 부분 구현 | v0.9.8 Release에 `URY.exe`, 사용자 설명서, PortAudio DLL 포함 ZIP·설치 EXE를 첨부 완료. Markdown 권한 수정 v0.9.9 후보는 Actions 빌드·실기기 동작 확인 필요 |
-| Windows 설치마법사·릴리스 | 부분 구현 | v0.9.8 릴리즈 완료. Inno Setup `URY_v0.9.9.iss` 기반 수정 후보의 설치·업데이트·삭제 실기기 검증 및 공개 릴리즈는 대기 중 |
+| Windows CI 빌드 | 부분 구현 | v0.9.8 공개 릴리즈 완료. Markdown 권한 수정 v0.9.9 `URY.exe` ZIP 54.5MB와 설치 EXE 41.2MB를 Actions Run 28에서 생성·검증. 실제 Windows 동작과 공개 릴리즈는 대기 중 |
+| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.9.iss` 설치 EXE 빌드 성공. Windows 실기기 설치·업데이트·삭제 검증 및 공개 릴리즈는 대기 중 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |

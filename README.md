@@ -2,7 +2,7 @@
 
 대학 강의자료와 녹음을 Gemini로 분석해 강의노트, PDF, 모의시험, 학습 로드맵을 만드는 macOS/Windows 데스크톱 앱입니다.
 
-최신 공개 릴리즈는 v0.9.8입니다. Windows용 v0.9.9 후보는 강의노트 Markdown 파일의 권한 오류를 보정하고 있습니다.
+최신 공개 릴리즈는 v0.9.8입니다. Windows용 v0.9.9 후보는 강의노트 Markdown 파일의 권한 오류를 수정해 Actions에서 EXE와 설치파일 빌드까지 통과했습니다.
 
 ## 시작하기
 
@@ -21,7 +21,7 @@
 - 대학별 HEX 포인트컬러와 실행 창·Dock 아이콘 색상 적용
 - AI Notebook 계열 앱을 참고한 고정 사이드바와 자료 중심 Studio 흐름
 - GitHub Release 새 버전 확인, 설치 파일 다운로드 및 실행
-- Windows 설치마법사 기반 설치·업데이트·삭제 (v0.9.9 빌드 후보, 실기기 QA 예정)
+- Windows 설치마법사 기반 설치·업데이트·삭제 (v0.9.9 후보 빌드 완료, 실기기 QA 예정)
 
 ## 저장소 구조
 
@@ -72,6 +72,7 @@ Windows EXE와 설치파일은 macOS에서 직접 컴파일하지 않고 GitHub 
 - EXE 패키지: `URY_Windows_v0.9.9_onedir`
 - 설치파일: `URY_Engine_v0.9.9_Installer.exe` (`URY_Windows_v0.9.9_setup` artifact)
 - 설치 스크립트: [installer/URY_v0.9.9.iss](installer/URY_v0.9.9.iss)
+- 빌드: [Windows Actions Run 28](https://github.com/Ryuhwanjin/URY/actions/runs/34934946365)
 
 설치 위치는 `%LOCALAPPDATA%\Programs\URY`이며, 사용자 학습 데이터는 `%USERPROFILE%\Desktop\URY`에 별도로 보존됩니다. 현재 설치파일은 Windows 실기기에서 설치·업데이트·삭제 회귀시험을 진행하기 전의 검증 후보입니다.
 

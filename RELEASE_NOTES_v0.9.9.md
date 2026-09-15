@@ -6,4 +6,4 @@
 - PDF 변환 중 읽을 수 없는 Markdown은 해당 파일만 건너뛰고 나머지 노트 처리를 계속합니다.
 - 회귀 테스트는 Markdown 복사·읽기·교체 권한 오류와 기존 파일 보존을 확인합니다.
 
-Windows Actions 빌드와 실제 Windows PC에서의 설치·강의노트 생성 확인이 필요합니다.
+Windows Actions Run 28에서 54.5MB onedir ZIP과 41.2MB 설치 EXE 빌드를 통과했습니다. 실제 Windows PC에서 설치·강의노트 생성을 확인한 뒤 공개 릴리즈할 수 있습니다.
