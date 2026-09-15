@@ -17,25 +17,60 @@ import urllib.error
 import unicodedata
 import ssl
 import glob
+import tempfile
 
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except Exception:
     pass
 
+def _workspace_is_writable(path):
+    """Check actual file creation; os.access may pass when Windows blocks Desktop writes."""
+    try:
+        os.makedirs(path, exist_ok=True)
+        with tempfile.TemporaryFile(dir=path):
+            pass
+        return True
+    except OSError:
+        return False
+
 def get_root_workspace():
     # 1. 실행기가 지정한 워크스페이스를 우선 사용한다. 설치 폴더를 옮겨도 그대로 따라간다.
     if os.environ.get("WORKSPACE_DIR"):
         env_ws = os.path.abspath(os.environ["WORKSPACE_DIR"])
-        if env_ws.rstrip("/") not in ("/Applications", "/System/Applications", "/Library") and not env_ws.startswith("/Volumes/") and os.access(env_ws, os.W_OK):
+        safe_path = env_ws.rstrip("/\\") not in ("/Applications", "/System/Applications", "/Library") and not env_ws.startswith("/Volumes/")
+        if safe_path and ((sys.platform != "win32" and os.access(env_ws, os.W_OK)) or _workspace_is_writable(env_ws)):
             return env_ws
 
-    # 2. 기본 워크스페이스: 무조건 바탕화면 ~/Desktop/URY 확정!
-    user_ws = os.path.expanduser("~/Desktop/URY")
-    try:
-        os.makedirs(user_ws, exist_ok=True)
-    except Exception:
-        pass
+    # 기본값은 Desktop/URY다. 실제 쓰기가 거부되면 Windows 사용자 전용 저장공간으로 전환한다.
+    desktop_ws = os.path.expanduser("~/Desktop/URY")
+    if sys.platform == "win32":
+        candidates = [desktop_ws]
+        if os.environ.get("LOCALAPPDATA"):
+            fallback_ws = os.path.join(os.environ["LOCALAPPDATA"], "URY")
+            fallback_marker = os.path.join(fallback_ws, ".ury_workspace_fallback")
+            if os.path.isfile(fallback_marker):
+                if not _workspace_is_writable(fallback_ws):
+                    raise PermissionError(f"기존 URY 저장 폴더에 쓸 수 없습니다: {fallback_ws}")
+                user_ws = fallback_ws
+            else:
+                candidates.append(fallback_ws)
+                user_ws = next((path for path in candidates if _workspace_is_writable(path)), None)
+                if user_ws == fallback_ws:
+                    with open(fallback_marker, "w", encoding="utf-8") as marker_file:
+                        marker_file.write("Desktop write access was denied.\n")
+        else:
+            user_ws = next((path for path in candidates if _workspace_is_writable(path)), None)
+        if user_ws is None:
+            raise PermissionError(f"URY 저장 폴더에 쓸 수 없습니다: {', '.join(candidates)}")
+    else:
+        user_ws = desktop_ws
+        try:
+            os.makedirs(user_ws, exist_ok=True)
+        except Exception:
+            pass
+    if user_ws != desktop_ws:
+        print(f"[Warn] Desktop 쓰기 권한이 없어 사용자 데이터 폴더를 사용합니다: {user_ws}")
 
     # 개발 소스코드 폴더에 생성되어 있는 기존 PDF 결과물이 있다면 바탕화면 URY로 자동 통합 동기화
     try:

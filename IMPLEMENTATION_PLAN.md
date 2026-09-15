@@ -36,7 +36,7 @@
 ## 3. 현재 기준선
 
 - v0.9.8 유지보수: v0.9.7 (`97457ed`) 기반으로 마이크 권한 설명을 서명 전에 추가하고, 앱·업데이터·패키징 버전 및 회귀 테스트를 동기화했다.
-- Windows v0.9.9 유지보수 후보: Markdown 캐시 복사·노트 읽기/쓰기 권한 오류가 강의노트 생성 전체를 중단시키지 않게 보정하고 Windows 설치파일을 재빌드했다. 실제 PC 검증 후 공개 릴리즈한다.
+- Windows v0.9.9 유지보수 후보: Run 28의 첫 수정은 기존 Markdown 접근 문제에만 적용되어 첫 실행의 새 Markdown 생성 오류를 해결하지 못했다. 워크스페이스 쓰기 권한을 실제 파일 생성으로 검사하고 Windows 사용자 데이터 폴더로 전환하는 보완을 구현했다. 선택한 대체 경로는 이후 실행과 완전 삭제에서도 유지되며, 새 빌드와 Windows 실기기 확인 후 공개 릴리즈한다.
 
 - 최신 기준: v0.9.8 (v0.9.7 `97457ed` 기반 녹음기 TCC 권한 수정)
 - 배포 정책 확정: 비영리 100% 무료 배포(무광고), 버전 정책 안 B(v0.9.6 검증 후 v1.0.0 승격)
@@ -107,9 +107,9 @@
 1. macOS 공용 기능과 Windows 소스 차이 감사
 2. 경로, 파일 선택기, 폰트, 아이콘, subprocess 호출을 Windows 방식으로 검증
 3. 딱딱한 직사각형 위젯을 현재 macOS 카드·라운드 UI와 동일하게 조정
-4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트. Studio QA에는 마이크 실녹음, 작은 화면에서 창 크기 복구, 노트 생성 중 콘솔 미노출, 기존 PDF가 열려 있을 때 저장을 포함
+4. Windows에서 Settings, Studio, PDF, Tutor, Updates 테스트. Studio QA에는 첫 실행 Markdown 생성 및 Desktop 권한 fallback, 마이크 실녹음, 작은 화면에서 창 크기 복구, 노트 생성 중 콘솔 미노출, 기존 PDF가 열려 있을 때 저장을 포함
 5. PyInstaller 단독 EXE 빌드 및 깨끗한 Windows 환경 실행시험
-6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify 및 `installer/URY_v0.9.8.iss` Inno Setup 패키지를 완료. Markdown 권한 수정 v0.9.9 후보도 Run 28에서 ZIP·설치 EXE 빌드를 통과했다. 실제 Windows 설치·기능 QA가 남아 있다.
+6. GitHub Actions Windows runner 기반 v0.9.8 `--onedir` 빌드·아이콘·번들 리소스 Verify 및 `installer/URY_v0.9.8.iss` Inno Setup 패키지를 완료. v0.9.9 후보 첫 빌드 Run 28은 기존 Markdown 잠금 처리만 검증했다. 첫 실행 쓰기 권한 fallback을 포함한 새 ZIP·설치 EXE 빌드와 실제 Windows QA가 남아 있다.
 
 완료 조건:
 

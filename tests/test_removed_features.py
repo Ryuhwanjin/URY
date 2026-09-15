@@ -1,6 +1,10 @@
 import ast
+import os
+import tempfile
+import types
 from pathlib import Path
 import unittest
+from unittest import mock
 
 
 class RemovedFeaturesTest(unittest.TestCase):
@@ -24,6 +28,64 @@ class RemovedFeaturesTest(unittest.TestCase):
             self.assertNotIn('"Documents" not in env_ws', root_fn)
             self.assertIn('os.path.expanduser("~/Desktop/URY")', root_fn)
             self.assertNotIn('os.path.expanduser("~/Desktop/URY_Engine")', root_fn)
+
+    def test_windows_workspace_falls_back_when_desktop_rejects_first_write(self):
+        source = (Path(__file__).parent.parent / "URY_Windows/system/code/config_manager.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        wanted = {"_workspace_is_writable", "get_root_workspace"}
+        nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            desktop = root / "Desktop" / "URY"
+            local_app_data = root / "AppData" / "Local"
+            fake_source = root / "app" / "system" / "code" / "config_manager.py"
+            namespace = {
+                "os": os,
+                "sys": types.SimpleNamespace(platform="win32"),
+                "tempfile": tempfile,
+                "__file__": str(fake_source),
+            }
+            exec(compile(ast.Module(body=nodes, type_ignores=[]), str(fake_source), "exec"), namespace)
+            real_expanduser = os.path.expanduser
+            real_temp_file = tempfile.TemporaryFile
+
+            def resolve_home(path):
+                return str(desktop) if path == "~/Desktop/URY" else real_expanduser(path)
+
+            def deny_desktop_probe(*args, **kwargs):
+                if Path(kwargs.get("dir", "")) == desktop:
+                    raise PermissionError(13, "Permission denied")
+                return real_temp_file(*args, **kwargs)
+
+            with mock.patch.dict(os.environ, {"WORKSPACE_DIR": "", "LOCALAPPDATA": str(local_app_data)}):
+                with mock.patch("os.path.expanduser", side_effect=resolve_home), mock.patch(
+                    "tempfile.TemporaryFile", side_effect=deny_desktop_probe
+                ):
+                    workspace = Path(namespace["get_root_workspace"]())
+
+            self.assertEqual(workspace, local_app_data / "URY")
+            self.assertTrue(workspace.is_dir())
+            self.assertTrue((workspace / ".ury_workspace_fallback").is_file())
+
+            # Keep using the same workspace after Desktop permissions are restored.
+            with mock.patch.dict(os.environ, {"WORKSPACE_DIR": "", "LOCALAPPDATA": str(local_app_data)}):
+                with mock.patch("os.path.expanduser", side_effect=resolve_home):
+                    self.assertEqual(Path(namespace["get_root_workspace"]()), workspace)
+
+    def test_uninstaller_resolves_the_active_fallback_workspace(self):
+        source = (Path(__file__).parent.parent / "URY_Windows/system/code/uninstall_gui.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_get_user_workspace")
+        namespace = {"os": os}
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), "uninstall_gui.py", "exec"), namespace)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fallback = Path(tmp) / "URY"
+            fallback.mkdir()
+            (fallback / ".ury_workspace_fallback").write_text("Desktop write access was denied.\n", encoding="utf-8")
+            with mock.patch.dict(os.environ, {"LOCALAPPDATA": tmp}):
+                self.assertEqual(Path(namespace["_get_user_workspace"]()), fallback)
 
     def test_windows_builder_bundles_runtime_loaded_modules(self):
         source = (Path(__file__).parent.parent / "URY_Windows/system/code/build_exe_gui.py").read_text(encoding="utf-8")

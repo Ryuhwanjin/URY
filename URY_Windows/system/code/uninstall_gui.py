@@ -8,6 +8,14 @@ import sys
 import shutil
 import time
 import subprocess
+
+def _get_user_workspace():
+    local_app_data = os.environ.get("LOCALAPPDATA", "")
+    fallback = os.path.join(local_app_data, "URY") if local_app_data else ""
+    if fallback and os.path.isfile(os.path.join(fallback, ".ury_workspace_fallback")):
+        return fallback
+    return os.path.expanduser("~/Desktop/URY")
+
 try:
     import tkinter as tk
     from tkinter import ttk, messagebox
@@ -89,7 +97,7 @@ class UninstallerGUI:
 
             # 2. 캐시 디렉터리 청소
             if self.del_cache_var.get():
-                user_ws = os.path.expanduser("~/Desktop/URY")
+                user_ws = _get_user_workspace()
                 cache_p = os.path.join(user_ws, ".markdown_cache") if os.path.exists(user_ws) else None
                 if cache_p and os.path.exists(cache_p):
                     shutil.rmtree(cache_p, ignore_errors=True)
@@ -97,10 +105,10 @@ class UninstallerGUI:
 
             # 3. 생성된 학습노트 폴더 삭제 (옵션)
             if self.del_notes_var.get():
-                user_ws = os.path.expanduser("~/Desktop/URY")
+                user_ws = _get_user_workspace()
                 if os.path.exists(user_ws):
                     shutil.rmtree(user_ws, ignore_errors=True)
-                    deleted_items.append("Desktop/URY 폴더 전체")
+                    deleted_items.append(f"워크스페이스 폴더 전체: {user_ws}")
 
             messagebox.showinfo("삭제 완료", "🎉 선택하신 URY 자원이 깔끔하게 완전 삭제되었습니다.")
             self.root.destroy()
