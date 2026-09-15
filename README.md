@@ -70,7 +70,7 @@ Windows EXE와 설치파일은 macOS에서 직접 컴파일하지 않고 GitHub 
 
 - Workflow: `.github/workflows/windows-build.yml`
 - EXE 패키지: `URY_Windows_v0.9.8_onedir`
-- 설치파일: `URY_Windows_v0.9.8_setup`
+- 설치파일: `URY_Engine_v0.9.8_Installer.exe` (`URY_Windows_v0.9.8_setup` artifact)
 - 설치 스크립트: [installer/URY_v0.9.8.iss](installer/URY_v0.9.8.iss)
 
 설치 위치는 `%LOCALAPPDATA%\Programs\URY`이며, 사용자 학습 데이터는 `%USERPROFILE%\Desktop\URY`에 별도로 보존됩니다. 현재 설치파일은 Windows 실기기에서 설치·업데이트·삭제 회귀시험을 진행하기 전의 검증 후보입니다.

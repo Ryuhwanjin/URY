@@ -78,5 +78,5 @@
 | Windows UI 코드 동기화 | 부분 구현 | 공용 UI·생성 코드는 동기화, 실제 Windows 최종 QA 필요 |
 | Windows 단독 EXE | 부분 구현 | GitHub Windows runner에서 `URY.exe`·`_internal` 생성 및 번들 프롬프트 검증 성공. 실제 Windows 클린 환경 실행시험 필요 |
 | Windows CI 빌드 | 부분 구현 | `windows-latest`에서 PyInstaller `--onedir`·아이콘·프롬프트·사용자 설명서 Verify 및 v0.9.8 artifact 생성 설정 완료. 실제 Windows 동작 검증 필요 |
-| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.8.iss` 기반 v0.9.8 setup artifact와 설명서 포함 설정 완료. 설치·업데이트·삭제 실기기 검증 필요 |
+| Windows 설치마법사·릴리스 | 부분 구현 | Inno Setup `URY_v0.9.8.iss` 기반 `URY_Engine_v0.9.8_Installer.exe`와 설명서 포함 설정 완료. 설치·업데이트·삭제 실기기 검증 필요 |
 | 폴더 이동·상대경로 | 부분 구현 | 사용자 워크스페이스 분리 구현, 설치 후 이동 회귀시험 필요 |
