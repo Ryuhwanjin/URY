@@ -2,7 +2,7 @@
 
 대학 강의자료와 녹음을 Gemini로 분석해 강의노트, PDF, 모의시험, 학습 로드맵을 만드는 macOS/Windows 데스크톱 앱입니다.
 
-최신 공개 릴리즈는 v0.9.8입니다. Windows v0.9.9 후보는 저장 폴더의 실제 쓰기 권한을 확인하고, Desktop 쓰기가 막히면 `%LOCALAPPDATA%\URY`를 사용합니다. 새 EXE와 설치파일이 Actions Run 30에서 빌드됐으며 Windows 실기기 확인은 남아 있습니다.
+최신 공개 릴리즈는 Windows v0.9.9이며, macOS 최신 버전은 v0.9.8입니다. Windows v0.9.9는 첫 강의노트 Markdown 저장 폴더의 쓰기 권한 fallback과 GUI 실행 안정성을 보완했습니다. 실제 Windows PC에서 설치·마이크 녹음·첫 노트 생성·업데이트·완전 삭제 확인은 남아 있습니다.
 
 ## 시작하기
 
@@ -21,7 +21,7 @@
 - 대학별 HEX 포인트컬러와 실행 창·Dock 아이콘 색상 적용
 - AI Notebook 계열 앱을 참고한 고정 사이드바와 자료 중심 Studio 흐름
 - GitHub Release 새 버전 확인, 설치 파일 다운로드 및 실행
-- Windows 설치마법사 기반 설치·업데이트·삭제 (v0.9.9 후보 빌드 완료, 실기기 QA 예정)
+- Windows 설치마법사 기반 설치·업데이트·삭제 (v0.9.9 공개, 실기기 QA 예정)
 
 ## 저장소 구조
 
@@ -72,9 +72,12 @@ Windows EXE와 설치파일은 macOS에서 직접 컴파일하지 않고 GitHub 
 - EXE 패키지: `URY_Windows_v0.9.9_onedir`
 - 설치파일: `URY_Engine_v0.9.9_Installer.exe` (`URY_Windows_v0.9.9_setup` artifact)
 - 설치 스크립트: [installer/URY_v0.9.9.iss](installer/URY_v0.9.9.iss)
-- 빌드: [Windows Actions Run 30](https://github.com/Ryuhwanjin/URY/actions/runs/34936946982) (ZIP 54.5MB, 설치 EXE 41.2MB)
+- 공개 릴리즈: [URY v0.9.9](https://github.com/Ryuhwanjin/URY/releases/tag/v0.9.9)
+- Windows ZIP: `URY_Engine_v0.9.9_Windows.zip` (56.3 MB)
+- 설치파일: `URY_Engine_v0.9.9_Installer.exe` (42.5 MB)
+- 빌드 및 업로드: [Windows Actions Run 38](https://github.com/Ryuhwanjin/URY/actions/runs/36522577539) (테스트 63개 통과, GUI 환경 의존 1개 제외)
 
-설치 위치는 `%LOCALAPPDATA%\Programs\URY`이며, 사용자 학습 데이터는 기본 `%USERPROFILE%\Desktop\URY`에 저장됩니다. Windows가 Desktop 쓰기를 거부하면 `%LOCALAPPDATA%\URY`로 전환해 이후 실행에도 유지하며, 완전 삭제 기능도 해당 경로를 찾습니다. 현재 설치파일은 Windows 실기기에서 설치·업데이트·삭제 회귀시험을 진행하기 전의 검증 후보입니다.
+설치 위치는 `%LOCALAPPDATA%\Programs\URY`이며, 사용자 학습 데이터는 기본 `%USERPROFILE%\Desktop\URY`에 저장됩니다. Windows가 Desktop 쓰기를 거부하면 `%LOCALAPPDATA%\URY`로 전환해 이후 실행에도 유지하며, 완전 삭제 기능도 해당 경로를 찾습니다. 실제 Windows PC에서 설치·마이크·첫 노트·업데이트·완전 삭제 회귀시험은 남아 있습니다.
 
 ## 안내
 
