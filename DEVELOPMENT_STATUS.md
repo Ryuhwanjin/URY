@@ -4,6 +4,10 @@
 
 ## 진행 중
 
+- Windows v0.9.9 정식 릴리즈:
+  - 대상 파일: `RELEASE_NOTES_v0.9.9.md`, `.github/workflows/windows-build.yml`, v0.9.9 태그 및 GitHub Release
+  - 현재 상태: 후보 커밋 `912dfcf` 기준 Windows Actions Run 33에서 테스트 63개 통과(1개 GUI 환경 의존 제외), ZIP·설치 EXE 빌드 성공. v0.9.9 태그와 공개 Release는 아직 없다. 실제 Windows 기기 QA는 남아 있다.
+  - 바로 다음 명령: 수정된 릴리즈 노트를 커밋·푸시하고 후보 커밋에 v0.9.9 태그를 생성한 뒤, Windows Actions가 Release asset 업로드를 마치는지 확인한다.
 - Windows Phase 3 착수 (Windows 실기기 QA, URY.exe 빌드, 설치마법사·업데이트·완전삭제 검증):
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: v0.9.8 공개 릴리즈 완료. 첫 실행 Markdown 권한 fallback 및 PyInstaller windowed 표준 출력 보완이 Windows Run 33에서 테스트 63개 통과(1개 GUI 환경 의존 제외), `URY.exe` ZIP 54.5MiB·설치 EXE 41.2MiB 생성까지 성공했다. 실제 Windows 설치·마이크·첫 Markdown 생성·업데이트·완전삭제 QA가 남아 있다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
