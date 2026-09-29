@@ -1,6 +1,6 @@
 # URY Engine 개발 현황
 
-마지막 갱신: 2026-09-15
+마지막 갱신: 2026-09-29
 
 ## 진행 중
 
@@ -8,14 +8,11 @@
   - 대상 파일: `URY_Windows/` (`03_단독EXE빌드.bat`, `04_완전삭제.bat`, `system/code/build_exe_gui.py`, `system/code/uninstall_gui.py`, `system/code/*.py`) 및 macOS/Windows 공용 코드
   - 현재 상태: v0.9.8 공개 릴리즈 완료. 첫 실행 Markdown 권한 fallback 및 PyInstaller windowed 표준 출력 보완이 Windows Run 33에서 테스트 63개 통과(1개 GUI 환경 의존 제외), `URY.exe` ZIP 54.5MiB·설치 EXE 41.2MiB 생성까지 성공했다. 실제 Windows 설치·마이크·첫 Markdown 생성·업데이트·완전삭제 QA가 남아 있다. Antigravity 리뷰·GPT(Codex) 판정·최종 동의 의견은 `antigravity_gpt.md` 8~11장에 기록했다.
   - 바로 다음 명령: Windows 실기기에서 설치 후 마이크 녹음, 해상도, 강의노트 생성, 업데이트·완전삭제를 검증한다.
-- 개발 안정화·Windows QA 종료 후 저장소 정리:
-  - 대상: Git 로컬·원격 브랜치와 프로젝트 디렉터리 트리
-  - 현재 상태: 사용자가 안정화 작업 뒤 브랜치·폴더 정리를 요청했다. 현재 `codex/windows-markdown-permission-v0.9.9` 작업 트리는 깨끗하고 원격과 동기화되어 있다. 실제 브랜치·폴더 정리는 안정화 완료 뒤 진행한다.
-  - 바로 다음 명령: `git branch -vv`로 브랜치 병합·추적 상태를 확인하고 `find . -maxdepth 2 -type d -not -path './.git*' | sort`로 폴더 트리를 점검한다.
 - Phase 1 후속 항목: 실제 429/503 쿼터 장애 회귀시험 및 동일 파일 Gemini File API 업로드 캐시는 Windows 안정화 후 진행 예정.
 
 ## 최근 완료
 
+- Git 저장소 브랜치·폴더 정리 완료: 로컬 `main`을 `origin/main`에 fast-forward하고, `origin/main`과 동일한 로컬 `codex/unify-platform-runtime`, 현재 v0.9.9 후보에 포함된 로컬·원격 `codex/release-v0.9.8`을 정리했다. 현재 후보에 없는 고유 커밋이 남은 원격 `windows-dev`, `windows/phase3`는 보존했다. v0.9.8에 이미 포함된 마이크 권한 stash는 중복 확인 후 제거하고, 플랫폼 통합 stash는 보존했다. 재생성 가능한 `__pycache__`, `build/`, `scratch/`, `URY_macOS/URY/`와 `.DS_Store`는 저장소 밖 `.URY_engine_local_archive_20260929/`로 이동했다. `.venv-macos-build/`, `URY_macOS/URY.app/`, `배포/` 릴리즈 파일은 유지했다. 브랜치 목록·작업 트리와 `git diff --check` 확인 완료.
 - Windows v0.9.9 1차 Markdown 후보 빌드(공개 릴리즈 안 함): 캐시 복사 권한 거부 처리, 기존 Markdown 갱신·읽기 실패 fallback, PDF 읽기 실패 건너뛰기를 넣고 Actions Run 28에서 EXE·설치파일을 생성했다. 이후 사용자 확인으로 실제 오류가 첫 실행 때 발생했고 기존 Markdown이 없었음을 확인했다. 따라서 Run 28 후보는 원인과 맞지 않아 첫 저장 권한 수정으로 대체한다. 커밋 `f876171`, CI 트리거 `dab6f64`; [Actions Run 28](https://github.com/Ryuhwanjin/URY/actions/runs/34934946365)
 - Windows v0.9.9 첫 저장 Markdown 권한 보완 완료: 실제 쓰기 검사에서 Desktop 경로가 거부되면 `%LOCALAPPDATA%\URY`로 전환하고 선택한 경로를 다음 실행에도 유지한다. 완전 삭제 GUI도 같은 경로를 사용한다. 새 경로 fallback·지속성·삭제 위치 테스트 포함 59개 통과(1개 GUI 환경 의존 제외), 구문·공용 코드 parity·`git diff --check` 통과. 커밋 `28967e4`; [Actions Run 30 성공](https://github.com/Ryuhwanjin/URY/actions/runs/34936946982) — ZIP 54.5MB, 설치 EXE 41.2MB. 실제 Windows 첫 실행 QA 및 공개 릴리즈는 대기 중.
 - Windows 저장·windowed 오류 예방 테스트 완료: 새 폴더 첫 Markdown 저장, Desktop/LocalAppData 모두 쓰기 거부, 명시적 사용자 워크스페이스를 회귀 테스트한다. Windows `--windowed` 앱이 콘솔 스트림 부재 시 `NUL`을 사용하고, 기존 CP1252 콘솔은 UTF-8로 재설정하게 공용 UI 코드를 동기화했다. macOS·Windows CI 테스트 63개 통과(1개 GUI 환경 의존 제외), CP1252 강제 시뮬레이션 통과. Run 33에서 Windows runner 테스트·EXE ZIP 54.5MiB·설치 EXE 41.2MiB 빌드 성공. 커밋 `d748bb6`, `922c038`; [Actions Run 33 성공](https://github.com/Ryuhwanjin/URY/actions/runs/34939223797). 실제 Windows 기기 QA 및 공개 릴리즈는 대기 중.
